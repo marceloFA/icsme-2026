@@ -10,7 +10,19 @@ compiled regular expressions covering all major mock frameworks per language.
 It is intentionally language-agnostic to catch cross-language patterns and
 runs after the AST phase.
 
-## Go heuristic
+## Language-specific detectors
+
+### Annotation-based (Python, Java, C#, TypeScript/JavaScript)
+
+Python, Java, C#, and TypeScript/JavaScript use formal fixture annotations
+or decorators:
+
+- **Python**: `@pytest.fixture` decorator or `setUp`/`tearDown` methods in unittest
+- **Java**: `@Before`/`@BeforeClass` (JUnit 4) or `@BeforeEach`/`@BeforeAll` (JUnit 5)
+- **C#**: `[SetUp]`/`[TearDown]` (NUnit) or `[Fact]`/`[Theory]` (xUnit)
+- **TypeScript/JavaScript**: Function calls like `beforeEach()`, `beforeAll()`, etc.
+
+### Go heuristic
 
 Go has no formal fixture annotation. The detector applies a call-graph
 heuristic: a non-test function (not prefixed `Test`, `Benchmark`, or

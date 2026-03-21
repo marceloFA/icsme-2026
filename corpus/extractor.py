@@ -234,6 +234,7 @@ TEST_FUNC_PATTERNS = {
     "javascript": re.compile(r"\bit\s*\(|\btest\s*\("),
     "typescript": re.compile(r"\bit\s*\(|\btest\s*\("),
     "go": re.compile(r"^func\s+Test[A-Z]", re.MULTILINE),
+    "csharp": re.compile(r"\[(?:Fact|Theory|Test)\]"),  # xUnit/NUnit attributes
 }
 
 

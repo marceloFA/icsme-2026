@@ -11,6 +11,7 @@ All collection parameters live in `corpus/config.py`.
 | JavaScript     | 100         | 800            | Frontend repos often yield few fixtures |
 | TypeScript     | 100         | 600            | Younger ecosystem |
 | Go             | 100         | 600            | Smaller ecosystem |
+| C#             | 100         | 800            | .NET ecosystem with diverse test frameworks |
 
 ## Star tiers
 

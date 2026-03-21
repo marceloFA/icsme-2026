@@ -170,6 +170,20 @@ LANGUAGE_CONFIGS = {
         test_path_patterns=["test/", "tests/", "_test.go"],
         test_file_suffixes=["_test.go"],
     ),
+    "csharp": LanguageConfig(
+        name="C#",
+        github_language="C#",
+        min_stars=100,
+        target_repos=800,
+        test_path_patterns=["tests/", "test/", "Tests/", "Test/"],
+        test_file_suffixes=[
+            "Tests.cs",
+            ".Tests.cs",
+            "_Tests.cs",
+            "Test.cs",
+            "_Test.cs",
+        ],
+    ),
 }
 
 # Minimum thresholds applied after cloning

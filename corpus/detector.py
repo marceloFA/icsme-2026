@@ -37,6 +37,7 @@ def _get_parser(language: str):
         import tree_sitter_javascript
         import tree_sitter_typescript
         import tree_sitter_go
+        import tree_sitter_csharp
         from tree_sitter import Language, Parser
 
         lang_map = {
@@ -45,6 +46,7 @@ def _get_parser(language: str):
             "javascript": Language(tree_sitter_javascript.language()),
             "typescript": Language(tree_sitter_typescript.language_typescript()),
             "go": Language(tree_sitter_go.language()),
+            "csharp": Language(tree_sitter_csharp.language()),
         }
         for key, lang in lang_map.items():
             p = Parser(lang)
@@ -172,6 +174,22 @@ MOCK_PATTERNS = [
     (r"gomock\.NewController", "gomock"),
     (r"testify/mock", "testify_mock"),
     (r"\.On\s*\(\s*['\"](\w+)['\"]", "testify_mock"),
+    # C#
+    (r"new\s+Mock<", "moq"),  # Moq
+    (r"Mock\.Of<", "moq"),  # Moq
+    (r"\.Setup\s*\(", "moq"),  # Moq
+    (r"\.Verify\s*\(", "moq"),  # Moq
+    (r"Substitute\.For<", "nsubstitute"),  # NSubstitute
+    (r"\.Received\s*\(", "nsubstitute"),  # NSubstitute
+    (
+        r"\.Returns\s*\(",
+        "nsubstitute",
+    ),  # NSubstitute (also Java Android, but NSubstitute more specific)
+    (r"A\.Fake<", "fakeiteasy"),  # FakeItEasy
+    (r"\.MustHaveHappened\s*\(", "fakeiteasy"),  # FakeItEasy
+    (r"MockRepository\.GenerateMock<", "rhino_mocks"),  # Rhino Mocks
+    (r"\.Expect\s*\(", "rhino_mocks"),  # Rhino Mocks
+    (r"\.VerifyAllExpectations\s*\(", "rhino_mocks"),  # Rhino Mocks
 ]
 
 
@@ -384,6 +402,53 @@ def _detect_js(tree, src_bytes: bytes) -> list[FixtureResult]:
 
 
 # ---------------------------------------------------------------------------
+# C# detector
+# ---------------------------------------------------------------------------
+
+CSHARP_FIXTURE_ATTRIBUTES = {
+    "[SetUp]": ("nunit_setup", "per_test"),
+    "[TearDown]": ("nunit_teardown", "per_test"),
+    "[OneTimeSetUp]": ("nunit_onetimesetup", "per_class"),
+    "[OneTimeTearDown]": ("nunit_onetimeteardown", "per_class"),
+    "[Fact]": ("xunit_fact", "per_test"),
+    "[Theory]": ("xunit_theory", "per_test"),
+}
+
+
+def _detect_csharp(tree, src_bytes: bytes) -> list[FixtureResult]:
+    results = []
+
+    def visit(node):
+        if node.type == "method_declaration":
+            attributes = [
+                _source(c, src_bytes).strip()
+                for c in node.children
+                if c.type == "attribute"
+            ]
+            for attr in attributes:
+                # Look for known fixture attributes
+                for attr_key in CSHARP_FIXTURE_ATTRIBUTES:
+                    if attr_key in attr:
+                        fixture_type, scope = CSHARP_FIXTURE_ATTRIBUTES[attr_key]
+                        results.append(
+                            _build_result(
+                                node=node,
+                                func_node=node,
+                                src_bytes=src_bytes,
+                                fixture_type=fixture_type,
+                                scope=scope,
+                            )
+                        )
+                        break
+
+        for child in node.children:
+            visit(child)
+
+    visit(tree.root_node)
+    return results
+
+
+# ---------------------------------------------------------------------------
 # Go detector
 # ---------------------------------------------------------------------------
 
@@ -525,6 +590,7 @@ DETECTORS = {
     "javascript": _detect_js,
     "typescript": _detect_js,  # TypeScript shares JS grammar for this purpose
     "go": _detect_go,
+    "csharp": _detect_csharp,
 }
 
 

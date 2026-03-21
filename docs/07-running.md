@@ -3,11 +3,14 @@
 ## Full run (recommended)
 
 ```bash
-# All languages, full targets (~4,000 repos searched, ~2,400 expected to survive)
+# All languages, full targets (~4,800 repos searched, ~3,000 expected to survive)
 python pipeline.py run
 
 # Single language, full target
 python pipeline.py run --language python
+
+# C# only, full target
+python pipeline.py run --language csharp
 
 # Smoke test with a small batch
 python pipeline.py run --language python --max 20

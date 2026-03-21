@@ -46,7 +46,7 @@ TABLE: repositories
   id               INTEGER  Internal primary key
   github_id        INTEGER  GitHub repository numeric ID
   full_name        TEXT     "owner/repo" slug
-  language         TEXT     python | java | javascript | typescript | go
+  language         TEXT     python | java | javascript | typescript | go | csharp
   stars            INTEGER  GitHub star count at collection time
   forks            INTEGER  GitHub fork count at collection time
   description      TEXT     GitHub repository description
@@ -77,6 +77,9 @@ TABLE: fixtures
                                     junit5_before_each | junit5_before_all |
                                     junit4_before | junit4_before_class |
                                     before_each | before_all | mocha_before |
+                                    nunit_setup | nunit_teardown |
+                                    nunit_onetimesetup | nunit_onetimeteardown |
+                                    xunit_fact | xunit_theory |
                                     test_main | go_helper
   scope                    TEXT     per_test | per_class | per_module | global
   start_line               INTEGER  1-indexed start line in the source file
@@ -96,7 +99,8 @@ TABLE: mock_usages
   repo_id                      INTEGER  FK → repositories.id
   framework                    TEXT     unittest_mock | pytest_mock | mockito |
                                         easymock | jest | sinon | vitest |
-                                        gomock | testify_mock
+                                        gomock | testify_mock | moq |
+                                        nsubstitute | fakeiteasy | rhino_mocks
   mock_style                   TEXT     stub | mock | spy | fake (NULL until classified)
   target_identifier            TEXT     String passed to the mock call
   target_layer                 TEXT     boundary | infrastructure | internal |
@@ -215,7 +219,7 @@ def _write_stats(conn, path: Path) -> None:
     conn2.row_factory = sqlite3.Row
     lines = ["FixtureDB — Corpus Statistics\n", "=" * 40 + "\n\n"]
 
-    for lang in ("python", "java", "javascript", "typescript", "go"):
+    for lang in ("python", "java", "javascript", "typescript", "go", "csharp"):
         r = conn2.execute(
             "SELECT COUNT(*) n FROM repositories WHERE language=? AND status='analysed'",
             (lang,),

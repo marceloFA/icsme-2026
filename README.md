@@ -57,7 +57,7 @@ For detailed setup, see [docs/06-setup.md](docs/06-setup.md).
 
 FixtureDB is a structured dataset of **test fixture definitions** extracted from
 open-source software repositories on GitHub across **Python, Java, JavaScript,
-TypeScript, and Go**.
+TypeScript, Go, and C#**.
 
 A *test fixture* is any code that prepares or tears down state before or after a test runs.
 For each fixture, the dataset records structural metadata (size, complexity, scope, type)
