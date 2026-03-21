@@ -45,6 +45,16 @@ def _find_test_files(repo_dir: Path, language: str) -> list[Path]:
         "vendor", "node_modules", ".git", "dist", "build",
         "target", ".gradle", "__pycache__", ".tox", "venv", ".venv",
         "site-packages", "third_party", "third-party",
+        "resources", "resource",  # test resource data directories
+    }
+
+    # Non-source-code file extensions to skip (resource files, data, config, etc.)
+    NON_CODE_EXTENSIONS = {
+        ".txt", ".json", ".xml", ".yaml", ".yml", ".properties",
+        ".md", ".csv", ".tsv", ".sql", ".html", ".css", ".scss", ".less",
+        ".svg", ".png", ".jpg", ".jpeg", ".gif", ".ico",
+        ".woff", ".woff2", ".ttf", ".eot", ".map",
+        ".lock", ".log", ".tmp",
     }
 
     test_files: list[Path] = []
@@ -58,6 +68,14 @@ def _find_test_files(repo_dir: Path, language: str) -> list[Path]:
 
         name = path.name.lower()
         rel = str(path.relative_to(repo_dir))
+
+        # Skip files with no extension (typically data/resource files)
+        if "." not in name:
+            continue
+
+        # Skip non-source-code files
+        if any(name.endswith(ext) for ext in NON_CODE_EXTENSIONS):
+            continue
 
         matched = any(name.endswith(suf.lower()) for suf in config.test_file_suffixes)
         if not matched:
