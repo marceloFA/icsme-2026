@@ -34,7 +34,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from corpus.config import LANGUAGE_CONFIGS, CLONE_BATCH_SIZE
 from corpus.db import initialise_db, db_is_initialised, db_session, get_corpus_stats
 from corpus.search import collect_repos_for_language, collect_all_languages
-from corpus.cloner import clone_pending_repos
+from corpus.cloner import clone_pending_repos, cleanup_stale_clones
 from corpus.extractor import extract_all_cloned
 from corpus.classifier import classify_all
 from corpus.exporter import export_dataset
@@ -80,6 +80,16 @@ def cmd_search(args):
         results = collect_all_languages(max_per_language=max_repos)
         for lang, count in results.items():
             print(f"  {lang:12s}: {count} repos")
+
+
+def cmd_cleanup(args):
+    dry_run = getattr(args, "dry_run", False)
+    counts = cleanup_stale_clones(dry_run=dry_run)
+    verb = "Would remove" if dry_run else "Removed"
+    print(f"✓ Cleanup done.")
+    print(f"  {verb} {counts['removed']} stale clone(s)")
+    print(f"  {verb} {counts['orphaned']} orphaned clone(s)")
+    print(f"  Kept {counts['kept']} valid clone(s) (awaiting extraction)")
 
 
 def cmd_clone(args):
@@ -209,6 +219,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_run.add_argument("--max", type=int, default=None,
                        help="Max repos per language to search")
 
+    # cleanup
+    p_cleanup = sub.add_parser("cleanup",
+                                help="Remove stale clone directories from interrupted runs")
+    p_cleanup.add_argument("--dry-run", action="store_true",
+                           help="Show what would be removed without deleting anything")
+
     # classify
     p_classify = sub.add_parser("classify", help="Label repo domains (web/cli/data/…)")
     p_classify.add_argument("--overwrite", action="store_true",
@@ -243,6 +259,7 @@ COMMAND_MAP = {
     "search":   cmd_search,
     "clone":    cmd_clone,
     "extract":  cmd_extract,
+    "cleanup":  cmd_cleanup,
     "classify": cmd_classify,
     "export":   cmd_export,
     "validate": cmd_validate,

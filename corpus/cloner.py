@@ -30,6 +30,73 @@ from corpus.db import db_session, get_repos_by_status, set_repo_status
 logger = logging.getLogger(__name__)
 
 
+def cleanup_stale_clones(dry_run: bool = False) -> dict:
+    """
+    Remove clone directories that should no longer exist on disk.
+
+    A clone directory is considered stale if:
+      - Its repo is not in the database at all (orphan from a wiped DB)
+      - Its repo status is 'skipped' or 'error' (failed quality checks —
+        the directory should have been deleted by clone_repo but wasn't
+        if the process was killed mid-flight)
+      - Its repo status is 'analysed' (extractor should have deleted it
+        but the process was killed before cleanup)
+
+    Directories for repos with status 'discovered' are also cleaned:
+    they are partial or interrupted clones — a fresh clone is safer.
+
+    Status 'cloned' directories are LEFT intact: extraction hasn't run
+    yet and the clone is still needed.
+
+    Args:
+        dry_run: if True, log what would be deleted but do not delete.
+
+    Returns a dict with counts: removed, kept, orphaned.
+    """
+    if not CLONES_DIR.exists():
+        return {"removed": 0, "kept": 0, "orphaned": 0}
+
+    STALE_STATUSES = {"discovered", "skipped", "error", "analysed"}
+
+    # Build a lookup: directory_name → repo status
+    # Directory name is full_name with "/" replaced by "__"
+    with db_session() as conn:
+        rows = conn.execute(
+            "SELECT full_name, status FROM repositories"
+        ).fetchall()
+    known = {r["full_name"].replace("/", "__"): r["status"] for r in rows}
+
+    counts = {"removed": 0, "kept": 0, "orphaned": 0}
+
+    for clone_dir in sorted(CLONES_DIR.iterdir()):
+        if not clone_dir.is_dir():
+            continue
+
+        dir_key = clone_dir.name
+        status = known.get(dir_key)
+
+        if status is None:
+            # Directory has no matching DB record — fully orphaned
+            reason = "orphaned (not in database)"
+            counts["orphaned"] += 1
+        elif status in STALE_STATUSES:
+            reason = f"stale (repo status = '{status}')"
+            counts["removed"] += 1
+        else:
+            # status == 'cloned' — keep it, extraction still needs it
+            logger.debug(f"[cleanup] Keep {dir_key} (status='{status}')")
+            counts["kept"] += 1
+            continue
+
+        if dry_run:
+            logger.info(f"[cleanup] Would remove {clone_dir.name}: {reason}")
+        else:
+            logger.info(f"[cleanup] Removing {clone_dir.name}: {reason}")
+            shutil.rmtree(clone_dir, ignore_errors=True)
+
+    return counts
+
+
 # ---------------------------------------------------------------------------
 # Single-repo clone + quality check
 # ---------------------------------------------------------------------------
@@ -44,13 +111,17 @@ def clone_repo(repo_id: int, full_name: str, clone_url: str,
     """
     target_dir = CLONES_DIR / full_name.replace("/", "__")
 
-    # Skip if already cloned (allows resuming interrupted runs)
+    # If the directory already exists and is a valid git repo, re-use it.
+    # This handles the case where the process was killed after a successful
+    # clone but before the DB status was updated — we avoid re-cloning.
     if target_dir.exists():
         try:
             commit = _get_head_sha(target_dir)
             logger.debug(f"[clone] {full_name} already present at {commit[:8]}")
             return repo_id, "cloned", commit
         except Exception:
+            # Directory exists but is broken/partial — wipe and re-clone
+            logger.debug(f"[clone] {full_name} directory broken, removing and re-cloning")
             shutil.rmtree(target_dir, ignore_errors=True)
 
     logger.info(f"[clone] Cloning {full_name} …")
@@ -78,7 +149,6 @@ def clone_repo(repo_id: int, full_name: str, clone_url: str,
         return repo_id, "error", "clone timed out"
 
     # Quality filter 1: commit count
-    # Even with --depth 1 we can approximate via git rev-list --count
     commit_count = _count_commits(target_dir)
     if commit_count < MIN_COMMITS:
         shutil.rmtree(target_dir, ignore_errors=True)
@@ -168,13 +238,20 @@ def clone_pending_repos(language: str | None = None,
     Clone all repos in 'discovered' status (optionally filtered by language).
     Uses a thread pool for parallel cloning.
 
+    Runs cleanup_stale_clones first to remove leftover directories from any
+    previous interrupted run before starting new clones.
+
     batch_size controls how many repos are processed in this call:
       - None (default): process ALL pending repos — used by `run`
       - int N: process at most N repos — used by `clone --batch N`
-        for incremental / resumable collection
 
     Returns a summary dict.
     """
+    # Remove stale directories before starting — keeps disk usage honest
+    # and ensures repos in 'discovered' status get a clean fresh clone
+    stale = cleanup_stale_clones()
+    if any(stale.values()):
+        logger.info(f"[cleanup] Stale clones removed before batch: {stale}")
     with db_session() as conn:
         rows = get_repos_by_status(conn, "discovered")
         if language:
