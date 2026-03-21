@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 # Test file discovery
 # ---------------------------------------------------------------------------
 
+
 def _find_test_files(repo_dir: Path, language: str) -> list[Path]:
     """
     Return all files in repo_dir that match the language's test file
@@ -42,20 +43,56 @@ def _find_test_files(repo_dir: Path, language: str) -> list[Path]:
         return []
 
     SKIP_DIRS = {
-        "vendor", "node_modules", ".git", "dist", "build",
-        "target", ".gradle", "__pycache__", ".tox", "venv", ".venv",
-        "site-packages", "third_party", "third-party",
-        "resources", "resource",  # test resource data directories
+        "vendor",
+        "node_modules",
+        ".git",
+        "dist",
+        "build",
+        "target",
+        ".gradle",
+        "__pycache__",
+        ".tox",
+        "venv",
+        ".venv",
+        "site-packages",
+        "third_party",
+        "third-party",
+        "resources",
+        "resource",  # test resource data directories
     }
 
     # Non-source-code file extensions to skip (resource files, data, config, etc.)
     NON_CODE_EXTENSIONS = {
-        ".txt", ".json", ".xml", ".yaml", ".yml", ".properties",
-        ".md", ".csv", ".tsv", ".sql", ".html", ".css", ".scss", ".less",
-        ".svg", ".png", ".jpg", ".jpeg", ".gif", ".ico",
-        ".woff", ".woff2", ".ttf", ".eot", ".map",
-        ".lock", ".log", ".tmp",
-        ".mod", ".sum",  # Go dependency files
+        ".txt",
+        ".json",
+        ".xml",
+        ".yaml",
+        ".yml",
+        ".properties",
+        ".md",
+        ".csv",
+        ".tsv",
+        ".sql",
+        ".html",
+        ".css",
+        ".scss",
+        ".less",
+        ".svg",
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".gif",
+        ".ico",
+        ".woff",
+        ".woff2",
+        ".ttf",
+        ".eot",
+        ".map",
+        ".lock",
+        ".log",
+        ".tmp",
+        ".mod",
+        ".sum",  # Go dependency files
     }
 
     test_files: list[Path] = []
@@ -80,8 +117,9 @@ def _find_test_files(repo_dir: Path, language: str) -> list[Path]:
 
         matched = any(name.endswith(suf.lower()) for suf in config.test_file_suffixes)
         if not matched:
-            matched = any(pat.lower() in rel.lower()
-                          for pat in config.test_path_patterns)
+            matched = any(
+                pat.lower() in rel.lower() for pat in config.test_path_patterns
+            )
 
         if matched:
             test_files.append(path)
@@ -92,6 +130,7 @@ def _find_test_files(repo_dir: Path, language: str) -> list[Path]:
 # ---------------------------------------------------------------------------
 # Single-repo extraction
 # ---------------------------------------------------------------------------
+
 
 def extract_repo(repo_id: int, full_name: str, language: str) -> dict:
     """
@@ -127,31 +166,31 @@ def extract_repo(repo_id: int, full_name: str, language: str) -> dict:
 
             for fix in fixtures:
                 fixture_record = {
-                    "file_id":                  file_id,
-                    "repo_id":                  repo_id,
-                    "name":                     fix.name,
-                    "fixture_type":             fix.fixture_type,
-                    "scope":                    fix.scope,
-                    "start_line":               fix.start_line,
-                    "end_line":                 fix.end_line,
-                    "loc":                      fix.loc,
-                    "cyclomatic_complexity":    fix.cyclomatic_complexity,
+                    "file_id": file_id,
+                    "repo_id": repo_id,
+                    "name": fix.name,
+                    "fixture_type": fix.fixture_type,
+                    "scope": fix.scope,
+                    "start_line": fix.start_line,
+                    "end_line": fix.end_line,
+                    "loc": fix.loc,
+                    "cyclomatic_complexity": fix.cyclomatic_complexity,
                     "num_objects_instantiated": fix.num_objects_instantiated,
-                    "num_external_calls":       fix.num_external_calls,
-                    "num_parameters":           fix.num_parameters,
-                    "has_yield":                int(fix.has_yield),
-                    "raw_source":               fix.raw_source,
+                    "num_external_calls": fix.num_external_calls,
+                    "num_parameters": fix.num_parameters,
+                    "has_yield": int(fix.has_yield),
+                    "raw_source": fix.raw_source,
                 }
                 fixture_id = insert_fixture(conn, fixture_record)
 
                 for mock in fix.mocks:
                     mock_record = {
-                        "fixture_id":                   fixture_id,
-                        "repo_id":                      repo_id,
-                        "framework":                    mock.framework,
-                        "target_identifier":            mock.target_identifier,
-                        "num_interactions_configured":  mock.num_interactions_configured,
-                        "raw_snippet":                  mock.raw_snippet,
+                        "fixture_id": fixture_id,
+                        "repo_id": repo_id,
+                        "framework": mock.framework,
+                        "target_identifier": mock.target_identifier,
+                        "num_interactions_configured": mock.num_interactions_configured,
+                        "raw_snippet": mock.raw_snippet,
                     }
                     insert_mock_usage(conn, mock_record)
                     total_mocks += 1
@@ -165,8 +204,9 @@ def extract_repo(repo_id: int, full_name: str, language: str) -> dict:
             f"only {total_fixtures} fixtures found (threshold: {MIN_FIXTURES_FOUND})"
         )
         with db_session() as conn:
-            set_repo_status(conn, repo_id, "skipped",
-                            f"only {total_fixtures} fixtures found")
+            set_repo_status(
+                conn, repo_id, "skipped", f"only {total_fixtures} fixtures found"
+            )
         delete_clone(full_name)
         return {"fixtures": 0, "mocks": 0}
 
@@ -189,11 +229,11 @@ def extract_repo(repo_id: int, full_name: str, language: str) -> dict:
 import re
 
 TEST_FUNC_PATTERNS = {
-    "python":     re.compile(r"^\s*def\s+test_", re.MULTILINE),
-    "java":       re.compile(r"@Test\b"),
+    "python": re.compile(r"^\s*def\s+test_", re.MULTILINE),
+    "java": re.compile(r"@Test\b"),
     "javascript": re.compile(r"\bit\s*\(|\btest\s*\("),
     "typescript": re.compile(r"\bit\s*\(|\btest\s*\("),
-    "go":         re.compile(r"^func\s+Test[A-Z]", re.MULTILINE),
+    "go": re.compile(r"^func\s+Test[A-Z]", re.MULTILINE),
 }
 
 
@@ -211,6 +251,7 @@ def _estimate_test_count(file_path: Path, language: str) -> int:
 # ---------------------------------------------------------------------------
 # Batch extraction
 # ---------------------------------------------------------------------------
+
 
 def extract_all_cloned(language: str | None = None) -> dict:
     """

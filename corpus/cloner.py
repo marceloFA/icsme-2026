@@ -61,9 +61,7 @@ def cleanup_stale_clones(dry_run: bool = False) -> dict:
     # Build a lookup: directory_name → repo status
     # Directory name is full_name with "/" replaced by "__"
     with db_session() as conn:
-        rows = conn.execute(
-            "SELECT full_name, status FROM repositories"
-        ).fetchall()
+        rows = conn.execute("SELECT full_name, status FROM repositories").fetchall()
     known = {r["full_name"].replace("/", "__"): r["status"] for r in rows}
 
     counts = {"removed": 0, "kept": 0, "orphaned": 0}
@@ -101,8 +99,10 @@ def cleanup_stale_clones(dry_run: bool = False) -> dict:
 # Single-repo clone + quality check
 # ---------------------------------------------------------------------------
 
-def clone_repo(repo_id: int, full_name: str, clone_url: str,
-               language: str) -> tuple[int, str, str | None]:
+
+def clone_repo(
+    repo_id: int, full_name: str, clone_url: str, language: str
+) -> tuple[int, str, str | None]:
     """
     Shallow-clone a repository.
 
@@ -121,15 +121,19 @@ def clone_repo(repo_id: int, full_name: str, clone_url: str,
             return repo_id, "cloned", commit
         except Exception:
             # Directory exists but is broken/partial — wipe and re-clone
-            logger.debug(f"[clone] {full_name} directory broken, removing and re-cloning")
+            logger.debug(
+                f"[clone] {full_name} directory broken, removing and re-cloning"
+            )
             shutil.rmtree(target_dir, ignore_errors=True)
 
     logger.info(f"[clone] Cloning {full_name} …")
     try:
         result = subprocess.run(
             [
-                "git", "clone",
-                "--depth", "1",          # snapshot only — no history needed
+                "git",
+                "clone",
+                "--depth",
+                "1",  # snapshot only — no history needed
                 "--single-branch",
                 "--no-tags",
                 clone_url,
@@ -137,7 +141,7 @@ def clone_repo(repo_id: int, full_name: str, clone_url: str,
             ],
             capture_output=True,
             text=True,
-            timeout=300,                 # 5-minute hard timeout per repo
+            timeout=300,  # 5-minute hard timeout per repo
         )
         if result.returncode != 0:
             msg = result.stderr.strip()[:300]
@@ -165,8 +169,7 @@ def clone_repo(repo_id: int, full_name: str, clone_url: str,
 
     commit = _get_head_sha(target_dir)
     logger.info(
-        f"[clone] ✓ {full_name} "
-        f"({test_file_count} test files, commit {commit[:8]})"
+        f"[clone] ✓ {full_name} " f"({test_file_count} test files, commit {commit[:8]})"
     )
     return repo_id, "cloned", commit
 
@@ -174,6 +177,7 @@ def clone_repo(repo_id: int, full_name: str, clone_url: str,
 # ---------------------------------------------------------------------------
 # Git helpers
 # ---------------------------------------------------------------------------
+
 
 def _get_head_sha(repo_dir: Path) -> str:
     result = subprocess.run(
@@ -224,7 +228,7 @@ def _count_test_files(repo_dir: Path, config) -> int:
         for path in repo_dir.rglob("*"):
             if pattern in str(path.relative_to(repo_dir)) and path.is_file():
                 count += 1
-                break   # count the directory once, not every file in it
+                break  # count the directory once, not every file in it
     return count
 
 
@@ -232,8 +236,10 @@ def _count_test_files(repo_dir: Path, config) -> int:
 # Batch cloning
 # ---------------------------------------------------------------------------
 
-def clone_pending_repos(language: str | None = None,
-                        batch_size: int | None = None) -> dict:
+
+def clone_pending_repos(
+    language: str | None = None, batch_size: int | None = None
+) -> dict:
     """
     Clone all repos in 'discovered' status (optionally filtered by language).
     Uses a thread pool for parallel cloning.
@@ -269,8 +275,10 @@ def clone_pending_repos(language: str | None = None,
         futures = {
             executor.submit(
                 clone_repo,
-                row["id"], row["full_name"],
-                row["clone_url"], row["language"]
+                row["id"],
+                row["full_name"],
+                row["clone_url"],
+                row["language"],
             ): row
             for row in batch
         }
@@ -278,8 +286,7 @@ def clone_pending_repos(language: str | None = None,
             repo_id, status, commit = future.result()
             summary[status] = summary.get(status, 0) + 1
             with db_session() as conn:
-                set_repo_status(conn, repo_id, status,
-                                pinned_commit=commit)
+                set_repo_status(conn, repo_id, status, pinned_commit=commit)
 
     logger.info(f"Batch done: {summary}")
     return summary
@@ -288,6 +295,7 @@ def clone_pending_repos(language: str | None = None,
 # ---------------------------------------------------------------------------
 # Cleanup
 # ---------------------------------------------------------------------------
+
 
 def delete_clone(full_name: str) -> None:
     """Remove the local clone once extraction is complete."""

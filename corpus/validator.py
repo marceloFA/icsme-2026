@@ -36,6 +36,7 @@ VALIDATION_DIR.mkdir(exist_ok=True)
 # Sampling
 # ---------------------------------------------------------------------------
 
+
 def generate_sample(n_per_language: int = 50) -> Path:
     """
     Draw a stratified random sample of n_per_language fixtures per language.
@@ -45,9 +46,12 @@ def generate_sample(n_per_language: int = 50) -> Path:
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
 
-    languages = [r[0] for r in conn.execute(
-        "SELECT DISTINCT language FROM repositories WHERE status='analysed'"
-    ).fetchall()]
+    languages = [
+        r[0]
+        for r in conn.execute(
+            "SELECT DISTINCT language FROM repositories WHERE status='analysed'"
+        ).fetchall()
+    ]
 
     if not languages:
         logger.error("No analysed repositories found. Run extraction first.")
@@ -56,7 +60,8 @@ def generate_sample(n_per_language: int = 50) -> Path:
 
     frames = []
     for lang in languages:
-        rows = conn.execute("""
+        rows = conn.execute(
+            """
             SELECT
                 f.id            AS fixture_id,
                 r.language,
@@ -73,7 +78,9 @@ def generate_sample(n_per_language: int = 50) -> Path:
             WHERE r.language = ? AND r.status = 'analysed'
             ORDER BY RANDOM()
             LIMIT ?
-        """, (lang, n_per_language)).fetchall()
+        """,
+            (lang, n_per_language),
+        ).fetchall()
 
         if not rows:
             logger.warning(f"No fixtures found for language: {lang}")
@@ -92,8 +99,8 @@ def generate_sample(n_per_language: int = 50) -> Path:
     sample = pd.concat(frames, ignore_index=True)
 
     # Add the manual labeling column
-    sample["is_true_fixture"] = ""   # reviewer fills: 1 = correct, 0 = false positive
-    sample["reviewer_notes"] = ""    # optional free-text notes
+    sample["is_true_fixture"] = ""  # reviewer fills: 1 = correct, 0 = false positive
+    sample["reviewer_notes"] = ""  # optional free-text notes
 
     timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
     out_path = VALIDATION_DIR / f"sample_{timestamp}.csv"
@@ -113,6 +120,7 @@ def generate_sample(n_per_language: int = 50) -> Path:
 # ---------------------------------------------------------------------------
 # Precision / recall computation
 # ---------------------------------------------------------------------------
+
 
 def compute_metrics(csv_path: Path) -> dict:
     """
@@ -137,13 +145,17 @@ def compute_metrics(csv_path: Path) -> dict:
 
     total_labelled = len(labelled)
     if total_labelled == 0:
-        logger.error("No labelled rows found. Fill in is_true_fixture before computing.")
+        logger.error(
+            "No labelled rows found. Fill in is_true_fixture before computing."
+        )
         return {}
 
     results = {}
     print(f"\nValidation results from: {csv_path.name}")
     print(f"Total labelled: {total_labelled}\n")
-    print(f"{'Language':<14} {'Sampled':>8} {'True':>8} {'False+':>8} {'Precision':>10}")
+    print(
+        f"{'Language':<14} {'Sampled':>8} {'True':>8} {'False+':>8} {'Precision':>10}"
+    )
     print("-" * 52)
 
     for lang, group in labelled.groupby("language"):
@@ -160,10 +172,14 @@ def compute_metrics(csv_path: Path) -> dict:
 
     overall_tp = sum(r["true_positives"] for r in results.values())
     overall_fp = sum(r["false_positives"] for r in results.values())
-    overall_p  = overall_tp / (overall_tp + overall_fp) if (overall_tp + overall_fp) > 0 else 0.0
+    overall_p = (
+        overall_tp / (overall_tp + overall_fp) if (overall_tp + overall_fp) > 0 else 0.0
+    )
     print("-" * 52)
-    print(f"{'Overall':<14} {total_labelled:>8} {overall_tp:>8} {overall_fp:>8} "
-          f"{overall_p:>9.1%}")
+    print(
+        f"{'Overall':<14} {total_labelled:>8} {overall_tp:>8} {overall_fp:>8} "
+        f"{overall_p:>9.1%}"
+    )
 
     print(
         "\nNote: This script measures precision only. "

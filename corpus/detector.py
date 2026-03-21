@@ -40,11 +40,11 @@ def _get_parser(language: str):
         from tree_sitter import Language, Parser
 
         lang_map = {
-            "python":     Language(tree_sitter_python.language()),
-            "java":       Language(tree_sitter_java.language()),
+            "python": Language(tree_sitter_python.language()),
+            "java": Language(tree_sitter_java.language()),
             "javascript": Language(tree_sitter_javascript.language()),
             "typescript": Language(tree_sitter_typescript.language_typescript()),
-            "go":         Language(tree_sitter_go.language()),
+            "go": Language(tree_sitter_go.language()),
         }
         for key, lang in lang_map.items():
             p = Parser(lang)
@@ -63,6 +63,7 @@ def _get_parser(language: str):
 # Data classes
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class MockResult:
     framework: str
@@ -74,11 +75,11 @@ class MockResult:
 @dataclass
 class FixtureResult:
     name: str
-    fixture_type: str           # see per-language constants below
-    scope: str                  # per_test / per_class / per_module / global
+    fixture_type: str  # see per-language constants below
+    scope: str  # per_test / per_class / per_module / global
     start_line: int
     end_line: int
-    loc: int                    # non-blank lines
+    loc: int  # non-blank lines
     cyclomatic_complexity: int
     num_objects_instantiated: int
     num_external_calls: int
@@ -92,8 +93,9 @@ class FixtureResult:
 # Shared AST utilities
 # ---------------------------------------------------------------------------
 
+
 def _source(node, src_bytes: bytes) -> str:
-    return src_bytes[node.start_byte:node.end_byte].decode("utf-8", errors="replace")
+    return src_bytes[node.start_byte : node.end_byte].decode("utf-8", errors="replace")
 
 
 def _count_loc(text: str) -> int:
@@ -130,17 +132,17 @@ def _count_external_calls(node, src_bytes: bytes) -> int:
     """
     text = _source(node, src_bytes).lower()
     external_patterns = [
-        r"\bopen\s*\(",                    # file
-        r"\bconnect\s*\(",                 # db/network
-        r"\bcreate_engine\s*\(",           # SQLAlchemy
-        r"\bsession\s*\.",                 # db sessions
-        r"\brequests?\.",                  # HTTP
-        r"\bhttpclient\b",                 # Go / Java
-        r"\bos\.environ\b",               # env config
-        r"\bsubprocess\.",                 # subprocess
-        r"\bsocket\s*\(",                  # raw sockets
-        r"\btempfile\.",                   # filesystem
-        r"\bshutil\.",                     # filesystem
+        r"\bopen\s*\(",  # file
+        r"\bconnect\s*\(",  # db/network
+        r"\bcreate_engine\s*\(",  # SQLAlchemy
+        r"\bsession\s*\.",  # db sessions
+        r"\brequests?\.",  # HTTP
+        r"\bhttpclient\b",  # Go / Java
+        r"\bos\.environ\b",  # env config
+        r"\bsubprocess\.",  # subprocess
+        r"\bsocket\s*\(",  # raw sockets
+        r"\btempfile\.",  # filesystem
+        r"\bshutil\.",  # filesystem
     ]
     return sum(len(re.findall(p, text)) for p in external_patterns)
 
@@ -151,25 +153,25 @@ def _count_external_calls(node, src_bytes: bytes) -> int:
 
 MOCK_PATTERNS = [
     # Python
-    (r"mock\.patch\s*\(\s*['\"]([^'\"]+)['\"]",          "unittest_mock"),
-    (r"mocker\.patch\s*\(\s*['\"]([^'\"]+)['\"]",        "pytest_mock"),
-    (r"MagicMock\s*\(|Mock\s*\(|AsyncMock\s*\(",         "unittest_mock"),
+    (r"mock\.patch\s*\(\s*['\"]([^'\"]+)['\"]", "unittest_mock"),
+    (r"mocker\.patch\s*\(\s*['\"]([^'\"]+)['\"]", "pytest_mock"),
+    (r"MagicMock\s*\(|Mock\s*\(|AsyncMock\s*\(", "unittest_mock"),
     # Java
-    (r"Mockito\.mock\s*\(\s*(\w+)\.class",               "mockito"),
-    (r"@Mock\b",                                          "mockito"),
-    (r"EasyMock\.createMock\s*\(\s*(\w+)\.class",        "easymock"),
-    (r"mock\s*\(\s*(\w+)\.class",                        "mockk"),     # MockK (Kotlin)
+    (r"Mockito\.mock\s*\(\s*(\w+)\.class", "mockito"),
+    (r"@Mock\b", "mockito"),
+    (r"EasyMock\.createMock\s*\(\s*(\w+)\.class", "easymock"),
+    (r"mock\s*\(\s*(\w+)\.class", "mockk"),  # MockK (Kotlin)
     # JavaScript / TypeScript
-    (r"jest\.fn\s*\(",                                    "jest"),
-    (r"jest\.spyOn\s*\(",                                 "jest"),
-    (r"jest\.mock\s*\(\s*['\"]([^'\"]+)['\"]",           "jest"),
-    (r"sinon\.(stub|spy|mock)\s*\(",                      "sinon"),
-    (r"vi\.fn\s*\(",                                      "vitest"),
-    (r"vi\.mock\s*\(\s*['\"]([^'\"]+)['\"]",             "vitest"),
+    (r"jest\.fn\s*\(", "jest"),
+    (r"jest\.spyOn\s*\(", "jest"),
+    (r"jest\.mock\s*\(\s*['\"]([^'\"]+)['\"]", "jest"),
+    (r"sinon\.(stub|spy|mock)\s*\(", "sinon"),
+    (r"vi\.fn\s*\(", "vitest"),
+    (r"vi\.mock\s*\(\s*['\"]([^'\"]+)['\"]", "vitest"),
     # Go
-    (r"gomock\.NewController",                            "gomock"),
-    (r"testify/mock",                                     "testify_mock"),
-    (r"\.On\s*\(\s*['\"](\w+)['\"]",                     "testify_mock"),
+    (r"gomock\.NewController", "gomock"),
+    (r"testify/mock", "testify_mock"),
+    (r"\.On\s*\(\s*['\"](\w+)['\"]", "testify_mock"),
 ]
 
 
@@ -184,22 +186,27 @@ def _extract_mocks(node, src_bytes: bytes) -> list[MockResult]:
             snippet = text[snippet_start:snippet_end].replace("\n", " ")
 
             # Count .return_value / .side_effect / when(...).thenReturn style
-            interactions = len(re.findall(
-                r"return_value|side_effect|thenReturn|thenThrow|doReturn",
-                text[m.start():m.end() + 200]
-            ))
-            found.append(MockResult(
-                framework=framework,
-                target_identifier=target,
-                num_interactions_configured=interactions,
-                raw_snippet=snippet,
-            ))
+            interactions = len(
+                re.findall(
+                    r"return_value|side_effect|thenReturn|thenThrow|doReturn",
+                    text[m.start() : m.end() + 200],
+                )
+            )
+            found.append(
+                MockResult(
+                    framework=framework,
+                    target_identifier=target,
+                    num_interactions_configured=interactions,
+                    raw_snippet=snippet,
+                )
+            )
     return found
 
 
 # ---------------------------------------------------------------------------
 # Python detector
 # ---------------------------------------------------------------------------
+
 
 def _detect_python(tree, src_bytes: bytes) -> list[FixtureResult]:
     results = []
@@ -223,20 +230,22 @@ def _detect_python(tree, src_bytes: bytes) -> list[FixtureResult]:
                     if scope_match:
                         scope_map = {
                             "function": "per_test",
-                            "class":    "per_class",
-                            "module":   "per_module",
-                            "package":  "per_module",
-                            "session":  "global",
+                            "class": "per_class",
+                            "module": "per_module",
+                            "package": "per_module",
+                            "session": "global",
                         }
                         scope = scope_map.get(scope_match.group(1), "per_test")
 
-                    results.append(_build_result(
-                        node=node,
-                        func_node=func_def,
-                        src_bytes=src_bytes,
-                        fixture_type="pytest_decorator",
-                        scope=scope,
-                    ))
+                    results.append(
+                        _build_result(
+                            node=node,
+                            func_node=func_def,
+                            src_bytes=src_bytes,
+                            fixture_type="pytest_decorator",
+                            scope=scope,
+                        )
+                    )
                     break
 
         # unittest setUp/tearDown inside TestCase subclass
@@ -244,18 +253,30 @@ def _detect_python(tree, src_bytes: bytes) -> list[FixtureResult]:
             name_node = node.child_by_field_name("name")
             if name_node:
                 name = _source(name_node, src_bytes)
-                if name in ("setUp", "tearDown", "setUpClass",
-                             "tearDownClass", "setUpModule", "tearDownModule"):
-                    scope = "per_class" if name in ("setUpClass", "tearDownClass") else "per_test"
+                if name in (
+                    "setUp",
+                    "tearDown",
+                    "setUpClass",
+                    "tearDownClass",
+                    "setUpModule",
+                    "tearDownModule",
+                ):
+                    scope = (
+                        "per_class"
+                        if name in ("setUpClass", "tearDownClass")
+                        else "per_test"
+                    )
                     if "Module" in name:
                         scope = "per_module"
-                    results.append(_build_result(
-                        node=node,
-                        func_node=node,
-                        src_bytes=src_bytes,
-                        fixture_type="unittest_setup",
-                        scope=scope,
-                    ))
+                    results.append(
+                        _build_result(
+                            node=node,
+                            func_node=node,
+                            src_bytes=src_bytes,
+                            fixture_type="unittest_setup",
+                            scope=scope,
+                        )
+                    )
 
         for child in node.children:
             visit(child)
@@ -269,14 +290,14 @@ def _detect_python(tree, src_bytes: bytes) -> list[FixtureResult]:
 # ---------------------------------------------------------------------------
 
 JUNIT_FIXTURE_ANNOTATIONS = {
-    "@BeforeEach":   ("junit5_before_each",  "per_test"),
-    "@BeforeAll":    ("junit5_before_all",   "per_class"),
-    "@AfterEach":    ("junit5_after_each",   "per_test"),
-    "@AfterAll":     ("junit5_after_all",    "per_class"),
-    "@Before":       ("junit4_before",       "per_test"),
-    "@BeforeClass":  ("junit4_before_class", "per_class"),
-    "@After":        ("junit4_after",        "per_test"),
-    "@AfterClass":   ("junit4_after_class",  "per_class"),
+    "@BeforeEach": ("junit5_before_each", "per_test"),
+    "@BeforeAll": ("junit5_before_all", "per_class"),
+    "@AfterEach": ("junit5_after_each", "per_test"),
+    "@AfterAll": ("junit5_after_all", "per_class"),
+    "@Before": ("junit4_before", "per_test"),
+    "@BeforeClass": ("junit4_before_class", "per_class"),
+    "@After": ("junit4_after", "per_test"),
+    "@AfterClass": ("junit4_after_class", "per_class"),
 }
 
 
@@ -295,13 +316,15 @@ def _detect_java(tree, src_bytes: bytes) -> list[FixtureResult]:
                 ann_key = "@" + ann.lstrip("@").split("(")[0].strip()
                 if ann_key in JUNIT_FIXTURE_ANNOTATIONS:
                     fixture_type, scope = JUNIT_FIXTURE_ANNOTATIONS[ann_key]
-                    results.append(_build_result(
-                        node=node,
-                        func_node=node,
-                        src_bytes=src_bytes,
-                        fixture_type=fixture_type,
-                        scope=scope,
-                    ))
+                    results.append(
+                        _build_result(
+                            node=node,
+                            func_node=node,
+                            src_bytes=src_bytes,
+                            fixture_type=fixture_type,
+                            scope=scope,
+                        )
+                    )
                     break
 
         for child in node.children:
@@ -316,12 +339,12 @@ def _detect_java(tree, src_bytes: bytes) -> list[FixtureResult]:
 # ---------------------------------------------------------------------------
 
 JS_FIXTURE_CALLS = {
-    "beforeEach":  ("before_each",  "per_test"),
-    "beforeAll":   ("before_all",   "per_class"),
-    "afterEach":   ("after_each",   "per_test"),
-    "afterAll":    ("after_all",    "per_class"),
-    "before":      ("mocha_before", "per_test"),
-    "after":       ("mocha_after",  "per_test"),
+    "beforeEach": ("before_each", "per_test"),
+    "beforeAll": ("before_all", "per_class"),
+    "afterEach": ("after_each", "per_test"),
+    "afterAll": ("after_all", "per_class"),
+    "before": ("mocha_before", "per_test"),
+    "after": ("mocha_after", "per_test"),
 }
 
 
@@ -333,8 +356,7 @@ def _detect_js(tree, src_bytes: bytes) -> list[FixtureResult]:
             target = node
             if node.type == "await_expression":
                 target = next(
-                    (c for c in node.children if c.type == "call_expression"),
-                    None
+                    (c for c in node.children if c.type == "call_expression"), None
                 )
             if target is None:
                 return
@@ -344,13 +366,15 @@ def _detect_js(tree, src_bytes: bytes) -> list[FixtureResult]:
                 name = _source(func_node, src_bytes).strip()
                 if name in JS_FIXTURE_CALLS:
                     fixture_type, scope = JS_FIXTURE_CALLS[name]
-                    results.append(_build_result(
-                        node=target,
-                        func_node=target,
-                        src_bytes=src_bytes,
-                        fixture_type=fixture_type,
-                        scope=scope,
-                    ))
+                    results.append(
+                        _build_result(
+                            node=target,
+                            func_node=target,
+                            src_bytes=src_bytes,
+                            fixture_type=fixture_type,
+                            scope=scope,
+                        )
+                    )
 
         for child in node.children:
             visit(child)
@@ -363,6 +387,7 @@ def _detect_js(tree, src_bytes: bytes) -> list[FixtureResult]:
 # Go detector
 # ---------------------------------------------------------------------------
 
+
 def _detect_go(tree, src_bytes: bytes) -> list[FixtureResult]:
     """
     Go has no formal fixture annotation. We detect:
@@ -374,7 +399,7 @@ def _detect_go(tree, src_bytes: bytes) -> list[FixtureResult]:
     """
     results = []
     all_func_names: set[str] = set()
-    test_func_calls: dict[str, set[str]] = {}   # test_func -> {called functions}
+    test_func_calls: dict[str, set[str]] = {}  # test_func -> {called functions}
 
     def collect_functions(node):
         if node.type == "function_declaration":
@@ -421,15 +446,25 @@ def _detect_go(tree, src_bytes: bytes) -> list[FixtureResult]:
             if name_node:
                 name = _source(name_node, src_bytes)
                 if name == "TestMain":
-                    results.append(_build_result(
-                        node=node, func_node=node, src_bytes=src_bytes,
-                        fixture_type="test_main", scope="global",
-                    ))
+                    results.append(
+                        _build_result(
+                            node=node,
+                            func_node=node,
+                            src_bytes=src_bytes,
+                            fixture_type="test_main",
+                            scope="global",
+                        )
+                    )
                 elif name in multi_used_helpers:
-                    results.append(_build_result(
-                        node=node, func_node=node, src_bytes=src_bytes,
-                        fixture_type="go_helper", scope="per_test",
-                    ))
+                    results.append(
+                        _build_result(
+                            node=node,
+                            func_node=node,
+                            src_bytes=src_bytes,
+                            fixture_type="go_helper",
+                            scope="per_test",
+                        )
+                    )
 
         for child in node.children:
             extract_fixtures(child)
@@ -442,18 +477,23 @@ def _detect_go(tree, src_bytes: bytes) -> list[FixtureResult]:
 # Shared result builder
 # ---------------------------------------------------------------------------
 
-def _build_result(node, func_node, src_bytes: bytes,
-                  fixture_type: str, scope: str) -> FixtureResult:
+
+def _build_result(
+    node, func_node, src_bytes: bytes, fixture_type: str, scope: str
+) -> FixtureResult:
     src_text = _source(func_node, src_bytes)
     name_node = func_node.child_by_field_name("name")
-    name = _source(name_node, src_bytes) if name_node else f"<anonymous>_{node.start_point[0]}"
+    name = (
+        _source(name_node, src_bytes)
+        if name_node
+        else f"<anonymous>_{node.start_point[0]}"
+    )
 
     params_node = func_node.child_by_field_name("parameters")
     num_params = 0
     if params_node:
         num_params = sum(
-            1 for c in params_node.children
-            if c.type not in ("(", ")", ",")
+            1 for c in params_node.children if c.type not in ("(", ")", ",")
         )
 
     has_yield = "yield" in src_text
@@ -480,11 +520,11 @@ def _build_result(node, func_node, src_bytes: bytes,
 # ---------------------------------------------------------------------------
 
 DETECTORS = {
-    "python":     _detect_python,
-    "java":       _detect_java,
+    "python": _detect_python,
+    "java": _detect_java,
     "javascript": _detect_js,
-    "typescript": _detect_js,   # TypeScript shares JS grammar for this purpose
-    "go":         _detect_go,
+    "typescript": _detect_js,  # TypeScript shares JS grammar for this purpose
+    "go": _detect_go,
 }
 
 

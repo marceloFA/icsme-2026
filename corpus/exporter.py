@@ -110,8 +110,8 @@ TABLE: mock_usages
 # Export logic
 # ---------------------------------------------------------------------------
 
-def export_dataset(version: str = "1.0",
-                   include_raw_source: bool = False) -> Path:
+
+def export_dataset(version: str = "1.0", include_raw_source: bool = False) -> Path:
     """
     Export the full dataset to EXPORT_DIR and produce a zip archive.
     Returns the path to the zip file.
@@ -132,15 +132,16 @@ def export_dataset(version: str = "1.0",
 
     # --- CSV exports ---
     _export_table(conn, "repositories", staging / "repositories.csv")
-    _export_table(conn, "test_files",   staging / "test_files.csv")
-    _export_table(conn, "mock_usages",  staging / "mock_usages.csv")
+    _export_table(conn, "test_files", staging / "test_files.csv")
+    _export_table(conn, "mock_usages", staging / "mock_usages.csv")
 
     # fixtures: exclude raw_source by default (large text, already in SQLite)
     if include_raw_source:
         _export_table(conn, "fixtures", staging / "fixtures_with_source.csv")
     else:
         _export_table(
-            conn, "fixtures",
+            conn,
+            "fixtures",
             staging / "fixtures.csv",
             exclude_cols=["raw_source"],
         )
@@ -165,8 +166,9 @@ def export_dataset(version: str = "1.0",
     return zip_path
 
 
-def _export_table(conn: sqlite3.Connection, table: str,
-                  dest: Path, exclude_cols: list[str] = None) -> None:
+def _export_table(
+    conn: sqlite3.Connection, table: str, dest: Path, exclude_cols: list[str] = None
+) -> None:
     exclude_cols = exclude_cols or []
     df = pd.read_sql(f"SELECT * FROM {table}", conn)
     if exclude_cols:
@@ -216,25 +218,27 @@ def _write_stats(conn, path: Path) -> None:
     for lang in ("python", "java", "javascript", "typescript", "go"):
         r = conn2.execute(
             "SELECT COUNT(*) n FROM repositories WHERE language=? AND status='analysed'",
-            (lang,)
+            (lang,),
         ).fetchone()["n"]
         tf = conn2.execute(
             "SELECT COUNT(*) n FROM test_files tf "
             "JOIN repositories r ON tf.repo_id=r.id WHERE r.language=?",
-            (lang,)
+            (lang,),
         ).fetchone()["n"]
         fx = conn2.execute(
             "SELECT COUNT(*) n FROM fixtures f "
             "JOIN repositories r ON f.repo_id=r.id WHERE r.language=?",
-            (lang,)
+            (lang,),
         ).fetchone()["n"]
         mk = conn2.execute(
             "SELECT COUNT(*) n FROM mock_usages m "
             "JOIN repositories r ON m.repo_id=r.id WHERE r.language=?",
-            (lang,)
+            (lang,),
         ).fetchone()["n"]
-        lines.append(f"{lang:12s}  repos={r:4d}  test_files={tf:6d}  "
-                     f"fixtures={fx:7d}  mocks={mk:6d}\n")
+        lines.append(
+            f"{lang:12s}  repos={r:4d}  test_files={tf:6d}  "
+            f"fixtures={fx:7d}  mocks={mk:6d}\n"
+        )
 
     conn2.close()
     path.write_text("".join(lines), encoding="utf-8")

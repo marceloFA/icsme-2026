@@ -15,7 +15,7 @@ load_dotenv()
 # ---------------------------------------------------------------------------
 
 ROOT_DIR = Path(__file__).parent.parent
-CLONES_DIR = ROOT_DIR / "clones"          # temporary, deleted after extraction
+CLONES_DIR = ROOT_DIR / "clones"  # temporary, deleted after extraction
 DATA_DIR = ROOT_DIR / "data"
 DB_PATH = DATA_DIR / "corpus.db"
 LOGS_DIR = ROOT_DIR / "logs"
@@ -39,14 +39,15 @@ REQUEST_DELAY = 2.0
 # Repository search filters
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class LanguageConfig:
     """Per-language search and detection configuration."""
 
-    name: str                          # human-readable
-    github_language: str               # label used by GitHub search API
+    name: str  # human-readable
+    github_language: str  # label used by GitHub search API
     min_stars: int = 100
-    target_repos: int = 1000           # how many repos to collect
+    target_repos: int = 1000  # how many repos to collect
 
     # Paths that signal "this is a test file"
     test_path_patterns: list[str] = field(default_factory=list)
@@ -71,7 +72,7 @@ class LanguageConfig:
 #   The 100-star floor is the common quality minimum in MSR work.
 # ---------------------------------------------------------------------------
 
-STAR_TIER_CORE_THRESHOLD = 500   # 'core'     — directly comparable to Hamster
+STAR_TIER_CORE_THRESHOLD = 500  # 'core'     — directly comparable to Hamster
 # repos with stars in [MIN_STARS, 499] are tagged 'extended'
 
 
@@ -81,9 +82,23 @@ def star_tier(stars: int) -> str:
 
 
 EXCLUSION_KEYWORDS = [
-    "tutorial", "course", "homework", "exercise", "demo", "example",
-    "sample", "workshop", "bootcamp", "learning", "practice", "beginner",
-    "awesome-", "cheatsheet", "interview", "leetcode", "hackerrank",
+    "tutorial",
+    "course",
+    "homework",
+    "exercise",
+    "demo",
+    "example",
+    "sample",
+    "workshop",
+    "bootcamp",
+    "learning",
+    "practice",
+    "beginner",
+    "awesome-",
+    "cheatsheet",
+    "interview",
+    "leetcode",
+    "hackerrank",
 ]
 
 # ---------------------------------------------------------------------------
@@ -121,7 +136,15 @@ LANGUAGE_CONFIGS = {
         min_stars=100,
         target_repos=800,
         test_path_patterns=["__tests__/", "test/", "tests/", "spec/"],
-        test_file_suffixes=[".test.js", ".spec.js", "test.js", ".test.jsx", ".spec.jsx", ".test.mjs", ".spec.mjs"],
+        test_file_suffixes=[
+            ".test.js",
+            ".spec.js",
+            "test.js",
+            ".test.jsx",
+            ".spec.jsx",
+            ".test.mjs",
+            ".spec.mjs",
+        ],
     ),
     "typescript": LanguageConfig(
         name="TypeScript",
@@ -129,7 +152,15 @@ LANGUAGE_CONFIGS = {
         min_stars=100,
         target_repos=600,
         test_path_patterns=["__tests__/", "test/", "tests/", "spec/"],
-        test_file_suffixes=[".test.ts", ".spec.ts", "test.ts", ".test.tsx", ".spec.tsx", ".test.mts", ".spec.mts"],
+        test_file_suffixes=[
+            ".test.ts",
+            ".spec.ts",
+            "test.ts",
+            ".test.tsx",
+            ".spec.tsx",
+            ".test.mts",
+            ".spec.mts",
+        ],
     ),
     "go": LanguageConfig(
         name="Go",
@@ -142,9 +173,9 @@ LANGUAGE_CONFIGS = {
 }
 
 # Minimum thresholds applied after cloning
-MIN_TEST_FILES = 5          # repos with fewer test files are dropped
-MIN_COMMITS = 50            # repos with fewer commits are dropped
-MIN_FIXTURES_FOUND = 1      # repos where we detect zero fixtures are dropped
+MIN_TEST_FILES = 5  # repos with fewer test files are dropped
+MIN_COMMITS = 50  # repos with fewer commits are dropped
+MIN_FIXTURES_FOUND = 1  # repos where we detect zero fixtures are dropped
 
 # Maximum repos to clone in a single run (useful for incremental collection)
 CLONE_BATCH_SIZE = 50

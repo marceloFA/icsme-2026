@@ -34,12 +34,15 @@ logger = logging.getLogger(__name__)
 # HTTP session
 # ---------------------------------------------------------------------------
 
+
 def _make_session() -> requests.Session:
     session = requests.Session()
-    session.headers.update({
-        "Accept": "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28",
-    })
+    session.headers.update(
+        {
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+        }
+    )
     if GITHUB_TOKEN:
         session.headers["Authorization"] = f"Bearer {GITHUB_TOKEN}"
     else:
@@ -57,6 +60,7 @@ SESSION = _make_session()
 # Rate limit handling
 # ---------------------------------------------------------------------------
 
+
 def _check_rate_limit() -> dict:
     """Return the current rate limit state for the search API."""
     r = SESSION.get(GITHUB_RATE_LIMIT_URL, timeout=10)
@@ -70,13 +74,16 @@ def _wait_for_rate_limit(resource: dict) -> None:
     if remaining < 3:
         reset_at = resource.get("reset", time.time() + 60)
         sleep_secs = max(reset_at - time.time() + 2, 1)
-        logger.info(f"Rate limit low ({remaining} remaining). Sleeping {sleep_secs:.0f}s.")
+        logger.info(
+            f"Rate limit low ({remaining} remaining). Sleeping {sleep_secs:.0f}s."
+        )
         time.sleep(sleep_secs)
 
 
 # ---------------------------------------------------------------------------
 # Repository filtering
 # ---------------------------------------------------------------------------
+
 
 def _is_excluded(repo: dict, config: LanguageConfig) -> tuple[bool, str]:
     """
@@ -112,7 +119,7 @@ def _has_test_indicators(repo: dict, config: LanguageConfig) -> bool:
     Returning False here is not disqualifying; it just deprioritises the repo.
     """
     topics = repo.get("topics") or []
-    text = " ".join(topics + [(repo.get("description") or "")])
+    text = " ".join(topics + [repo.get("description") or ""])
     test_signals = ["test", "testing", "spec", "tdd", "bdd", "unit"]
     return any(sig in text.lower() for sig in test_signals)
 
@@ -120,6 +127,7 @@ def _has_test_indicators(repo: dict, config: LanguageConfig) -> bool:
 # ---------------------------------------------------------------------------
 # Core search
 # ---------------------------------------------------------------------------
+
 
 def _search_page(query: str, page: int, per_page: int = 100) -> dict:
     """Fetch a single page of search results."""
@@ -178,7 +186,7 @@ def collect_repos_for_language(
     """
     config = LANGUAGE_CONFIGS[language_key]
     max_repos = max_repos or config.target_repos
-    new_written = 0      # only counts genuine inserts, not upserts
+    new_written = 0  # only counts genuine inserts, not upserts
 
     bucket_starts = _generate_date_buckets(
         start="2015-01-01",
@@ -221,17 +229,17 @@ def collect_repos_for_language(
                         continue
 
                     record = {
-                        "github_id":   repo["id"],
-                        "full_name":   repo["full_name"],
-                        "language":    language_key,
-                        "stars":       repo.get("stargazers_count"),
-                        "forks":       repo.get("forks_count"),
+                        "github_id": repo["id"],
+                        "full_name": repo["full_name"],
+                        "language": language_key,
+                        "stars": repo.get("stargazers_count"),
+                        "forks": repo.get("forks_count"),
                         "description": repo.get("description"),
-                        "topics":      json.dumps(repo.get("topics", [])),
-                        "created_at":  repo.get("created_at"),
-                        "pushed_at":   repo.get("pushed_at"),
-                        "clone_url":   repo.get("clone_url"),
-                        "star_tier":   star_tier(repo.get("stargazers_count") or 0),
+                        "topics": json.dumps(repo.get("topics", [])),
+                        "created_at": repo.get("created_at"),
+                        "pushed_at": repo.get("pushed_at"),
+                        "clone_url": repo.get("clone_url"),
+                        "star_tier": star_tier(repo.get("stargazers_count") or 0),
                     }
                     _, is_new = upsert_repository(conn, record)
                     if is_new:
@@ -256,6 +264,7 @@ def collect_repos_for_language(
 # Date bucket generator
 # ---------------------------------------------------------------------------
 
+
 def _generate_date_buckets(
     start: str, end: str, months: int = 6
 ) -> list[tuple[str, str]]:
@@ -272,10 +281,12 @@ def _generate_date_buckets(
         # Approximate month arithmetic
         next_dt = current + timedelta(days=months * 30)
         bucket_end = min(next_dt, end_dt)
-        buckets.append((
-            current.strftime(fmt),
-            bucket_end.strftime(fmt),
-        ))
+        buckets.append(
+            (
+                current.strftime(fmt),
+                bucket_end.strftime(fmt),
+            )
+        )
         current = next_dt
 
     return buckets
@@ -284,6 +295,7 @@ def _generate_date_buckets(
 # ---------------------------------------------------------------------------
 # Convenience: collect all languages
 # ---------------------------------------------------------------------------
+
 
 def collect_all_languages(max_per_language: int | None = None) -> dict[str, int]:
     results = {}

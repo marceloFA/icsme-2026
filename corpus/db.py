@@ -13,7 +13,6 @@ from pathlib import Path
 
 from corpus.config import DB_PATH
 
-
 # ---------------------------------------------------------------------------
 # Schema
 # ---------------------------------------------------------------------------
@@ -113,10 +112,11 @@ CREATE INDEX IF NOT EXISTS idx_test_files_repo  ON test_files(repo_id);
 # Connection helpers
 # ---------------------------------------------------------------------------
 
+
 def get_connection(db_path: Path = DB_PATH) -> sqlite3.Connection:
     conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row       # rows behave like dicts
-    conn.execute("PRAGMA journal_mode=WAL")   # safe for concurrent reads
+    conn.row_factory = sqlite3.Row  # rows behave like dicts
+    conn.execute("PRAGMA journal_mode=WAL")  # safe for concurrent reads
     conn.execute("PRAGMA foreign_keys=ON")
     return conn
 
@@ -163,6 +163,7 @@ def db_is_initialised(db_path: Path = DB_PATH) -> bool:
 # Repository helpers
 # ---------------------------------------------------------------------------
 
+
 def upsert_repository(conn: sqlite3.Connection, repo: dict) -> tuple[int, bool]:
     """
     Insert or update a repository record.
@@ -180,7 +181,8 @@ def upsert_repository(conn: sqlite3.Connection, repo: dict) -> tuple[int, bool]:
     ).fetchone()
     is_new = existing is None
 
-    conn.execute("""
+    conn.execute(
+        """
         INSERT INTO repositories (
             github_id, full_name, language, stars, forks,
             description, topics, created_at, pushed_at, clone_url,
@@ -194,24 +196,37 @@ def upsert_repository(conn: sqlite3.Connection, repo: dict) -> tuple[int, bool]:
             stars       = excluded.stars,
             pushed_at   = excluded.pushed_at,
             star_tier   = excluded.star_tier
-    """, repo)
+    """,
+        repo,
+    )
 
-    row_id = existing["id"] if existing else conn.execute(
-        "SELECT id FROM repositories WHERE github_id = ?", (repo["github_id"],)
-    ).fetchone()["id"]
+    row_id = (
+        existing["id"]
+        if existing
+        else conn.execute(
+            "SELECT id FROM repositories WHERE github_id = ?", (repo["github_id"],)
+        ).fetchone()["id"]
+    )
 
     return row_id, is_new
 
 
-def set_repo_status(conn: sqlite3.Connection, repo_id: int,
-                    status: str, error: str = None,
-                    pinned_commit: str = None) -> None:
-    conn.execute("""
+def set_repo_status(
+    conn: sqlite3.Connection,
+    repo_id: int,
+    status: str,
+    error: str = None,
+    pinned_commit: str = None,
+) -> None:
+    conn.execute(
+        """
         UPDATE repositories
         SET status = ?, error_message = ?,
             pinned_commit = COALESCE(?, pinned_commit)
         WHERE id = ?
-    """, (status, error, pinned_commit, repo_id))
+    """,
+        (status, error, pinned_commit, repo_id),
+    )
 
 
 def get_repos_by_status(conn: sqlite3.Connection, status: str) -> list[sqlite3.Row]:
@@ -224,36 +239,47 @@ def get_repos_by_status(conn: sqlite3.Connection, status: str) -> list[sqlite3.R
 # Test file helpers
 # ---------------------------------------------------------------------------
 
-def upsert_test_file(conn: sqlite3.Connection, repo_id: int,
-                     relative_path: str, language: str) -> int:
-    conn.execute("""
+
+def upsert_test_file(
+    conn: sqlite3.Connection, repo_id: int, relative_path: str, language: str
+) -> int:
+    conn.execute(
+        """
         INSERT INTO test_files (repo_id, relative_path, language)
         VALUES (?, ?, ?)
         ON CONFLICT(repo_id, relative_path) DO NOTHING
-    """, (repo_id, relative_path, language))
+    """,
+        (repo_id, relative_path, language),
+    )
     row = conn.execute(
         "SELECT id FROM test_files WHERE repo_id = ? AND relative_path = ?",
-        (repo_id, relative_path)
+        (repo_id, relative_path),
     ).fetchone()
     return row["id"]
 
 
-def update_test_file_counts(conn: sqlite3.Connection, file_id: int,
-                             num_test_funcs: int, num_fixtures: int) -> None:
-    conn.execute("""
+def update_test_file_counts(
+    conn: sqlite3.Connection, file_id: int, num_test_funcs: int, num_fixtures: int
+) -> None:
+    conn.execute(
+        """
         UPDATE test_files
         SET num_test_funcs = ?, num_fixtures = ?
         WHERE id = ?
-    """, (num_test_funcs, num_fixtures, file_id))
+    """,
+        (num_test_funcs, num_fixtures, file_id),
+    )
 
 
 # ---------------------------------------------------------------------------
 # Fixture helpers
 # ---------------------------------------------------------------------------
 
+
 def insert_fixture(conn: sqlite3.Connection, fixture: dict) -> int:
     """Insert a fixture record. Returns the new row id, or existing id on conflict."""
-    cursor = conn.execute("""
+    cursor = conn.execute(
+        """
         INSERT INTO fixtures (
             file_id, repo_id, name, fixture_type, scope,
             start_line, end_line, loc, cyclomatic_complexity,
@@ -266,12 +292,14 @@ def insert_fixture(conn: sqlite3.Connection, fixture: dict) -> int:
             :num_parameters, :has_yield, :raw_source
         )
         ON CONFLICT(file_id, name, start_line) DO NOTHING
-    """, fixture)
+    """,
+        fixture,
+    )
     if cursor.lastrowid:
         return cursor.lastrowid
     row = conn.execute(
         "SELECT id FROM fixtures WHERE file_id=? AND name=? AND start_line=?",
-        (fixture["file_id"], fixture["name"], fixture["start_line"])
+        (fixture["file_id"], fixture["name"], fixture["start_line"]),
     ).fetchone()
     return row["id"]
 
@@ -280,8 +308,10 @@ def insert_fixture(conn: sqlite3.Connection, fixture: dict) -> int:
 # Mock helpers
 # ---------------------------------------------------------------------------
 
+
 def insert_mock_usage(conn: sqlite3.Connection, mock: dict) -> None:
-    conn.execute("""
+    conn.execute(
+        """
         INSERT INTO mock_usages (
             fixture_id, repo_id, framework, target_identifier,
             num_interactions_configured, raw_snippet
@@ -289,12 +319,15 @@ def insert_mock_usage(conn: sqlite3.Connection, mock: dict) -> None:
             :fixture_id, :repo_id, :framework, :target_identifier,
             :num_interactions_configured, :raw_snippet
         )
-    """, mock)
+    """,
+        mock,
+    )
 
 
 # ---------------------------------------------------------------------------
 # Stats helper (useful for progress reporting)
 # ---------------------------------------------------------------------------
+
 
 def get_corpus_stats(conn: sqlite3.Connection) -> dict:
     stats = {}

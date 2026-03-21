@@ -23,39 +23,129 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 DOMAIN_RULES: list[tuple[str, list[str]]] = [
-    ("web", [
-        "web", "http", "api", "rest", "graphql", "fastapi", "django",
-        "flask", "express", "rails", "spring", "server", "request",
-        "endpoint", "route", "middleware", "websocket", "grpc",
-        "frontend", "backend", "react", "vue", "angular", "nextjs",
-    ]),
-    ("data", [
-        "data", "ml", "machine-learning", "deep-learning", "neural",
-        "pandas", "numpy", "spark", "etl", "pipeline", "analytics",
-        "dataset", "dataframe", "model", "train", "inference",
-        "nlp", "vision", "tensorflow", "pytorch", "scikit",
-    ]),
-    ("cli", [
-        "cli", "command-line", "terminal", "shell", "tool", "utility",
-        "script", "automation", "task", "runner", "build", "make",
-        "cmd", "console", "prompt",
-    ]),
-    ("infra", [
-        "infra", "infrastructure", "devops", "docker", "kubernetes",
-        "k8s", "cloud", "aws", "gcp", "azure", "deploy", "ci",
-        "cd", "terraform", "ansible", "monitoring", "logging",
-        "observability", "container", "helm",
-    ]),
-    ("library", [
-        "library", "lib", "sdk", "framework", "package", "module",
-        "client", "wrapper", "binding", "plugin", "extension",
-        "adapter", "connector", "driver",
-    ]),
+    (
+        "web",
+        [
+            "web",
+            "http",
+            "api",
+            "rest",
+            "graphql",
+            "fastapi",
+            "django",
+            "flask",
+            "express",
+            "rails",
+            "spring",
+            "server",
+            "request",
+            "endpoint",
+            "route",
+            "middleware",
+            "websocket",
+            "grpc",
+            "frontend",
+            "backend",
+            "react",
+            "vue",
+            "angular",
+            "nextjs",
+        ],
+    ),
+    (
+        "data",
+        [
+            "data",
+            "ml",
+            "machine-learning",
+            "deep-learning",
+            "neural",
+            "pandas",
+            "numpy",
+            "spark",
+            "etl",
+            "pipeline",
+            "analytics",
+            "dataset",
+            "dataframe",
+            "model",
+            "train",
+            "inference",
+            "nlp",
+            "vision",
+            "tensorflow",
+            "pytorch",
+            "scikit",
+        ],
+    ),
+    (
+        "cli",
+        [
+            "cli",
+            "command-line",
+            "terminal",
+            "shell",
+            "tool",
+            "utility",
+            "script",
+            "automation",
+            "task",
+            "runner",
+            "build",
+            "make",
+            "cmd",
+            "console",
+            "prompt",
+        ],
+    ),
+    (
+        "infra",
+        [
+            "infra",
+            "infrastructure",
+            "devops",
+            "docker",
+            "kubernetes",
+            "k8s",
+            "cloud",
+            "aws",
+            "gcp",
+            "azure",
+            "deploy",
+            "ci",
+            "cd",
+            "terraform",
+            "ansible",
+            "monitoring",
+            "logging",
+            "observability",
+            "container",
+            "helm",
+        ],
+    ),
+    (
+        "library",
+        [
+            "library",
+            "lib",
+            "sdk",
+            "framework",
+            "package",
+            "module",
+            "client",
+            "wrapper",
+            "binding",
+            "plugin",
+            "extension",
+            "adapter",
+            "connector",
+            "driver",
+        ],
+    ),
 ]
 
 
-def _classify_repo(full_name: str, description: str,
-                   topics_json: str) -> str:
+def _classify_repo(full_name: str, description: str, topics_json: str) -> str:
     """Return a domain label for a single repository."""
     topics: list[str] = []
     try:
@@ -65,11 +155,7 @@ def _classify_repo(full_name: str, description: str,
 
     # Build a single text blob: name + description + topics
     name_parts = re.split(r"[/_\-]", full_name.split("/")[-1])
-    text = " ".join(
-        name_parts
-        + [description or ""]
-        + topics
-    ).lower()
+    text = " ".join(name_parts + [description or ""] + topics).lower()
 
     for domain, keywords in DOMAIN_RULES:
         if any(kw in text for kw in keywords):

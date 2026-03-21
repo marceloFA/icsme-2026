@@ -60,6 +60,7 @@ logger = logging.getLogger("pipeline")
 # Subcommand handlers
 # ---------------------------------------------------------------------------
 
+
 def cmd_init(args):
     initialise_db()
     print("✓ Database initialised.")
@@ -71,8 +72,10 @@ def cmd_search(args):
 
     if language:
         if language not in LANGUAGE_CONFIGS:
-            print(f"Unknown language '{language}'. "
-                  f"Choose from: {list(LANGUAGE_CONFIGS)}")
+            print(
+                f"Unknown language '{language}'. "
+                f"Choose from: {list(LANGUAGE_CONFIGS)}"
+            )
             sys.exit(1)
         count = collect_repos_for_language(language, max_repos=max_repos)
         print(f"✓ {count} repos discovered for {language}")
@@ -153,6 +156,7 @@ def cmd_export(args):
 def cmd_validate(args):
     if args.compute:
         from pathlib import Path
+
         results = compute_metrics(Path(args.compute))
         if results:
             print("✓ Metrics computed. See output above.")
@@ -168,8 +172,13 @@ def cmd_stats(args):
 
     col_w = 22
     print(f"\n{'Corpus statistics':─<45}")
-    status_keys = ["repos_discovered", "repos_cloned",
-                   "repos_analysed", "repos_skipped", "repos_error"]
+    status_keys = [
+        "repos_discovered",
+        "repos_cloned",
+        "repos_analysed",
+        "repos_skipped",
+        "repos_error",
+    ]
     for k in status_keys:
         label = k.replace("_", " ").capitalize()
         print(f"  {label:<{col_w}} {stats.get(k, 0):>8,}")
@@ -184,6 +193,7 @@ def cmd_stats(args):
 # Argument parser
 # ---------------------------------------------------------------------------
 
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Fixture corpus collection pipeline",
@@ -197,16 +207,24 @@ def build_parser() -> argparse.ArgumentParser:
 
     # search
     p_search = sub.add_parser("search", help="Search GitHub for repos")
-    p_search.add_argument("--language", choices=list(LANGUAGE_CONFIGS),
-                          help="Limit to one language (default: all)")
-    p_search.add_argument("--max", type=int, default=None,
-                          help="Max repos per language")
+    p_search.add_argument(
+        "--language",
+        choices=list(LANGUAGE_CONFIGS),
+        help="Limit to one language (default: all)",
+    )
+    p_search.add_argument(
+        "--max", type=int, default=None, help="Max repos per language"
+    )
 
     # clone
     p_clone = sub.add_parser("clone", help="Clone discovered repos")
     p_clone.add_argument("--language", choices=list(LANGUAGE_CONFIGS))
-    p_clone.add_argument("--batch", type=int, default=CLONE_BATCH_SIZE,
-                         help="Max repos to clone in this run")
+    p_clone.add_argument(
+        "--batch",
+        type=int,
+        default=CLONE_BATCH_SIZE,
+        help="Max repos to clone in this run",
+    )
 
     # extract
     p_extract = sub.add_parser("extract", help="Extract fixtures from cloned repos")
@@ -214,35 +232,55 @@ def build_parser() -> argparse.ArgumentParser:
 
     # run
     p_run = sub.add_parser("run", help="Run full pipeline end-to-end")
-    p_run.add_argument("--language", choices=list(LANGUAGE_CONFIGS),
-                       help="Limit to one language")
-    p_run.add_argument("--max", type=int, default=None,
-                       help="Max repos per language to search")
+    p_run.add_argument(
+        "--language", choices=list(LANGUAGE_CONFIGS), help="Limit to one language"
+    )
+    p_run.add_argument(
+        "--max", type=int, default=None, help="Max repos per language to search"
+    )
 
     # cleanup
-    p_cleanup = sub.add_parser("cleanup",
-                                help="Remove stale clone directories from interrupted runs")
-    p_cleanup.add_argument("--dry-run", action="store_true",
-                           help="Show what would be removed without deleting anything")
+    p_cleanup = sub.add_parser(
+        "cleanup", help="Remove stale clone directories from interrupted runs"
+    )
+    p_cleanup.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would be removed without deleting anything",
+    )
 
     # classify
     p_classify = sub.add_parser("classify", help="Label repo domains (web/cli/data/…)")
-    p_classify.add_argument("--overwrite", action="store_true",
-                            help="Re-classify already-labelled repos")
+    p_classify.add_argument(
+        "--overwrite", action="store_true", help="Re-classify already-labelled repos"
+    )
 
     # export
     p_export = sub.add_parser("export", help="Export dataset for Zenodo deposit")
-    p_export.add_argument("--version", default="1.0", help="Version string (default: 1.0)")
-    p_export.add_argument("--include-source", action="store_true",
-                          help="Include raw_source column in fixtures CSV")
+    p_export.add_argument(
+        "--version", default="1.0", help="Version string (default: 1.0)"
+    )
+    p_export.add_argument(
+        "--include-source",
+        action="store_true",
+        help="Include raw_source column in fixtures CSV",
+    )
 
     # validate
-    p_validate = sub.add_parser("validate",
-                                 help="Sample fixtures for manual precision/recall validation")
-    p_validate.add_argument("--sample", type=int, default=50,
-                             help="Fixtures to sample per language (default: 50)")
-    p_validate.add_argument("--compute", metavar="CSV",
-                             help="Path to a completed validation CSV — compute metrics")
+    p_validate = sub.add_parser(
+        "validate", help="Sample fixtures for manual precision/recall validation"
+    )
+    p_validate.add_argument(
+        "--sample",
+        type=int,
+        default=50,
+        help="Fixtures to sample per language (default: 50)",
+    )
+    p_validate.add_argument(
+        "--compute",
+        metavar="CSV",
+        help="Path to a completed validation CSV — compute metrics",
+    )
 
     # stats
     sub.add_parser("stats", help="Print corpus statistics")
@@ -255,16 +293,16 @@ def build_parser() -> argparse.ArgumentParser:
 # ---------------------------------------------------------------------------
 
 COMMAND_MAP = {
-    "init":     cmd_init,
-    "search":   cmd_search,
-    "clone":    cmd_clone,
-    "extract":  cmd_extract,
-    "cleanup":  cmd_cleanup,
+    "init": cmd_init,
+    "search": cmd_search,
+    "clone": cmd_clone,
+    "extract": cmd_extract,
+    "cleanup": cmd_cleanup,
     "classify": cmd_classify,
-    "export":   cmd_export,
+    "export": cmd_export,
     "validate": cmd_validate,
-    "run":      cmd_run,
-    "stats":    cmd_stats,
+    "run": cmd_run,
+    "stats": cmd_stats,
 }
 
 if __name__ == "__main__":
