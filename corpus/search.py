@@ -169,16 +169,17 @@ def collect_repos_for_language(
 ) -> int:
     """
     Search GitHub for repositories in the given language and persist them
-    to the database. Returns the number of new repos written.
+    to the database. Returns the number of NEW repos written.
 
-    To work around GitHub's 1,000-result cap we bucket by creation date.
+    Repos already in the database are skipped for counting purposes
+    (their metadata is updated in place). The search continues until
+    max_repos genuinely new repos have been inserted, making this function
+    safe to call multiple times — each call discovers a new batch.
     """
     config = LANGUAGE_CONFIGS[language_key]
     max_repos = max_repos or config.target_repos
-    written = 0
+    new_written = 0      # only counts genuine inserts, not upserts
 
-    # Date buckets: split search into ~6-month windows going back to 2015
-    # This is the standard trick to exceed the 1000-result search limit.
     bucket_starts = _generate_date_buckets(
         start="2015-01-01",
         end=datetime.utcnow().strftime("%Y-%m-%d"),
@@ -186,19 +187,19 @@ def collect_repos_for_language(
     )
 
     logger.info(
-        f"[{language_key}] Starting collection. Target: {max_repos} repos. "
-        f"Buckets: {len(bucket_starts)}"
+        f"[{language_key}] Starting collection. "
+        f"Target: {max_repos} NEW repos. Buckets: {len(bucket_starts)}"
     )
 
     for bucket_start, bucket_end in bucket_starts:
-        if written >= max_repos:
+        if new_written >= max_repos:
             break
 
         base_query = _build_query(config)
         query = f"{base_query} created:{bucket_start}..{bucket_end}"
         page = 1
 
-        while written < max_repos:
+        while new_written < max_repos:
             rl = _check_rate_limit()
             _wait_for_rate_limit(rl)
 
@@ -211,7 +212,7 @@ def collect_repos_for_language(
 
             with db_session() as conn:
                 for repo in items:
-                    if written >= max_repos:
+                    if new_written >= max_repos:
                         break
 
                     excluded, reason = _is_excluded(repo, config)
@@ -232,20 +233,23 @@ def collect_repos_for_language(
                         "clone_url":   repo.get("clone_url"),
                         "star_tier":   star_tier(repo.get("stargazers_count") or 0),
                     }
-                    upsert_repository(conn, record)
-                    written += 1
+                    _, is_new = upsert_repository(conn, record)
+                    if is_new:
+                        new_written += 1
 
             page += 1
-            # GitHub search allows max 10 pages of 100 = 1000 results per query
             if page > 10:
                 break
 
             time.sleep(REQUEST_DELAY)
 
-        logger.info(f"[{language_key}] After bucket {bucket_start}: {written} repos collected")
+        logger.info(
+            f"[{language_key}] After bucket {bucket_start}: "
+            f"{new_written} new repos collected"
+        )
 
-    logger.info(f"[{language_key}] Collection complete. Total: {written} repos")
-    return written
+    logger.info(f"[{language_key}] Collection complete. New repos: {new_written}")
+    return new_written
 
 
 # ---------------------------------------------------------------------------

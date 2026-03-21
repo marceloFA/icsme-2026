@@ -32,7 +32,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from corpus.config import LANGUAGE_CONFIGS, CLONE_BATCH_SIZE
-from corpus.db import initialise_db, db_session, get_corpus_stats
+from corpus.db import initialise_db, db_is_initialised, db_session, get_corpus_stats
 from corpus.search import collect_repos_for_language, collect_all_languages
 from corpus.cloner import clone_pending_repos
 from corpus.extractor import extract_all_cloned
@@ -101,7 +101,10 @@ def cmd_extract(args):
 def cmd_run(args):
     """Run all phases sequentially."""
     print("── Phase 0: Initialise ─────────────────────────────")
-    cmd_init(args)
+    if db_is_initialised():
+        print("  Database already initialised — skipping.")
+    else:
+        cmd_init(args)
 
     print("\n── Phase 1: Search GitHub ──────────────────────────")
     cmd_search(args)

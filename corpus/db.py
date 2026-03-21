@@ -136,18 +136,50 @@ def db_session(db_path: Path = DB_PATH):
 
 
 def initialise_db(db_path: Path = DB_PATH) -> None:
-    """Create all tables and indexes if they do not already exist."""
+    """
+    Create all tables and indexes if they do not already exist.
+    Safe to call multiple times — never drops or truncates existing data.
+    """
     with db_session(db_path) as conn:
         conn.executescript(SCHEMA)
     print(f"[db] Initialised database at {db_path}")
+
+
+def db_is_initialised(db_path: Path = DB_PATH) -> bool:
+    """Return True if the database already has the repositories table."""
+    try:
+        conn = get_connection(db_path)
+        result = conn.execute(
+            "SELECT name FROM sqlite_master "
+            "WHERE type='table' AND name='repositories'"
+        ).fetchone()
+        conn.close()
+        return result is not None
+    except Exception:
+        return False
 
 
 # ---------------------------------------------------------------------------
 # Repository helpers
 # ---------------------------------------------------------------------------
 
-def upsert_repository(conn: sqlite3.Connection, repo: dict) -> int:
-    """Insert or update a repository record. Returns the internal row id."""
+def upsert_repository(conn: sqlite3.Connection, repo: dict) -> tuple[int, bool]:
+    """
+    Insert or update a repository record.
+
+    Returns (internal_row_id, is_new) where is_new=True means this was a
+    genuine insert (repo not previously in the DB), False means it already
+    existed and was updated in place.
+
+    Callers that want to count new discoveries should only increment their
+    counter when is_new=True.
+    """
+    # Check existence before the upsert so we can report is_new accurately.
+    existing = conn.execute(
+        "SELECT id FROM repositories WHERE github_id = ?", (repo["github_id"],)
+    ).fetchone()
+    is_new = existing is None
+
     conn.execute("""
         INSERT INTO repositories (
             github_id, full_name, language, stars, forks,
@@ -163,10 +195,12 @@ def upsert_repository(conn: sqlite3.Connection, repo: dict) -> int:
             pushed_at   = excluded.pushed_at,
             star_tier   = excluded.star_tier
     """, repo)
-    row = conn.execute(
+
+    row_id = existing["id"] if existing else conn.execute(
         "SELECT id FROM repositories WHERE github_id = ?", (repo["github_id"],)
-    ).fetchone()
-    return row["id"]
+    ).fetchone()["id"]
+
+    return row_id, is_new
 
 
 def set_repo_status(conn: sqlite3.Connection, repo_id: int,
