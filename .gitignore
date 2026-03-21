@@ -205,3 +205,9 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# FixtureDB — pipeline-generated directories
+clones/                 # Temporary git clones (deleted after extraction)
+data/                   # SQLite database and collected data
+logs/                   # Pipeline execution logs
+output/                 # EDA output and analysis results
