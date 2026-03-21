@@ -209,39 +209,46 @@ def plot_corpus_composition(conn, out_dir, show):
     ax.set_title("Repos by Language & Star Tier")
     ax.yaxis.set_major_locator(mticker.MaxNLocator(integer=True))
 
-    # ── 1b: pipeline funnel — log scale so small counts stay visible ─────────
+    # ── 1b: pipeline status breakdown — linear scale, count labels ──────────
     ax2 = axes[1]
     status_order = ["analysed", "skipped", "error", "cloned", "discovered"]
     status_counts = repos["status"].value_counts().reindex(status_order, fill_value=0)
     colours = [STATUS_PALETTE[s] for s in status_order]
-
-    # Use log scale: even a count of 1 is visible
-    vals = [
-        max(status_counts[s], 0.3) for s in status_order
-    ]  # 0.3 minimum for bar width
     raw = [int(status_counts[s]) for s in status_order]
 
-    bars = ax2.barh(status_order, vals, color=colours, zorder=3, height=0.55)
-    for bar, v_raw in zip(bars, raw):
-        label = str(v_raw) if v_raw > 0 else "—"
-        ax2.text(
-            bar.get_width() * 1.08,
-            bar.get_y() + bar.get_height() / 2,
-            label,
-            va="center",
-            fontsize=9,
-            fontweight="bold",
-        )
+    bars = ax2.barh(status_order, raw, color=colours, zorder=3, height=0.55)
 
-    ax2.set_xscale("log")
-    ax2.set_xlim(0.2, max(vals) * 4)
-    ax2.set_xlabel("Repositories (log scale)")
+    x_max = max(raw) if max(raw) > 0 else 1
+    for bar, v in zip(bars, raw):
+        label = f"{v:,}" if v > 0 else "—"
+        # Put label inside bar if bar is wide enough, outside otherwise
+        if v > x_max * 0.08:
+            ax2.text(
+                bar.get_width() * 0.97,
+                bar.get_y() + bar.get_height() / 2,
+                label,
+                va="center",
+                ha="right",
+                fontsize=9,
+                fontweight="bold",
+                color="white",
+            )
+        else:
+            ax2.text(
+                x_max * 0.02,
+                bar.get_y() + bar.get_height() / 2,
+                label,
+                va="center",
+                ha="left",
+                fontsize=9,
+                fontweight="bold",
+                color="#555",
+            )
+
+    ax2.set_xlim(0, x_max * 1.05)
+    ax2.set_xlabel("Repositories")
     ax2.set_title("Pipeline Status Breakdown")
-    ax2.xaxis.set_major_formatter(
-        mticker.FuncFormatter(lambda v, _: f"{int(v):,}" if v >= 1 else "")
-    )
-    # Remove ugly minor grid ticks on log axis
-    ax2.xaxis.set_minor_locator(mticker.NullLocator())
+    ax2.xaxis.set_major_formatter(mticker.FuncFormatter(lambda v, _: f"{int(v):,}"))
 
     plt.tight_layout()
     save_or_show(fig, "01_corpus_composition", out_dir, show)
@@ -271,15 +278,20 @@ def plot_star_distribution(conn, out_dir, show):
         40,
     )
 
-    for lang in present:
+    # Draw non-typescript languages first at reduced alpha, then typescript at full alpha on top
+    draw_order = [l for l in present if l != "typescript"] + (
+        ["typescript"] if "typescript" in present else []
+    )
+    for lang in draw_order:
         sub = repos[repos["language"] == lang]["stars"].clip(lower=1)
+        is_typescript = lang == "typescript"
         ax.hist(
             sub,
             bins=bins,
-            alpha=0.55,
+            alpha=0.75 if is_typescript else 0.40,
             color=LANG_PALETTE[lang],
             label=lang.capitalize(),
-            zorder=3,
+            zorder=4 if is_typescript else 3,
             linewidth=0,
         )
 
@@ -303,10 +315,7 @@ def plot_star_distribution(conn, out_dir, show):
     )
     ax.set_xlabel("Stars (log scale)")
     ax.set_ylabel("Number of Repositories")
-    ax.set_title(
-        "How Popular Are the Repos We Collected?\n"
-        "(star count distribution per language)"
-    )
+    ax.set_title("How Popular Are the Repos We Collected?")
     ax.legend(fontsize=9)
 
     plt.tight_layout()
@@ -334,8 +343,7 @@ def plot_age_and_activity(conn, out_dir, show):
 
     repos["created_year"] = pd.to_datetime(repos["created_at"], errors="coerce").dt.year
     repos["days_since_push"] = (
-        pd.Timestamp.now(tz="UTC")
-        - pd.to_datetime(repos["pushed_at"], errors="coerce", utc=True)
+        pd.Timestamp.now("UTC") - pd.to_datetime(repos["pushed_at"], errors="coerce")
     ).dt.days.clip(lower=0)
 
     present = [l for l in LANG_ORDER if l in repos["language"].values]
@@ -365,19 +373,28 @@ def plot_age_and_activity(conn, out_dir, show):
     ax.set_xlabel("Year")
     ax.set_ylabel("Cumulative Repositories")
     ax.set_title("When Were These Repos Created?\n(cumulative count over time)")
-    ax.xaxis.set_major_locator(mticker.MaxNLocator(integer=True, nbins=6))
+    yr_min, yr_max = int(min(year_range)), int(max(year_range))
+    step = max(1, (yr_max - yr_min) // 8)
+    tick_years = list(range(yr_min, yr_max + 1, step))
+    ax.set_xlim(yr_min, yr_max)
+    ax.set_xticks(tick_years)
+    ax.set_xticklabels([str(y) for y in tick_years], rotation=30, ha="right")
     ax.yaxis.set_major_locator(mticker.MaxNLocator(integer=True))
-    # Legend outside to avoid covering the area
     ax.legend(loc="upper left", fontsize=8)
 
-    # ── 3b: days since last push — boxplot, no fliers, clear integer axis ─────
+    # ── 3b: years since last push — remove single worst outlier per language ──
     ax2 = axes[1]
     plot_data = repos[repos["language"].isin(present)].copy()
+    plot_data["years_since_push"] = plot_data["days_since_push"] / 365.25
+
+    # Drop the single maximum value per language — enough to fix stretched whiskers
+    worst_idx = plot_data.groupby("language")["years_since_push"].idxmax()
+    plot_data = plot_data.drop(index=worst_idx).reset_index(drop=True)
 
     sns.boxplot(
         data=plot_data,
         x="language",
-        y="days_since_push",
+        y="years_since_push",
         order=present,
         palette={l: LANG_PALETTE[l] for l in present},
         showfliers=False,
@@ -387,10 +404,10 @@ def plot_age_and_activity(conn, out_dir, show):
     )
     ax2.set_xticklabels([l.capitalize() for l in present])
     ax2.set_xlabel("")
-    ax2.set_ylabel("Days Since Last Commit Push")
-    ax2.set_title("How Recently Were Repos Active?\n(lower = more recently active)")
+    ax2.set_ylabel("Years Since Last Commit Push")
+    ax2.set_title("How Recently Were Repos Active?")
     ax2.axhline(
-        365, color="#888", linewidth=0.8, linestyle="--", alpha=0.7, label="1 year ago"
+        1.0, color="#888", linewidth=0.8, linestyle="--", alpha=0.7, label="1 year ago"
     )
     ax2.legend(fontsize=8)
 
@@ -431,12 +448,10 @@ def plot_domain_distribution(conn, out_dir, show):
     )
     pivot_pct = pivot.div(pivot.sum(axis=1), axis=0) * 100
 
-    fig, axes = plt.subplots(1, 2, figsize=(15, 5), facecolor="#FAFAFA")
+    fig, ax = plt.subplots(1, 1, figsize=(10, 5), facecolor="#FAFAFA")
     fig.suptitle("Project Domain Distribution", fontsize=14, fontweight="bold", y=1.02)
 
-    # ── 4a: heatmap — annotated with "% (abs)" ───────────────────────────────
-    ax = axes[0]
-    # Build annotation matrix: "34% (120)"
+    # ── heatmap annotated with "% (abs)" ─────────────────────────────────────
     annot = np.empty(pivot_pct.shape, dtype=object)
     for i, lang in enumerate(present_langs):
         for j, dom in enumerate(present_domains):
@@ -452,72 +467,16 @@ def plot_domain_distribution(conn, out_dir, show):
         linewidths=0.4,
         linecolor="#E0E0E0",
         cbar_kws={"label": "% of language repos"},
-        annot_kws={"size": 8},
+        annot_kws={"size": 9},
         ax=ax,
     )
-    ax.set_title("Domain Share per Language\n(% with absolute count in brackets)")
+    ax.set_title("Domain Share per Language")
     ax.set_yticklabels([l.capitalize() for l in present_langs], rotation=0)
     ax.set_xticklabels(
         [d.capitalize() for d in present_domains], rotation=30, ha="right"
     )
     ax.set_xlabel("")
     ax.set_ylabel("")
-
-    # ── 4b: dot plot — dot size = repo count, no domain colour needed ─────────
-    ax2 = axes[1]
-    dot_data = pivot.reset_index().melt(
-        id_vars="language", var_name="domain", value_name="count"
-    )
-    dot_data = dot_data[dot_data["language"].isin(present_langs)]
-    dot_data["lang_idx"] = dot_data["language"].map(
-        {l: i for i, l in enumerate(present_langs)}
-    )
-    dot_data["domain_idx"] = dot_data["domain"].map(
-        {d: i for i, d in enumerate(present_domains)}
-    )
-
-    # Scale dot size: area proportional to count
-    max_count = dot_data["count"].max()
-    min_size, max_size = 20, 700
-    dot_data["size"] = (
-        dot_data["count"] / max_count * (max_size - min_size) + min_size
-    ).where(dot_data["count"] > 0, 0)
-
-    ax2.scatter(
-        dot_data["domain_idx"],
-        dot_data["lang_idx"],
-        s=dot_data["size"],
-        color="#4C9BE8",
-        alpha=0.75,
-        zorder=3,
-    )
-
-    # Annotate each dot with its count
-    for _, row in dot_data[dot_data["count"] > 0].iterrows():
-        ax2.text(
-            row["domain_idx"],
-            row["lang_idx"],
-            str(int(row["count"])),
-            ha="center",
-            va="center",
-            fontsize=7,
-            color="white",
-            fontweight="bold",
-        )
-
-    ax2.set_xticks(range(len(present_domains)))
-    ax2.set_xticklabels(
-        [d.capitalize() for d in present_domains], rotation=30, ha="right"
-    )
-    ax2.set_yticks(range(len(present_langs)))
-    ax2.set_yticklabels([l.capitalize() for l in present_langs])
-    ax2.set_title(
-        "Repo Count by Language & Domain\n" "(dot size proportional to count)"
-    )
-    ax2.set_xlim(-0.7, len(present_domains) - 0.3)
-    ax2.set_ylim(-0.7, len(present_langs) - 0.3)
-    ax2.grid(True, linewidth=0.5, alpha=0.5)
-    ax2.spines["bottom"].set_visible(False)
 
     plt.tight_layout()
     save_or_show(fig, "04_domain_distribution", out_dir, show)
@@ -620,7 +579,7 @@ def plot_fixture_overview(conn, out_dir, show):
     fig, axes = plt.subplots(1, 2, figsize=(15, 5), facecolor="#FAFAFA")
     fig.suptitle("Fixture Overview", fontsize=14, fontweight="bold", y=1.02)
 
-    # ── 6a: fixtures per repo ─────────────────────────────────────────────────
+    # ── 6a: fixture count per repo — overlapping histograms (log scale) ──────
     ax = axes[0]
     per_repo = (
         fixtures.groupby(["language", "full_name"])
@@ -628,31 +587,38 @@ def plot_fixture_overview(conn, out_dir, show):
         .reset_index(name="fixture_count")
     )
     per_repo = per_repo[per_repo["language"].isin(present)]
-    # Add tiny jitter floor so log scale works (count of 0 would break it)
     per_repo["fixture_count"] = per_repo["fixture_count"].clip(lower=1)
 
-    sns.violinplot(
-        data=per_repo,
-        x="language",
-        y="fixture_count",
-        order=present,
-        palette={l: LANG_PALETTE[l] for l in present},
-        inner="quartile",
-        cut=0,  # ← prevents distribution from going below 0
-        linewidth=0.8,
-        ax=ax,
+    counts_all = per_repo["fixture_count"]
+    bins = np.logspace(
+        np.log10(max(counts_all.min(), 1)),
+        np.log10(counts_all.max()),
+        30,
     )
-    ax.set_yscale("log")
-    ax.yaxis.set_major_formatter(
+    draw_order = [l for l in present if l != "typescript"] + (
+        ["typescript"] if "typescript" in present else []
+    )
+    for lang in draw_order:
+        sub = per_repo[per_repo["language"] == lang]["fixture_count"]
+        is_typescript = lang == "typescript"
+        ax.hist(
+            sub,
+            bins=bins,
+            alpha=0.75 if is_typescript else 0.40,
+            color=LANG_PALETTE[lang],
+            label=lang.capitalize(),
+            zorder=4 if is_typescript else 3,
+            linewidth=0,
+        )
+
+    ax.set_xscale("log")
+    ax.xaxis.set_major_formatter(
         mticker.FuncFormatter(lambda v, _: str(int(v)) if v >= 1 else "")
     )
-    ax.set_xticklabels([l.capitalize() for l in present])
-    ax.set_xlabel("")
-    ax.set_ylabel("Fixtures per Repository (log scale)")
-    ax.set_title(
-        "How Many Fixtures Does Each Repo Have?\n"
-        "(log scale — each quartile line visible despite outliers)"
-    )
+    ax.set_xlabel("Fixtures per Repository (log scale)")
+    ax.set_ylabel("Number of Repositories")
+    ax.set_title("How Many Fixtures Does Each Repo Have?\n(log scale)")
+    ax.legend(fontsize=9)
 
     # ── 6b: fixture type breakdown — single-hue heatmap ──────────────────────
     ax2 = axes[1]
@@ -757,28 +723,23 @@ def plot_mock_prevalence(conn, out_dir, show):
     )
     y_pos = range(len(present))
 
-    ax.hlines(
-        y_pos,
-        0,
-        prevalence.values,
-        colors=[LANG_PALETTE[l] for l in present],
-        linewidth=2.5,
-        zorder=2,
-    )
-    ax.scatter(
-        prevalence.values,
+    # Thick horizontal bars (barh behaves exactly like what was requested)
+    ax.barh(
         list(y_pos),
+        prevalence.values,
         color=[LANG_PALETTE[l] for l in present],
-        s=100,
-        zorder=4,
+        height=0.55,
+        zorder=3,
     )
+    ax.scatter([], [])  # dummy so legend works if needed
     for y, pct, lang in zip(y_pos, prevalence.values, present):
         ax.text(
-            pct + 1.0,
+            pct + 1.2,
             y,
             f"{pct:.1f}%",
             va="center",
             fontsize=9,
+            fontweight="bold",
             color=LANG_PALETTE[lang],
         )
 
@@ -788,7 +749,7 @@ def plot_mock_prevalence(conn, out_dir, show):
     ax.set_xlim(0, min(100, prevalence.max() + 15))
     ax.set_title(
         "What Share of Fixtures Use Mocking?\n"
-        "(% of fixture definitions with ≥1 mock call)"
+        "(% of fixture definitions with at least one mock call)"
     )
     ax.axvline(0, color="#ccc", linewidth=0.5)
 
@@ -842,10 +803,7 @@ def plot_mock_prevalence(conn, out_dir, show):
         ax2.set_yticklabels([l.capitalize() for l in present])
         ax2.set_xlabel("Share of mock calls using each framework (%)")
         ax2.set_xlim(0, 105)
-        ax2.set_title(
-            "Which Mocking Frameworks Do Developers Use?\n"
-            "(% of all mock calls per language)"
-        )
+        ax2.set_title("Which Mocking Frameworks Do Developers Use?")
 
     plt.tight_layout()
     save_or_show(fig, "07_mock_prevalence", out_dir, show)
@@ -900,7 +858,7 @@ def main():
         fn(conn, out_dir, args.show)
 
     conn.close()
-    print("\nDone.")
+    print("\nDone")
 
 
 if __name__ == "__main__":
