@@ -19,6 +19,10 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+# Maximum file size to process (5 MB). Test files should never be this large.
+# Files larger than this are likely generated code, data files, or corrupted.
+MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB
+
 # ---------------------------------------------------------------------------
 # Lazy-load Tree-sitter grammars to avoid import overhead when unused
 # ---------------------------------------------------------------------------
@@ -37,7 +41,7 @@ def _get_parser(language: str):
         import tree_sitter_javascript
         import tree_sitter_typescript
         import tree_sitter_go
-        import tree_sitter_csharp
+        import tree_sitter_c_sharp
         from tree_sitter import Language, Parser
 
         lang_map = {
@@ -46,7 +50,7 @@ def _get_parser(language: str):
             "javascript": Language(tree_sitter_javascript.language()),
             "typescript": Language(tree_sitter_typescript.language_typescript()),
             "go": Language(tree_sitter_go.language()),
-            "csharp": Language(tree_sitter_csharp.language()),
+            "csharp": Language(tree_sitter_c_sharp.language()),
         }
         for key, lang in lang_map.items():
             p = Parser(lang)
@@ -406,12 +410,12 @@ def _detect_js(tree, src_bytes: bytes) -> list[FixtureResult]:
 # ---------------------------------------------------------------------------
 
 CSHARP_FIXTURE_ATTRIBUTES = {
-    "[SetUp]": ("nunit_setup", "per_test"),
-    "[TearDown]": ("nunit_teardown", "per_test"),
-    "[OneTimeSetUp]": ("nunit_onetimesetup", "per_class"),
-    "[OneTimeTearDown]": ("nunit_onetimeteardown", "per_class"),
-    "[Fact]": ("xunit_fact", "per_test"),
-    "[Theory]": ("xunit_theory", "per_test"),
+    "SetUp": ("nunit_setup", "per_test"),
+    "TearDown": ("nunit_teardown", "per_test"),
+    "OneTimeSetUp": ("nunit_onetimesetup", "per_class"),
+    "OneTimeTearDown": ("nunit_onetimeteardown", "per_class"),
+    "Fact": ("xunit_fact", "per_test"),
+    "Theory": ("xunit_theory", "per_test"),
 }
 
 
@@ -420,16 +424,21 @@ def _detect_csharp(tree, src_bytes: bytes) -> list[FixtureResult]:
 
     def visit(node):
         if node.type == "method_declaration":
-            attributes = [
-                _source(c, src_bytes).strip()
-                for c in node.children
-                if c.type == "attribute"
-            ]
+            # Collect all attributes for this method
+            # Attributes are in attribute_list children
+            attributes = []
+            for c in node.children:
+                if c.type == "attribute_list":
+                    # Extract attributes from inside the attribute_list
+                    for attr_node in c.children:
+                        if attr_node.type == "attribute":
+                            attr_text = _source(attr_node, src_bytes).strip()
+                            attributes.append(attr_text)
+            
+            # Check if any known fixture attribute is present
             for attr in attributes:
-                # Look for known fixture attributes
-                for attr_key in CSHARP_FIXTURE_ATTRIBUTES:
-                    if attr_key in attr:
-                        fixture_type, scope = CSHARP_FIXTURE_ATTRIBUTES[attr_key]
+                for attr_name, (fixture_type, scope) in CSHARP_FIXTURE_ATTRIBUTES.items():
+                    if attr_name in attr:
                         results.append(
                             _build_result(
                                 node=node,
@@ -439,7 +448,7 @@ def _detect_csharp(tree, src_bytes: bytes) -> list[FixtureResult]:
                                 scope=scope,
                             )
                         )
-                        break
+                        break  # Only one fixture type per method
 
         for child in node.children:
             visit(child)
@@ -603,6 +612,23 @@ def extract_fixtures(file_path: Path, language: str) -> list[FixtureResult]:
     if language not in DETECTORS:
         logger.warning(f"No detector for language '{language}'")
         return []
+
+    # Log file size before reading (helps identify memory issues with large files)
+    try:
+        file_size_bytes = file_path.stat().st_size
+        file_size_mb = file_size_bytes / (1024 * 1024)
+        #logger.info(f"[extract] Reading {file_path.name} ({file_size_mb:.2f} MB) for {language}")
+        
+        # Skip files larger than MAX_FILE_SIZE_BYTES (not real test files)
+        if file_size_bytes > MAX_FILE_SIZE_BYTES:
+            logger.warning(f"[extract] Skipping oversized file: {file_path.name} is {file_size_mb:.2f} MB (> {MAX_FILE_SIZE_BYTES / (1024*1024):.0f} MB limit)")
+            return []
+        
+        # Warn if file is large but within limits
+        if file_size_mb > 3:
+            logger.info(f"[extract] Processing large test file: {file_path.name} ({file_size_mb:.2f} MB)")
+    except Exception as e:
+        logger.debug(f"Could not get file size for {file_path}: {e}")
 
     try:
         src_bytes = file_path.read_bytes()

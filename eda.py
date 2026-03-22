@@ -46,10 +46,10 @@ LANG_PALETTE = {
     "python": "#4C9BE8",
     "java": "#E8834C",
     "javascript": "#E8C94C",
-    "typescript": "#4CE8A0",
     "go": "#A04CE8",
+    "csharp": "#2ECC71",
 }
-LANG_ORDER = ["python", "java", "javascript", "typescript", "go"]
+LANG_ORDER = ["python", "java", "javascript", "go", "csharp"]
 
 STATUS_PALETTE = {
     "discovered": "#B0BEC5",
@@ -129,7 +129,18 @@ def has_data(conn, table, condition="1=1"):
 
 
 def qdf(conn, query):
-    return pd.read_sql_query(query, conn)
+    df = pd.read_sql_query(query, conn)
+    # Normalize language names: combine typescript with javascript
+    if "language" in df.columns:
+        df["language"] = df["language"].replace("typescript", "javascript")
+    return df
+
+
+def lang_display(lang):
+    """Convert language internal name to display name (capitalize + JS+TS)."""
+    if lang == "javascript":
+        return "JS+TS"
+    return lang.capitalize()
 
 
 # ---------------------------------------------------------------------------
@@ -138,17 +149,16 @@ def qdf(conn, query):
 # ---------------------------------------------------------------------------
 
 
-def plot_corpus_composition(conn, out_dir, show):
-    repos = qdf(conn, "SELECT language, star_tier, status FROM repositories")
+def plot_corpus_by_tier(conn, out_dir, show):
+    """Plot 1a: Repos by language and star tier"""
+    repos = qdf(conn, "SELECT language, star_tier FROM repositories")
     if repos.empty:
         print("  [skip] No repositories in DB yet.")
         return
 
-    fig, axes = plt.subplots(1, 2, figsize=(14, 5), facecolor="#FAFAFA")
-    fig.suptitle("Corpus Composition", fontsize=14, fontweight="bold", y=1.02)
+    fig, ax = plt.subplots(figsize=(10, 5), facecolor="#FAFAFA")
+    fig.suptitle("Repositories by Language & Star Tier", fontsize=14, fontweight="bold", y=1.02)
 
-    # ── 1a: repos per language, tier as opacity ──────────────────────────────
-    ax = axes[0]
     present = [l for l in LANG_ORDER if l in repos["language"].values]
 
     tier_alpha = {"core": 1.0, "extended": 0.40}
@@ -190,7 +200,7 @@ def plot_corpus_composition(conn, out_dir, show):
     import matplotlib.patches as mpatches
 
     lang_handles = [
-        mpatches.Patch(color=LANG_PALETTE[l], label=l.capitalize()) for l in present
+        mpatches.Patch(color=LANG_PALETTE[l], label=lang_display(l)) for l in present
     ]
     tier_handles = [
         mpatches.Patch(color="#888888", alpha=tier_alpha[t], label=tier_label[t])
@@ -204,26 +214,37 @@ def plot_corpus_composition(conn, out_dir, show):
         fontsize=8,
     )
     ax.set_xticks(range(len(present)))
-    ax.set_xticklabels([l.capitalize() for l in present])
+    ax.set_xticklabels([lang_display(l) for l in present])
     ax.set_ylabel("Repositories")
-    ax.set_title("Repos by Language & Star Tier")
     ax.yaxis.set_major_locator(mticker.MaxNLocator(integer=True))
 
-    # ── 1b: pipeline status breakdown — linear scale, count labels ──────────
-    ax2 = axes[1]
+    plt.tight_layout()
+    save_or_show(fig, "01a_repos_by_tier", out_dir, show)
+
+
+def plot_pipeline_status(conn, out_dir, show):
+    """Plot 1b: Pipeline status breakdown"""
+    repos = qdf(conn, "SELECT status FROM repositories")
+    if repos.empty:
+        print("  [skip] No repositories in DB yet.")
+        return
+
+    fig, ax = plt.subplots(figsize=(10, 5), facecolor="#FAFAFA")
+    fig.suptitle("Pipeline Status Breakdown", fontsize=14, fontweight="bold", y=1.02)
+
     status_order = ["analysed", "skipped", "error", "cloned", "discovered"]
     status_counts = repos["status"].value_counts().reindex(status_order, fill_value=0)
     colours = [STATUS_PALETTE[s] for s in status_order]
     raw = [int(status_counts[s]) for s in status_order]
 
-    bars = ax2.barh(status_order, raw, color=colours, zorder=3, height=0.55)
+    bars = ax.barh(status_order, raw, color=colours, zorder=3, height=0.55)
 
     x_max = max(raw) if max(raw) > 0 else 1
     for bar, v in zip(bars, raw):
         label = f"{v:,}" if v > 0 else "—"
         # Put label inside bar if bar is wide enough, outside otherwise
         if v > x_max * 0.08:
-            ax2.text(
+            ax.text(
                 bar.get_width() * 0.97,
                 bar.get_y() + bar.get_height() / 2,
                 label,
@@ -234,7 +255,7 @@ def plot_corpus_composition(conn, out_dir, show):
                 color="white",
             )
         else:
-            ax2.text(
+            ax.text(
                 x_max * 0.02,
                 bar.get_y() + bar.get_height() / 2,
                 label,
@@ -245,13 +266,18 @@ def plot_corpus_composition(conn, out_dir, show):
                 color="#555",
             )
 
-    ax2.set_xlim(0, x_max * 1.05)
-    ax2.set_xlabel("Repositories")
-    ax2.set_title("Pipeline Status Breakdown")
-    ax2.xaxis.set_major_formatter(mticker.FuncFormatter(lambda v, _: f"{int(v):,}"))
+    ax.set_xlim(0, x_max * 1.05)
+    ax.set_xlabel("Repositories")
+    ax.xaxis.set_major_formatter(mticker.FuncFormatter(lambda v, _: f"{int(v):,}"))
 
     plt.tight_layout()
-    save_or_show(fig, "01_corpus_composition", out_dir, show)
+    save_or_show(fig, "01b_pipeline_status", out_dir, show)
+
+
+def plot_corpus_composition(conn, out_dir, show):
+    """Plot 1: Corpus Composition (calls both 1a and 1b)"""
+    plot_corpus_by_tier(conn, out_dir, show)
+    plot_pipeline_status(conn, out_dir, show)
 
 
 # ---------------------------------------------------------------------------
@@ -272,28 +298,48 @@ def plot_star_distribution(conn, out_dir, show):
 
     fig, ax = plt.subplots(figsize=(10, 5), facecolor="#FAFAFA")
 
-    bins = np.logspace(
-        np.log10(repos["stars"].clip(lower=1).min()),
-        np.log10(repos["stars"].max()),
-        40,
+    # Ridge plot: one density curve per language
+    from scipy import stats
+    
+    repos_clipped = repos.copy()
+    repos_clipped["stars"] = repos_clipped["stars"].clip(lower=1)
+    repos_clipped["log_stars"] = np.log10(repos_clipped["stars"])
+    
+    x_range = np.logspace(
+        np.log10(repos_clipped["stars"].min()),
+        np.log10(repos_clipped["stars"].max()),
+        200
     )
-
-    # Draw non-typescript languages first at reduced alpha, then typescript at full alpha on top
-    draw_order = [l for l in present if l != "typescript"] + (
-        ["typescript"] if "typescript" in present else []
-    )
-    for lang in draw_order:
-        sub = repos[repos["language"] == lang]["stars"].clip(lower=1)
-        is_typescript = lang == "typescript"
-        ax.hist(
-            sub,
-            bins=bins,
-            alpha=0.75 if is_typescript else 0.40,
-            color=LANG_PALETTE[lang],
-            label=lang.capitalize(),
-            zorder=4 if is_typescript else 3,
-            linewidth=0,
-        )
+    x_log = np.log10(x_range)
+    
+    y_offset = 0
+    for i, lang in enumerate(present):
+        sub = repos_clipped[repos_clipped["language"] == lang]["log_stars"].values
+        if len(sub) > 1:
+            kde = stats.gaussian_kde(sub, bw_method=0.15)
+            density = kde(x_log)
+            # Normalize density for stacking
+            density = density / density.max() * 0.8
+            
+            # Fill area under curve
+            ax.fill_between(
+                x_range,
+                y_offset,
+                y_offset + density,
+                color=LANG_PALETTE[lang],
+                alpha=0.7,
+                label=lang_display(lang),
+                zorder=len(present) - i,
+            )
+            # Edge line
+            ax.plot(
+                x_range,
+                y_offset + density,
+                color=LANG_PALETTE[lang],
+                linewidth=1.2,
+                zorder=len(present) - i + 1,
+            )
+            y_offset += 1
 
     ax.set_xscale("log")
     ax.xaxis.set_major_formatter(mticker.FuncFormatter(lambda v, _: f"{int(v):,}"))
@@ -304,6 +350,7 @@ def plot_star_distribution(conn, out_dir, show):
         linestyle="--",
         alpha=0.7,
         label="500 ★  core threshold",
+        zorder=100,
     )
     ax.axvline(
         100,
@@ -312,11 +359,13 @@ def plot_star_distribution(conn, out_dir, show):
         linestyle=":",
         alpha=0.7,
         label="100 ★  minimum",
+        zorder=100,
     )
     ax.set_xlabel("Stars (log scale)")
-    ax.set_ylabel("Number of Repositories")
-    ax.set_title("How Popular Are the Repos We Collected?")
-    ax.legend(fontsize=9)
+    ax.set_ylabel("Language (density, offset)")
+    ax.set_title("How Popular Are the Repos We Collected?\n(ridge plot, log scale)")
+    ax.set_yticks([])
+    ax.legend(fontsize=9, loc="upper right")
 
     plt.tight_layout()
     save_or_show(fig, "02_star_distribution", out_dir, show)
@@ -329,11 +378,12 @@ def plot_star_distribution(conn, out_dir, show):
 # ---------------------------------------------------------------------------
 
 
-def plot_age_and_activity(conn, out_dir, show):
+def plot_repos_creation_timeline(conn, out_dir, show):
+    """Plot 3a: Repository creation timeline"""
     repos = qdf(
         conn,
         """
-        SELECT language, created_at, pushed_at
+        SELECT language, created_at
         FROM repositories WHERE created_at IS NOT NULL
     """,
     )
@@ -342,48 +392,93 @@ def plot_age_and_activity(conn, out_dir, show):
         return
 
     repos["created_year"] = pd.to_datetime(repos["created_at"], errors="coerce").dt.year
+    present = [l for l in LANG_ORDER if l in repos["language"].values]
+
+    fig, ax = plt.subplots(figsize=(10, 5), facecolor="#FAFAFA")
+    fig.suptitle("When Were Repositories Created?", fontsize=14, fontweight="bold", y=1.02)
+
+    all_years = sorted(repos["created_year"].dropna().unique().astype(int))
+    year_range = list(range(min(all_years), max(all_years) + 1))
+    
+    # Build matrix: rows = languages, columns = years
+    year_counts = {}
+    for lang in present:
+        sub = repos[repos["language"] == lang]["created_year"].dropna().astype(int)
+        yearly = sub.value_counts().reindex(year_range, fill_value=0).sort_index()
+        year_counts[lang] = yearly.values
+    
+    # Stacked bar chart
+    x = np.arange(len(year_range))
+    width = 0.6
+    bottom = np.zeros(len(year_range))
+    
+    for lang in present:
+        ax.bar(
+            x,
+            year_counts[lang],
+            width,
+            label=lang_display(lang),
+            bottom=bottom,
+            color=LANG_PALETTE[lang],
+            alpha=0.85,
+            edgecolor="white",
+            linewidth=0.5,
+        )
+        bottom += year_counts[lang]
+    
+    ax.set_xlabel("Year")
+    ax.set_ylabel("Number of Repositories")
+    ax.set_title("Distribution across 2015–2017")
+    ax.set_xticks(x)
+    ax.set_xticklabels([str(y) for y in year_range])
+    ax.yaxis.set_major_locator(mticker.MaxNLocator(integer=True))
+    ax.legend(loc="upper left", fontsize=8, framealpha=0.95)
+    ax.set_ylim(0, bottom.max() * 1.1)
+    
+    # Add count labels on each segment
+    bottom = np.zeros(len(year_range))
+    for lang in present:
+        heights = year_counts[lang]
+        for i, h in enumerate(heights):
+            if h > 20:  # Only label segments larger than 20 repos
+                ax.text(
+                    i,
+                    bottom[i] + h / 2,
+                    str(int(h)),
+                    ha="center",
+                    va="center",
+                    fontsize=7,
+                    fontweight="bold",
+                    color="white",
+                )
+        bottom += heights
+
+    plt.tight_layout()
+    save_or_show(fig, "03a_repos_creation_timeline", out_dir, show)
+
+
+def plot_repos_activity(conn, out_dir, show):
+    """Plot 3b: Repository recent activity"""
+    repos = qdf(
+        conn,
+        """
+        SELECT language, pushed_at
+        FROM repositories WHERE pushed_at IS NOT NULL
+    """,
+    )
+    if repos.empty:
+        print("  [skip] No date data.")
+        return
+
     repos["days_since_push"] = (
         pd.Timestamp.now("UTC") - pd.to_datetime(repos["pushed_at"], errors="coerce")
     ).dt.days.clip(lower=0)
 
     present = [l for l in LANG_ORDER if l in repos["language"].values]
 
-    fig, axes = plt.subplots(1, 2, figsize=(14, 5), facecolor="#FAFAFA")
-    fig.suptitle("Repository Age & Activity", fontsize=14, fontweight="bold", y=1.02)
+    fig, ax = plt.subplots(figsize=(10, 5), facecolor="#FAFAFA")
+    fig.suptitle("How Recently Were Repos Active?", fontsize=14, fontweight="bold", y=1.02)
 
-    # ── 3a: cumulative repo count over creation year ──────────────────────────
-    ax = axes[0]
-    all_years = sorted(repos["created_year"].dropna().unique().astype(int))
-    year_range = range(min(all_years), max(all_years) + 1)
-
-    cumulative = {}
-    for lang in present:
-        sub = repos[repos["language"] == lang]["created_year"].dropna().astype(int)
-        yearly = sub.value_counts().reindex(year_range, fill_value=0).sort_index()
-        cumulative[lang] = yearly.cumsum().values
-
-    ys = np.array([cumulative[l] for l in present])
-    ax.stackplot(
-        list(year_range),
-        ys,
-        labels=[l.capitalize() for l in present],
-        colors=[LANG_PALETTE[l] for l in present],
-        alpha=0.85,
-    )
-    ax.set_xlabel("Year")
-    ax.set_ylabel("Cumulative Repositories")
-    ax.set_title("When Were These Repos Created?\n(cumulative count over time)")
-    yr_min, yr_max = int(min(year_range)), int(max(year_range))
-    step = max(1, (yr_max - yr_min) // 8)
-    tick_years = list(range(yr_min, yr_max + 1, step))
-    ax.set_xlim(yr_min, yr_max)
-    ax.set_xticks(tick_years)
-    ax.set_xticklabels([str(y) for y in tick_years], rotation=30, ha="right")
-    ax.yaxis.set_major_locator(mticker.MaxNLocator(integer=True))
-    ax.legend(loc="upper left", fontsize=8)
-
-    # ── 3b: years since last push — remove single worst outlier per language ──
-    ax2 = axes[1]
     plot_data = repos[repos["language"].isin(present)].copy()
     plot_data["years_since_push"] = plot_data["days_since_push"] / 365.25
 
@@ -400,19 +495,24 @@ def plot_age_and_activity(conn, out_dir, show):
         showfliers=False,
         linewidth=0.9,
         width=0.5,
-        ax=ax2,
+        ax=ax,
     )
-    ax2.set_xticklabels([l.capitalize() for l in present])
-    ax2.set_xlabel("")
-    ax2.set_ylabel("Years Since Last Commit Push")
-    ax2.set_title("How Recently Were Repos Active?")
-    ax2.axhline(
+    ax.set_xticklabels([lang_display(l) for l in present])
+    ax.set_xlabel("")
+    ax.set_ylabel("Years Since Last Commit Push")
+    ax.axhline(
         1.0, color="#888", linewidth=0.8, linestyle="--", alpha=0.7, label="1 year ago"
     )
-    ax2.legend(fontsize=8)
+    ax.legend(fontsize=8)
 
     plt.tight_layout()
-    save_or_show(fig, "03_age_and_activity", out_dir, show)
+    save_or_show(fig, "03b_repos_activity", out_dir, show)
+
+
+def plot_age_and_activity(conn, out_dir, show):
+    """Plot 3: Repository Age & Activity (calls both 3a and 3b)"""
+    plot_repos_creation_timeline(conn, out_dir, show)
+    plot_repos_activity(conn, out_dir, show)
 
 
 # ---------------------------------------------------------------------------
@@ -471,7 +571,7 @@ def plot_domain_distribution(conn, out_dir, show):
         ax=ax,
     )
     ax.set_title("Domain Share per Language")
-    ax.set_yticklabels([l.capitalize() for l in present_langs], rotation=0)
+    ax.set_yticklabels([lang_display(l) for l in present_langs], rotation=0)
     ax.set_xticklabels(
         [d.capitalize() for d in present_domains], rotation=30, ha="right"
     )
@@ -512,7 +612,7 @@ def plot_fork_star_ratio(conn, out_dir, show):
             sub["stars"],
             sub["forks"],
             color=LANG_PALETTE[lang],
-            label=lang.capitalize(),
+            label=lang_display(lang),
             alpha=0.35,
             s=18,
             linewidths=0,
@@ -556,7 +656,8 @@ def plot_fork_star_ratio(conn, out_dir, show):
 # ---------------------------------------------------------------------------
 
 
-def plot_fixture_overview(conn, out_dir, show):
+def plot_fixture_distribution(conn, out_dir, show):
+    """Plot 6a: Fixture distribution per repository (ridge plot)"""
     if not has_data(conn, "fixtures"):
         print("  [skip] No fixture data yet. Run `python pipeline.py extract`.")
         return
@@ -576,11 +677,9 @@ def plot_fixture_overview(conn, out_dir, show):
 
     present = [l for l in LANG_ORDER if l in fixtures["language"].values]
 
-    fig, axes = plt.subplots(1, 2, figsize=(15, 5), facecolor="#FAFAFA")
-    fig.suptitle("Fixture Overview", fontsize=14, fontweight="bold", y=1.02)
+    fig, ax = plt.subplots(1, 1, figsize=(8, 5), facecolor="#FAFAFA")
+    fig.suptitle("How Many Fixtures Does Each Repo Have?", fontsize=14, fontweight="bold", y=1.00)
 
-    # ── 6a: fixture count per repo — overlapping histograms (log scale) ──────
-    ax = axes[0]
     per_repo = (
         fixtures.groupby(["language", "full_name"])
         .size()
@@ -588,40 +687,85 @@ def plot_fixture_overview(conn, out_dir, show):
     )
     per_repo = per_repo[per_repo["language"].isin(present)]
     per_repo["fixture_count"] = per_repo["fixture_count"].clip(lower=1)
+    per_repo["log_count"] = np.log10(per_repo["fixture_count"])
 
-    counts_all = per_repo["fixture_count"]
-    bins = np.logspace(
-        np.log10(max(counts_all.min(), 1)),
-        np.log10(counts_all.max()),
-        30,
+    # Ridge plot: one density curve per language
+    from scipy import stats
+    
+    x_range = np.logspace(
+        np.log10(per_repo["fixture_count"].min()),
+        np.log10(per_repo["fixture_count"].max()),
+        200
     )
-    draw_order = [l for l in present if l != "typescript"] + (
-        ["typescript"] if "typescript" in present else []
-    )
-    for lang in draw_order:
-        sub = per_repo[per_repo["language"] == lang]["fixture_count"]
-        is_typescript = lang == "typescript"
-        ax.hist(
-            sub,
-            bins=bins,
-            alpha=0.75 if is_typescript else 0.40,
-            color=LANG_PALETTE[lang],
-            label=lang.capitalize(),
-            zorder=4 if is_typescript else 3,
-            linewidth=0,
-        )
-
+    x_log = np.log10(x_range)
+    
+    y_offset = 0
+    for i, lang in enumerate(present):
+        sub = per_repo[per_repo["language"] == lang]["log_count"].values
+        if len(sub) > 1:
+            kde = stats.gaussian_kde(sub, bw_method=0.15)
+            density = kde(x_log)
+            # Normalize density for stacking
+            density = density / density.max() * 0.8
+            
+            # Fill area under curve
+            ax.fill_between(
+                x_range,
+                y_offset,
+                y_offset + density,
+                color=LANG_PALETTE[lang],
+                alpha=0.7,
+                label=lang_display(lang),
+                zorder=len(present) - i,
+            )
+            # Edge line
+            ax.plot(
+                x_range,
+                y_offset + density,
+                color=LANG_PALETTE[lang],
+                linewidth=1.2,
+                zorder=len(present) - i + 1,
+            )
+            y_offset += 1
+    
     ax.set_xscale("log")
     ax.xaxis.set_major_formatter(
         mticker.FuncFormatter(lambda v, _: str(int(v)) if v >= 1 else "")
     )
     ax.set_xlabel("Fixtures per Repository (log scale)")
-    ax.set_ylabel("Number of Repositories")
-    ax.set_title("How Many Fixtures Does Each Repo Have?\n(log scale)")
-    ax.legend(fontsize=9)
+    ax.set_ylabel("Language (density, offset)")
+    ax.set_title("Ridge Plot - Log Scale Distribution", fontsize=11, pad=10)
+    ax.set_yticks([])
+    ax.legend(fontsize=9, loc="upper right")
 
-    # ── 6b: fixture type breakdown — single-hue heatmap ──────────────────────
-    ax2 = axes[1]
+    plt.tight_layout()
+    save_or_show(fig, "06a_fixture_distribution", out_dir, show)
+
+
+def plot_fixture_types(conn, out_dir, show):
+    """Plot 6b: Fixture type breakdown per language (heatmap)"""
+    if not has_data(conn, "fixtures"):
+        print("  [skip] No fixture data yet. Run `python pipeline.py extract`.")
+        return
+
+    fixtures = qdf(
+        conn,
+        """
+        SELECT f.fixture_type, r.language, r.full_name
+        FROM fixtures f
+        JOIN repositories r ON f.repo_id = r.id
+        WHERE r.status = 'analysed'
+    """,
+    )
+    if fixtures.empty:
+        print("  [skip] Fixture table is empty.")
+        return
+
+    present = [l for l in LANG_ORDER if l in fixtures["language"].values]
+
+    fig, ax = plt.subplots(1, 1, figsize=(8, 5), facecolor="#FAFAFA")
+    fig.suptitle("Fixture Type Breakdown", fontsize=14, fontweight="bold", y=1.00)
+
     type_counts = (
         fixtures[fixtures["language"].isin(present)]
         .groupby(["language", "fixture_type"])
@@ -649,23 +793,27 @@ def plot_fixture_overview(conn, out_dir, show):
         linecolor="#E0E0E0",
         cbar_kws={"label": "% of language fixtures"},
         annot_kws={"size": 8},
-        ax=ax2,
+        ax=ax,
     )
-    ax2.set_title(
-        "Fixture Type Breakdown per Language\n" "(% share of each detection pattern)"
-    )
-    ax2.set_yticklabels([l.capitalize() for l in present], rotation=0)
-    ax2.set_xticklabels(
+    ax.set_title("% Share of Each Detection Pattern", fontsize=11, pad=10)
+    ax.set_yticklabels([lang_display(l) for l in present], rotation=0)
+    ax.set_xticklabels(
         [c.replace("_", "\n") for c in pivot_pct.columns],
         rotation=30,
         ha="right",
         fontsize=8,
     )
-    ax2.set_xlabel("")
-    ax2.set_ylabel("")
+    ax.set_xlabel("")
+    ax.set_ylabel("")
 
     plt.tight_layout()
-    save_or_show(fig, "06_fixture_overview", out_dir, show)
+    save_or_show(fig, "06b_fixture_types", out_dir, show)
+
+
+def plot_fixture_overview(conn, out_dir, show):
+    """Wrapper: calls both fixture plots"""
+    plot_fixture_distribution(conn, out_dir, show)
+    plot_fixture_types(conn, out_dir, show)
 
 
 # ---------------------------------------------------------------------------
@@ -676,7 +824,72 @@ def plot_fixture_overview(conn, out_dir, show):
 # ---------------------------------------------------------------------------
 
 
-def plot_mock_prevalence(conn, out_dir, show):
+def plot_mock_prevalence_chart(conn, out_dir, show):
+    """Plot 7a: Mock prevalence (bar chart)"""
+    if not has_data(conn, "mock_usages"):
+        print("  [skip] No mock data yet. Run `python pipeline.py extract`.")
+        return
+
+    fixtures = qdf(
+        conn,
+        """
+        SELECT f.id, r.language,
+               (SELECT COUNT(*) FROM mock_usages m WHERE m.fixture_id = f.id) AS mock_count
+        FROM fixtures f
+        JOIN repositories r ON f.repo_id = r.id
+        WHERE r.status = 'analysed'
+    """,
+    )
+    if fixtures.empty:
+        print("  [skip] Fixture table is empty.")
+        return
+
+    present = [l for l in LANG_ORDER if l in fixtures["language"].values]
+
+    fig, ax = plt.subplots(1, 1, figsize=(8, 5), facecolor="#FAFAFA")
+    fig.suptitle("Mock Usage in Fixtures", fontsize=14, fontweight="bold", y=1.00)
+
+    fixtures["has_mock"] = fixtures["mock_count"] > 0
+    prevalence = (
+        fixtures[fixtures["language"].isin(present)]
+        .groupby("language")["has_mock"]
+        .mean()
+        .reindex(present)
+        * 100
+    )
+    y_pos = range(len(present))
+
+    ax.barh(
+        list(y_pos),
+        prevalence.values,
+        color=[LANG_PALETTE[l] for l in present],
+        height=0.55,
+        zorder=3,
+    )
+    for y, pct, lang in zip(y_pos, prevalence.values, present):
+        ax.text(
+            pct + 1.2,
+            y,
+            f"{pct:.1f}%",
+            va="center",
+            fontsize=9,
+            fontweight="bold",
+            color=LANG_PALETTE[lang],
+        )
+
+    ax.set_yticks(list(y_pos))
+    ax.set_yticklabels([lang_display(l) for l in present])
+    ax.set_xlabel("Fixtures with at least one mock call (%)")
+    ax.set_xlim(0, min(100, prevalence.max() + 15))
+    ax.set_title("What Share of Fixtures Use Mocking?", fontsize=11, pad=10)
+    ax.axvline(0, color="#ccc", linewidth=0.5)
+
+    plt.tight_layout()
+    save_or_show(fig, "07a_mock_prevalence", out_dir, show)
+
+
+def plot_framework_usage(conn, out_dir, show):
+    """Plot 7b: Framework usage (stacked bar chart)"""
     if not has_data(conn, "mock_usages"):
         print("  [skip] No mock data yet. Run `python pipeline.py extract`.")
         return
@@ -706,55 +919,9 @@ def plot_mock_prevalence(conn, out_dir, show):
 
     present = [l for l in LANG_ORDER if l in fixtures["language"].values]
 
-    fig, axes = plt.subplots(1, 2, figsize=(14, 5), facecolor="#FAFAFA")
-    fig.suptitle(
-        "Mocking Practices Inside Fixtures", fontsize=14, fontweight="bold", y=1.02
-    )
+    fig, ax = plt.subplots(1, 1, figsize=(8, 5), facecolor="#FAFAFA")
+    fig.suptitle("Mocking Frameworks", fontsize=14, fontweight="bold", y=1.00)
 
-    # ── 7a: mock prevalence — lollipop chart ─────────────────────────────────
-    ax = axes[0]
-    fixtures["has_mock"] = fixtures["mock_count"] > 0
-    prevalence = (
-        fixtures[fixtures["language"].isin(present)]
-        .groupby("language")["has_mock"]
-        .mean()
-        .reindex(present)
-        * 100
-    )
-    y_pos = range(len(present))
-
-    # Thick horizontal bars (barh behaves exactly like what was requested)
-    ax.barh(
-        list(y_pos),
-        prevalence.values,
-        color=[LANG_PALETTE[l] for l in present],
-        height=0.55,
-        zorder=3,
-    )
-    ax.scatter([], [])  # dummy so legend works if needed
-    for y, pct, lang in zip(y_pos, prevalence.values, present):
-        ax.text(
-            pct + 1.2,
-            y,
-            f"{pct:.1f}%",
-            va="center",
-            fontsize=9,
-            fontweight="bold",
-            color=LANG_PALETTE[lang],
-        )
-
-    ax.set_yticks(list(y_pos))
-    ax.set_yticklabels([l.capitalize() for l in present])
-    ax.set_xlabel("Fixtures containing at least one mock call (%)")
-    ax.set_xlim(0, min(100, prevalence.max() + 15))
-    ax.set_title(
-        "What Share of Fixtures Use Mocking?\n"
-        "(% of fixture definitions with at least one mock call)"
-    )
-    ax.axvline(0, color="#ccc", linewidth=0.5)
-
-    # ── 7b: framework usage — stacked horizontal bar, single-hue per language ─
-    ax2 = axes[1]
     if not mocks.empty:
         fw_counts = (
             mocks[mocks["language"].isin(present)]
@@ -773,7 +940,7 @@ def plot_mock_prevalence(conn, out_dir, show):
         # Single-hue per language: shades from light to dark
         import matplotlib.colors as mcolors
 
-        y_pos2 = range(len(present))
+        y_pos = range(len(present))
         for i, lang in enumerate(present):
             base = LANG_PALETTE[lang]
             base_rgb = mcolors.to_rgb(base)
@@ -785,9 +952,9 @@ def plot_mock_prevalence(conn, out_dir, show):
             for j, (fw, shade) in enumerate(zip(fws, shades)):
                 w = pivot_pct.loc[lang, fw]
                 if w > 0:
-                    ax2.barh(i, w, left=left, color=shade, height=0.55, zorder=3)
+                    ax.barh(i, w, left=left, color=shade, height=0.55, zorder=3)
                     if w > 6:
-                        ax2.text(
+                        ax.text(
                             left + w / 2,
                             i,
                             fw.replace("_", "\n"),
@@ -799,14 +966,20 @@ def plot_mock_prevalence(conn, out_dir, show):
                         )
                 left += w
 
-        ax2.set_yticks(list(y_pos2))
-        ax2.set_yticklabels([l.capitalize() for l in present])
-        ax2.set_xlabel("Share of mock calls using each framework (%)")
-        ax2.set_xlim(0, 105)
-        ax2.set_title("Which Mocking Frameworks Do Developers Use?")
+        ax.set_yticks(list(y_pos))
+        ax.set_yticklabels([lang_display(l) for l in present])
+        ax.set_xlabel("Share of mock calls using each framework (%)")
+        ax.set_xlim(0, 105)
+        ax.set_title("Which Frameworks Do Developers Use?", fontsize=11, pad=10)
 
     plt.tight_layout()
-    save_or_show(fig, "07_mock_prevalence", out_dir, show)
+    save_or_show(fig, "07b_framework_usage", out_dir, show)
+
+
+def plot_mock_prevalence(conn, out_dir, show):
+    """Wrapper: calls both mocking practice plots"""
+    plot_mock_prevalence_chart(conn, out_dir, show)
+    plot_framework_usage(conn, out_dir, show)
 
 
 # ---------------------------------------------------------------------------

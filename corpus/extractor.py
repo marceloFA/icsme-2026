@@ -27,6 +27,10 @@ from corpus.detector import extract_fixtures
 
 logger = logging.getLogger(__name__)
 
+# Maximum file size to process (5 MB). Test files should never be this large.
+# Files larger than this are likely generated code, data files, or corrupted.
+MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB
+
 
 # ---------------------------------------------------------------------------
 # Test file discovery
@@ -83,16 +87,87 @@ def _find_test_files(repo_dir: Path, language: str) -> list[Path]:
         ".jpeg",
         ".gif",
         ".ico",
+        ".tga",  # Targa image files
+        ".ivf",  # Indeo video files
+        ".gbk",  # Game Boy ROM files
+        # Audio files
+        ".mp3",
+        ".ogg",
+        ".wav",
+        ".flac",
+        ".aac",
+        ".m4a",
+        ".wma",
+        ".opus",
+        ".aiff",
+        ".alac",
+        ".ape",
         ".woff",
         ".woff2",
         ".ttf",
         ".eot",
         ".map",
         ".lock",
+        ".yarn",  # Yarn package manager files
         ".log",
+        ".out",  # Compiled output/test output files
         ".tmp",
         ".mod",
         ".sum",  # Go dependency files
+        ".dot",  # Graph visualization files
+        ".geom",  # Geometry/geospatial files
+        ".osm",  # OpenStreetMap data files
+        ".pdb",
+        ".shp",  # Shapefile geospatial data
+        ".dat",  # General data files
+        ".mlmodel",  # Core ML model files
+        ".fasta",
+        ".bd.fast",  # Build dependency cache files 
+        ".bd.fasta",  # Build dependency cache files
+        ".bd",  # Build dependency files
+        ".db",  # Database files
+        ".dbf",  # dBASE database files
+        # C# / .NET ecosystem files
+        ".gucx",  # Gum UI framework files
+        ".gusx",  # Gum UI framework files
+        ".resx",  # Windows Forms resource files
+        ".xaml",  # WPF/MAUI UI definition files
+        ".csproj",  # C# project files
+        ".vbproj",  # VB.NET project files
+        ".sln",  # Solution files
+        ".nuspec",  # NuGet package specification
+        ".props",  # MSBuild property files
+        ".targets",  # MSBuild target files
+        ".ruleset",  # Code analysis ruleset files
+        ".editorconfig",  # Editor configuration
+        # Game engine files (Unity, etc.)
+        ".unity",  # Unity scene files
+        ".prefab",  # Unity prefab files
+        ".anim",  # Unity animation files
+        ".controller",  # Unity animator controller
+        ".mat",  # Unity material files
+        ".asset",  # Unity asset files
+        ".uxml",  # Unity UI Toolkit files
+        # Compressed archives
+        ".zip",
+        ".rar",
+        ".7z",
+        ".tar",
+        ".gz",
+        ".bz2",
+        ".xz",
+        ".iso",
+        ".dmg",
+        ".exe",  # Windows executables/installers
+        ".msi",  # Windows installer
+        ".dll",  # Windows dynamic link libraries
+        ".so",  # Unix shared objects
+        ".dylib",  # macOS dynamic libraries
+        ".apk",  # Android package
+        ".aar",  # Android archive library
+        ".jar",  # Java archive
+        ".war",  # Web archive
+        ".ear",  # Enterprise archive
     }
 
     test_files: list[Path] = []
@@ -122,6 +197,13 @@ def _find_test_files(repo_dir: Path, language: str) -> list[Path]:
             )
 
         if matched:
+            # Skip files larger than MAX_FILE_SIZE_BYTES (likely not real test files)
+            try:
+                if path.stat().st_size > MAX_FILE_SIZE_BYTES:
+                    continue
+            except OSError:
+                # Can't stat, skip to be safe
+                continue
             test_files.append(path)
 
     return test_files
@@ -147,11 +229,35 @@ def extract_repo(repo_id: int, full_name: str, language: str) -> dict:
     test_files = _find_test_files(repo_dir, language)
     logger.info(f"[extract] {full_name}: {len(test_files)} test files found")
 
+    # Calculate and log total test file size for this repo
+    total_test_size_bytes = 0
+    largest_file_mb = 0
+    try:
+        for tf_path in test_files:
+            file_size = tf_path.stat().st_size
+            total_test_size_bytes += file_size
+            largest_file_mb = max(largest_file_mb, file_size / (1024 * 1024))
+        
+        total_test_size_mb = total_test_size_bytes / (1024 * 1024)
+        logger.info(f"[extract] {full_name}: Total test file size = {total_test_size_mb:.2f} MB, Largest = {largest_file_mb:.2f} MB")
+    except Exception as e:
+        logger.debug(f"Could not calculate file sizes for {full_name}: {e}")
+
     total_fixtures = 0
     total_mocks = 0
 
     for tf_path in test_files:
         relative = str(tf_path.relative_to(repo_dir))
+
+        # Log file size before processing
+        try:
+            file_size_bytes = tf_path.stat().st_size
+            file_size_mb = file_size_bytes / (1024 * 1024)
+            #info(f"[extract] Processing test file: {relative} ({file_size_mb:.2f} MB)")
+            if file_size_mb > 10:
+                logger.warning(f"[extract] Large test file in {full_name}: {relative} is {file_size_mb:.2f} MB")
+        except Exception as e:
+            logger.debug(f"Could not get file size for {relative}: {e}")
 
         # Register the test file in DB
         with db_session() as conn:
