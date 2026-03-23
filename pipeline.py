@@ -37,6 +37,7 @@ from corpus.search import collect_repos_for_language, collect_all_languages
 from corpus.cloner import clone_pending_repos, cleanup_stale_clones
 from corpus.extractor import extract_all_cloned
 from corpus.classifier import classify_all
+from corpus.fixture_classifier import categorize_all
 from corpus.exporter import export_dataset
 from corpus.validator import generate_sample, compute_metrics
 
@@ -136,6 +137,10 @@ def cmd_run(args):
     args.overwrite = False
     cmd_classify(args)
 
+    print("\n── Phase 5: Categorize fixtures ────────────────────")
+    args.overwrite = False
+    cmd_categorize(args)
+
     print("\n── Done ─────────────────────────────────────────────")
     cmd_stats(args)
 
@@ -143,6 +148,11 @@ def cmd_run(args):
 def cmd_classify(args):
     counts = classify_all(overwrite=args.overwrite)
     print(f"✓ Domain classification done: {counts}")
+
+
+def cmd_categorize(args):
+    counts = categorize_all(overwrite=args.overwrite)
+    print(f"✓ Fixture categorization done: {counts}")
 
 
 def cmd_export(args):
@@ -255,6 +265,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--overwrite", action="store_true", help="Re-classify already-labelled repos"
     )
 
+    # categorize
+    p_categorize = sub.add_parser("categorize", help="Categorize fixtures by usage pattern (data_builder/service_setup/…)")
+    p_categorize.add_argument(
+        "--overwrite", action="store_true", help="Re-categorize already-categorized fixtures"
+    )
+
     # export
     p_export = sub.add_parser("export", help="Export dataset for Zenodo deposit")
     p_export.add_argument(
@@ -299,6 +315,7 @@ COMMAND_MAP = {
     "extract": cmd_extract,
     "cleanup": cmd_cleanup,
     "classify": cmd_classify,
+    "categorize": cmd_categorize,
     "export": cmd_export,
     "validate": cmd_validate,
     "run": cmd_run,
