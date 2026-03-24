@@ -127,48 +127,36 @@ def get_connection(db_path: Path = DB_PATH) -> sqlite3.Connection:
 
 
 @contextmanager
-def db_session(db_path: Path = DB_PATH, max_retries: int = 5):
+def db_session(db_path: Path = DB_PATH, max_retries: int = 20):
     """
     Context manager that commits on success, rolls back on exception.
     Retries on database lock with exponential backoff.
-    """
-    conn = None
-    last_exception = None
     
+    For overnight runs: up to 20 retries with base 0.5s, reaching ~260s max wait.
+    """
     for attempt in range(max_retries):
+        conn = None
         try:
             conn = get_connection(db_path)
-            yield conn
-            conn.commit()
-            conn.close()
+            try:
+                yield conn
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                raise
+            finally:
+                conn.close()
             return  # Success
         except sqlite3.OperationalError as e:
             if "locked" in str(e).lower() and attempt < max_retries - 1:
                 # Database locked - retry with exponential backoff
-                wait_time = (2 ** attempt) * 0.1  # 0.1s, 0.2s, 0.4s, 0.8s, 1.6s
-                logger.debug(f"Database locked, retrying in {wait_time:.2f}s (attempt {attempt + 1}/{max_retries})")
-                if conn:
-                    conn.rollback()
-                    conn.close()
+                # Base 0.5s + exponential: 0.5s, 1s, 2s, 4s, 8s, 16s, 32s, 64s, 128s, 256s...
+                wait_time = (2 ** attempt) * 0.5
+                logger.debug(f"Database locked, retrying in {wait_time:.1f}s (attempt {attempt + 1}/{max_retries})")
                 time.sleep(wait_time)
-                last_exception = e
-                continue
             else:
-                # Not a lock error, or max retries reached
-                if conn:
-                    conn.rollback()
-                    conn.close()
+                # Not a lock error, or max retries reached - propagate
                 raise
-        except Exception:
-            # Other exceptions - rollback and raise
-            if conn:
-                conn.rollback()
-                conn.close()
-            raise
-    
-    # Should not reach here, but just in case
-    if last_exception:
-        raise last_exception
 
 
 def initialise_db(db_path: Path = DB_PATH) -> None:
@@ -337,6 +325,11 @@ def insert_fixture(conn: sqlite3.Connection, fixture: dict) -> int:
         "SELECT id FROM fixtures WHERE file_id=? AND name=? AND start_line=?",
         (fixture["file_id"], fixture["name"], fixture["start_line"]),
     ).fetchone()
+    if row is None:
+        raise ValueError(
+            f"Fixture insert conflict but SELECT returned no rows: "
+            f"file_id={fixture['file_id']}, name={fixture['name']}, start_line={fixture['start_line']}"
+        )
     return row["id"]
 
 
@@ -346,18 +339,40 @@ def insert_fixture(conn: sqlite3.Connection, fixture: dict) -> int:
 
 
 def insert_mock_usage(conn: sqlite3.Connection, mock: dict) -> None:
-    conn.execute(
-        """
-        INSERT INTO mock_usages (
-            fixture_id, repo_id, framework, target_identifier,
-            num_interactions_configured, raw_snippet
-        ) VALUES (
-            :fixture_id, :repo_id, :framework, :target_identifier,
-            :num_interactions_configured, :raw_snippet
+    try:
+        conn.execute(
+            """
+            INSERT INTO mock_usages (
+                fixture_id, repo_id, framework, target_identifier,
+                num_interactions_configured, raw_snippet
+            ) VALUES (
+                :fixture_id, :repo_id, :framework, :target_identifier,
+                :num_interactions_configured, :raw_snippet
+            )
+        """,
+            mock,
         )
-    """,
-        mock,
-    )
+    except sqlite3.IntegrityError as e:
+        # Better error context for foreign key failures
+        fixture_id = mock.get("fixture_id")
+        repo_id = mock.get("repo_id")
+        
+        # Check if fixture exists
+        fixture_exists = conn.execute(
+            "SELECT id FROM fixtures WHERE id = ?", (fixture_id,)
+        ).fetchone()
+        
+        # Check if repo exists
+        repo_exists = conn.execute(
+            "SELECT id FROM repositories WHERE id = ?", (repo_id,)
+        ).fetchone()
+        
+        error_msg = (
+            f"Foreign key constraint failed when inserting mock_usage: "
+            f"fixture_id={fixture_id} (exists={fixture_exists is not None}), "
+            f"repo_id={repo_id} (exists={repo_exists is not None})"
+        )
+        raise sqlite3.IntegrityError(error_msg) from e
 
 
 # ---------------------------------------------------------------------------
@@ -378,3 +393,76 @@ def get_corpus_stats(conn: sqlite3.Connection) -> dict:
         stats[table] = row["n"]
 
     return stats
+
+
+def get_analyzed_count_by_language(conn: sqlite3.Connection) -> dict[str, int]:
+    """
+    Get count of successfully analyzed repos (status='analysed' AND produced >=1 fixture) per language.
+    These are repositories with fixtures successfully extracted.
+    """
+    row = conn.execute("""
+        SELECT r.language, COUNT(DISTINCT r.id) as count
+        FROM repositories r
+        WHERE r.status = 'analysed'
+        AND EXISTS (SELECT 1 FROM fixtures WHERE repo_id = r.id)
+        GROUP BY r.language
+        ORDER BY r.language
+    """).fetchall()
+    return {r["language"]: r["count"] for r in row}
+
+
+def get_analyzed_count_for_language(conn: sqlite3.Connection, language: str) -> int:
+    """
+    Get count of successfully analyzed repos for a specific language.
+    Only counts repos with status='analysed' AND at least one extracted fixture.
+    """
+    row = conn.execute("""
+        SELECT COUNT(DISTINCT r.id) as n
+        FROM repositories r
+        WHERE r.language = ? AND r.status = 'analysed'
+        AND EXISTS (SELECT 1 FROM fixtures WHERE repo_id = r.id)
+    """,
+        (language,)
+    ).fetchone()
+    return row["n"]
+
+
+def get_discovered_count_for_language(conn: sqlite3.Connection, language: str) -> int:
+    """
+    Get count of discovered repos (status='discovered') waiting to be cloned.
+    These are repos from search that haven't been processed yet.
+    """
+    row = conn.execute(
+        "SELECT COUNT(*) as n FROM repositories WHERE language = ? AND status = 'discovered'",
+        (language,)
+    ).fetchone()
+    return row["n"]
+
+
+def get_survival_rate_for_language(conn: sqlite3.Connection, language: str) -> float:
+    """
+    Calculate and return the empirical survival rate for a language.
+    Survival = (analyzed repos with fixtures) / (discovered repos)
+    
+    Returns 0.0 if no discovered repos yet (no data to calculate).
+    """
+    cursor = conn.execute(
+        """
+        SELECT 
+            COUNT(DISTINCT r.id) as discovered,
+            SUM(CASE WHEN r.status = 'analysed' AND EXISTS (
+                SELECT 1 FROM fixtures WHERE repo_id = r.id
+            ) THEN 1 ELSE 0 END) as analyzed
+        FROM repositories r
+        WHERE r.language = ?
+        """,
+        (language,)
+    )
+    result = cursor.fetchone()
+    discovered = result["discovered"]
+    analyzed = result["analyzed"] or 0
+    
+    if discovered == 0:
+        return 0.0
+    
+    return analyzed / discovered

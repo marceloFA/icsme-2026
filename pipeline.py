@@ -31,8 +31,25 @@ from pathlib import Path
 # Ensure project root is on the path when run directly
 sys.path.insert(0, str(Path(__file__).parent))
 
-from corpus.config import LANGUAGE_CONFIGS, CLONE_BATCH_SIZE
-from corpus.db import initialise_db, db_is_initialised, db_session, get_corpus_stats
+from corpus.config import (
+    LANGUAGE_CONFIGS,
+    CLONE_BATCH_SIZE,
+    DISCOVERY_SURVIVAL_RATE,
+    DISCOVERY_SAFETY_BUFFER,
+    MAX_DISCOVERIES_PER_ITERATION,
+    MAX_REPOS_PER_ITERATION,
+    LANGUAGE_SURVIVAL_RATES,
+)
+from corpus.db import (
+    initialise_db,
+    db_is_initialised,
+    db_session,
+    get_corpus_stats,
+    get_analyzed_count_by_language,
+    get_analyzed_count_for_language,
+    get_discovered_count_for_language,
+    get_survival_rate_for_language,
+)
 from corpus.search import collect_repos_for_language, collect_all_languages
 from corpus.cloner import clone_pending_repos, cleanup_stale_clones
 from corpus.extractor import extract_all_cloned
@@ -70,6 +87,7 @@ def cmd_init(args):
 def cmd_search(args):
     language = args.language
     max_repos = args.max
+    stratified = getattr(args, "stratified", True)  # Default to stratified
 
     if language:
         if language not in LANGUAGE_CONFIGS:
@@ -78,10 +96,10 @@ def cmd_search(args):
                 f"Choose from: {list(LANGUAGE_CONFIGS)}"
             )
             sys.exit(1)
-        count = collect_repos_for_language(language, max_repos=max_repos)
+        count = collect_repos_for_language(language, max_repos=max_repos, stratified=stratified)
         print(f"✓ {count} repos discovered for {language}")
     else:
-        results = collect_all_languages(max_per_language=max_repos)
+        results = collect_all_languages(max_per_language=max_repos, stratified=stratified)
         for lang, count in results.items():
             print(f"  {lang:12s}: {count} repos")
 
@@ -107,9 +125,12 @@ def cmd_clone(args):
     print(f"✓ Clone batch done: {summary}")
 
 
-def cmd_extract(args):
-    totals = extract_all_cloned(language=args.language)
-    print(f"✓ Extraction done: {totals}")
+def cmd_extract(args, target_analyzed: int | None = None):
+    """Extract fixtures from cloned repos, optionally stopping early when target is reached."""
+    totals = extract_all_cloned(language=args.language, target_analyzed=target_analyzed)
+    early_stopped = totals.pop("early_stopped", False)
+    print(f"✓ Extraction done: {totals} (early_stopped={early_stopped})")
+    return early_stopped
 
 
 def cmd_run(args):
@@ -153,6 +174,131 @@ def cmd_classify(args):
 def cmd_categorize(args):
     counts = categorize_all(overwrite=args.overwrite)
     print(f"✓ Fixture categorization done: {counts}")
+
+
+def cmd_collect(args):
+    """
+    Automated collection for a single language until target analyzed repos reached.
+    
+    This command loops: search → clone → extract until the target count of
+    successfully analyzed repos (status='analysed') is reached for the language.
+    
+    Recommended usage:
+      python pipeline.py collect --language python --target 1500
+      python pipeline.py collect --language java --target 1500
+    """
+    language = args.language
+    target_analyzed = args.target
+    
+    if not language:
+        print("ERROR: --language is required for collect command")
+        sys.exit(1)
+    
+    if language not in LANGUAGE_CONFIGS:
+        print(f"Unknown language '{language}'. Choose from: {list(LANGUAGE_CONFIGS)}")
+        sys.exit(1)
+    
+    if not target_analyzed or target_analyzed < 1:
+        print("ERROR: --target must be a positive integer")
+        sys.exit(1)
+    
+    stratified = getattr(args, "stratified", True)
+    
+    # Initialize DB if needed
+    if not db_is_initialised():
+        print("── Initializing database ──")
+        cmd_init(args)
+    
+    iteration = 0
+    while True:
+        iteration += 1
+        
+        with db_session() as conn:
+            current_analyzed = get_analyzed_count_for_language(conn, language)
+        
+        print(f"\n{'='*60}")
+        print(f"Collection Iteration {iteration} for {language}")
+        print(f"  Current analyzed repos: {current_analyzed}/{target_analyzed}")
+        print(f"{'='*60}")
+        
+        if current_analyzed >= target_analyzed:
+            print(f"\n✓ TARGET REACHED: {language} has {current_analyzed} analyzed repos (≥{target_analyzed})")
+            break
+        
+        # Check if there are already discovered repos waiting to be cloned
+        with db_session() as conn:
+            pending_discovered = get_discovered_count_for_language(conn, language)
+        
+        needed = target_analyzed - current_analyzed
+        
+        print(f"\n  Repos still needed: {needed}")
+        print(f"  Pending discovered repos waiting: {pending_discovered}")
+        
+        if pending_discovered > 0:
+            print(f"\n  → Processing {pending_discovered} pending discovered repos (skipping new search)...")
+        else:
+            # Only search if no pending repos
+            # Get language-specific survival rate (from observed data or config)
+            with db_session() as conn:
+                observed_rate = get_survival_rate_for_language(conn, language)
+                total_discovered = get_discovered_count_for_language(conn, language) + get_analyzed_count_for_language(conn, language)
+            
+            # Use observed rate if we have enough data (>20 discovered repos), else use config estimate
+            if observed_rate > 0 and total_discovered >= 20:
+                survival_rate = observed_rate
+                rate_source = f"observed ({total_discovered} repos)"
+            else:
+                survival_rate = LANGUAGE_SURVIVAL_RATES.get(language, DISCOVERY_SURVIVAL_RATE)
+                rate_source = "config estimate"
+            
+            # Based on empirical survival rate, calculate required discoveries
+            # Apply safety buffer to account for estimation variability
+            discoveries_needed = max(1, int(needed / survival_rate * DISCOVERY_SAFETY_BUFFER))
+            # Cap discovery to match the cloning/extraction cap per iteration
+            discover_target = min(discoveries_needed, MAX_REPOS_PER_ITERATION)
+            
+            print(f"  Discovery survival rate: {survival_rate*100:.1f}% ({rate_source})")
+            print(f"  Safety buffer: {DISCOVERY_SAFETY_BUFFER:.0%}")
+            print(f"  Calculated discoveries needed (with buffer): {discoveries_needed}")
+            print(f"  Will discover this iteration: {discover_target} (capped at {MAX_DISCOVERIES_PER_ITERATION})")
+            
+            print(f"\n  → Searching for ~{discover_target} more repos (to reach analyzed target)...")
+            args.max = discover_target
+            args.stratified = stratified
+            cmd_search(args)
+        
+        print(f"\n  → Cloning discovered repos (capped at {MAX_REPOS_PER_ITERATION} per iteration)...")
+        args.batch = MAX_REPOS_PER_ITERATION  # cap repos per iteration
+        cmd_clone(args)
+        
+        print(f"\n  → Extracting fixtures from cloned repos...")
+        early_stopped = cmd_extract(args, target_analyzed=target_analyzed)
+        
+        # If we hit target during extraction, stop searching for more repos
+        if early_stopped:
+            print(f"\n  ✓ Target {target_analyzed} analyzed repos reached during extraction.")
+            print(f"  Stopping collection loop.")
+            break
+    
+    # Classify and categorize all extracted repos (once, after all iterations)
+    print(f"\n  → Classifying domains for all extracted repos...")
+    args.overwrite = False
+    cmd_classify(args)
+    
+    print(f"\n  → Categorizing fixtures...")
+    args.overwrite = False
+    cmd_categorize(args)
+    
+    print(f"\n{'='*60}")
+    print(f"Final status for {language}:")
+    with db_session() as conn:
+        analyzed = get_analyzed_count_for_language(conn, language)
+        stats = get_corpus_stats(conn)
+    
+    print(f"  Analyzed repos: {analyzed}")
+    print(f"  Total fixtures: {stats.get('fixtures', 0)}")
+    print(f"  Total test files: {stats.get('test_files', 0)}")
+    print(f"{'='*60}\n")
 
 
 def cmd_export(args):
@@ -225,6 +371,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_search.add_argument(
         "--max", type=int, default=None, help="Max repos per language"
     )
+    p_search.add_argument(
+        "--no-stratified",
+        action="store_false",
+        dest="stratified",
+        help="Use chronological search (legacy, biased toward older repos). Default: stratified sampling by year",
+    )
 
     # clone
     p_clone = sub.add_parser("clone", help="Clone discovered repos")
@@ -247,6 +399,36 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_run.add_argument(
         "--max", type=int, default=None, help="Max repos per language to search"
+    )
+    p_run.add_argument(
+        "--no-stratified",
+        action="store_false",
+        dest="stratified",
+        help="Use chronological search (legacy, biased toward older repos). Default: stratified sampling by year",
+    )
+
+    # collect
+    p_collect = sub.add_parser(
+        "collect",
+        help="Automated collection for one language until target analyzed repos reached",
+    )
+    p_collect.add_argument(
+        "--language",
+        choices=list(LANGUAGE_CONFIGS),
+        required=True,
+        help="Language to collect",
+    )
+    p_collect.add_argument(
+        "--target",
+        type=int,
+        required=True,
+        help="Target number of successfully analyzed repos (gold standard, post-filtering)",
+    )
+    p_collect.add_argument(
+        "--no-stratified",
+        action="store_false",
+        dest="stratified",
+        help="Use chronological search (legacy). Default: stratified sampling by year",
     )
 
     # cleanup
@@ -316,6 +498,7 @@ COMMAND_MAP = {
     "cleanup": cmd_cleanup,
     "classify": cmd_classify,
     "categorize": cmd_categorize,
+    "collect": cmd_collect,
     "export": cmd_export,
     "validate": cmd_validate,
     "run": cmd_run,

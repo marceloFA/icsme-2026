@@ -47,7 +47,7 @@ class LanguageConfig:
     name: str  # human-readable
     github_language: str  # label used by GitHub search API
     min_stars: int = 100
-    target_repos: int = 1000  # how many repos to collect
+    target_repos: int = 1000  # target count of final analyzed repos (with >=1 fixture extracted)
 
     # Paths that signal "this is a test file"
     test_path_patterns: list[str] = field(default_factory=list)
@@ -104,13 +104,12 @@ EXCLUSION_KEYWORDS = [
 # ---------------------------------------------------------------------------
 # Per-language targets
 #
-# target_repos is the search-phase ceiling.  Expected survival after quality
-# filters (min test files + min commits) is ~50–70%, so searching for 1,000
-# should yield ~600–700 analysed repos per language — a corpus size that
-# stands well in a Data Showcase abstract and allows meaningful stratification.
+# target_repos is the gold-standard final count: repositories with status='analysed'
+# AND at least one extracted fixture. The `collect` command loops until this target
+# is reached for each language.
 #
-# JavaScript is slightly lower because many JS repos are frontend-only and
-# yield few or no fixture definitions.
+# JavaScript and TypeScript targets are lower because many such repos are
+# frontend-only and yield few or no fixture definitions.
 # ---------------------------------------------------------------------------
 
 LANGUAGE_CONFIGS = {
@@ -118,7 +117,7 @@ LANGUAGE_CONFIGS = {
         name="Python",
         github_language="Python",
         min_stars=100,
-        target_repos=1000,
+        target_repos=300,
         test_path_patterns=["test/", "tests/", "testing/", "test_", "conftest"],
         test_file_suffixes=["test_.py", "_test.py", "_tests.py"],
     ),
@@ -126,7 +125,7 @@ LANGUAGE_CONFIGS = {
         name="Java",
         github_language="Java",
         min_stars=100,
-        target_repos=1000,
+        target_repos=300,
         test_path_patterns=["src/test/", "test/", "tests/"],
         test_file_suffixes=["Test.java", "Tests.java", "IT.java", "Spec.java"],
     ),
@@ -134,7 +133,7 @@ LANGUAGE_CONFIGS = {
         name="JavaScript",
         github_language="JavaScript",
         min_stars=100,
-        target_repos=800,
+        target_repos=175,
         test_path_patterns=["__tests__/", "test/", "tests/", "spec/"],
         test_file_suffixes=[
             ".test.js",
@@ -150,7 +149,7 @@ LANGUAGE_CONFIGS = {
         name="TypeScript",
         github_language="TypeScript",
         min_stars=100,
-        target_repos=600,
+        target_repos=125,
         test_path_patterns=["__tests__/", "test/", "tests/", "spec/"],
         test_file_suffixes=[
             ".test.ts",
@@ -166,7 +165,7 @@ LANGUAGE_CONFIGS = {
         name="Go",
         github_language="Go",
         min_stars=100,
-        target_repos=600,
+        target_repos=300,
         test_path_patterns=["test/", "tests/", "_test.go"],
         test_file_suffixes=["_test.go"],
     ),
@@ -174,7 +173,7 @@ LANGUAGE_CONFIGS = {
         name="C#",
         github_language="C#",
         min_stars=100,
-        target_repos=800,
+        target_repos=300,
         test_path_patterns=["tests/", "test/", "Tests/", "Test/"],
         test_file_suffixes=[
             "Tests.cs",
@@ -191,13 +190,38 @@ MIN_TEST_FILES = 5  # repos with fewer test files are dropped
 MIN_COMMITS = 50  # repos with fewer commits are dropped
 MIN_FIXTURES_FOUND = 1  # repos where we detect zero fixtures are dropped
 
+# Per-language survival rates (discovered → analyzed with fixtures)
+# These are empirically observed rates used to calculate discovery estimates.
+# They are updated as we collect data for each language.
+# Format: {language: survival_rate}
+LANGUAGE_SURVIVAL_RATES = {
+    "python": 0.076,  # 7.6% actual from completed collection
+    "java": 0.15,     # estimate (Java typically has higher survival)
+    "go": 0.09,       # estimate
+    "csharp": 0.10,   # estimate
+    "javascript": 0.08,  # estimate
+    "typescript": 0.08,  # estimate
+}
+
+# Discovery and collection tuning
+DISCOVERY_SURVIVAL_RATE = 0.09  # fallback/default if language not in LANGUAGE_SURVIVAL_RATES
+DISCOVERY_SAFETY_BUFFER = 1.25  # 25% buffer to reduce iterations
+MAX_DISCOVERIES_PER_ITERATION = 3000  # cap to manage disk space
+MAX_REPOS_PER_ITERATION = 500  # max repos (discovered + cloned + extracted) per collection iteration
+
 # Maximum repos to clone in a single run (useful for incremental collection)
 CLONE_BATCH_SIZE = 50
 
 # Number of parallel clone workers
-CLONE_WORKERS = 10
+CLONE_WORKERS = 12
 
-# Number of parallel extraction workers (reduced to avoid SQLite lock contention)
-# SQLite has a single-writer limitation; too many concurrent workers cause
-# "database is locked" errors. Safe range is 3-4 for typical systems.
-EXTRACT_WORKERS = 4
+# Number of parallel extraction workers (balanced for SQLite single-writer limit)
+# SQLite has a single-writer limitation; only one transaction can write at a time.
+# With 20-retry aggressive backoff policy, 3 workers is safe and provides good parallelism
+# without excessive lock contention. Going above 4 causes diminishing returns.
+EXTRACT_WORKERS = 3
+
+# Maximum time to spend extracting fixtures from a single test file (seconds)
+# Files that exceed this timeout are skipped to prevent pathological cases
+# (e.g., minified code, massive auto-generated test files, etc.)
+FILE_EXTRACTION_TIMEOUT = 300  # 5 minutes

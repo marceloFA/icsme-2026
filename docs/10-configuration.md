@@ -30,8 +30,13 @@ All collection parameters live in `corpus/config.py`.
 
 ## Pipeline tuning
 
-| Parameter           | Default | Notes |
-|---------------------|---------|-------|
-| `CLONE_WORKERS`     | 4       | Parallel clone threads — increase if network allows |
-| `CLONE_BATCH_SIZE`  | 50      | Repos per `clone` invocation |
-| `REQUEST_DELAY`     | 2.0 s   | Pause between GitHub Search API pages |
+| Parameter                          | Default | Notes |
+|------------------------------------|---------|-------|
+| `CLONE_WORKERS`                    | 12      | Parallel clone threads |
+| `CLONE_BATCH_SIZE`                 | 50      | Repos per `clone` invocation (incremental mode) |
+| `EXTRACT_WORKERS`                  | 3       | Parallel extraction workers (respects SQLite single-writer limit) |
+| `MAX_REPOS_PER_ITERATION`          | 500     | Cap on repos processed per collection iteration (all languages) |
+| `MAX_DISCOVERIES_PER_ITERATION`    | 3,000   | Max repos discovered per iteration (disk space management) |
+| `DISCOVERY_SURVIVAL_RATE`          | 0.09    | Fallback discovery→analyzed conversion rate |
+| `DISCOVERY_SAFETY_BUFFER`          | 1.25    | 25% safety buffer on discovery estimates |
+| `REQUEST_DELAY`                    | 2.0 s   | Pause between GitHub Search API pages |
