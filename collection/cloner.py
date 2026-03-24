@@ -20,7 +20,7 @@ from pathlib import Path
 import requests
 from pydriller import Repository
 
-from corpus.config import (
+from collection.config import (
     CLONES_DIR,
     LANGUAGE_CONFIGS,
     MIN_COMMITS,
@@ -28,7 +28,7 @@ from corpus.config import (
     CLONE_WORKERS,
     GITHUB_TOKEN,
 )
-from corpus.db import db_session, get_repos_by_status, set_repo_status
+from collection.db import db_session, get_repos_by_status, set_repo_status
 
 logger = logging.getLogger(__name__)
 

@@ -15,7 +15,7 @@ from datetime import datetime, timedelta
 
 import requests
 
-from corpus.config import (
+from collection.config import (
     GITHUB_TOKEN,
     GITHUB_SEARCH_URL,
     GITHUB_RATE_LIMIT_URL,
@@ -25,7 +25,7 @@ from corpus.config import (
     LanguageConfig,
     star_tier,
 )
-from corpus.db import db_session, upsert_repository
+from collection.db import db_session, upsert_repository
 
 logger = logging.getLogger(__name__)
 

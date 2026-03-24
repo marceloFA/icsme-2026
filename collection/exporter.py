@@ -28,7 +28,7 @@ from datetime import datetime
 
 import pandas as pd
 
-from corpus.config import DB_PATH, ROOT_DIR
+from collection.config import DB_PATH, ROOT_DIR
 
 logger = logging.getLogger(__name__)
 

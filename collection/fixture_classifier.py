@@ -17,13 +17,13 @@ Categories (RQ1 taxonomy):
   - hybrid:               combination of above patterns
 
 Usage:
-    from corpus.fixture_classifier import categorize_all
+    from collection.fixture_classifier import categorize_all
     counts = categorize_all()
 """
 
 import logging
 import re
-from corpus.db import db_session
+from collection.db import db_session
 
 logger = logging.getLogger(__name__)
 

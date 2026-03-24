@@ -12,9 +12,9 @@ import logging
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from corpus.config import LANGUAGE_CONFIGS, MIN_FIXTURES_FOUND, EXTRACT_WORKERS, FILE_EXTRACTION_TIMEOUT
-from corpus.cloner import get_clone_path, delete_clone
-from corpus.db import (
+from collection.config import LANGUAGE_CONFIGS, MIN_FIXTURES_FOUND, EXTRACT_WORKERS, FILE_EXTRACTION_TIMEOUT
+from collection.cloner import get_clone_path, delete_clone
+from collection.db import (
     db_session,
     get_repos_by_status,
     set_repo_status,
@@ -25,7 +25,7 @@ from corpus.db import (
     get_corpus_stats,
     get_analyzed_count_for_language,
 )
-from corpus.detector import extract_fixtures
+from collection.detector import extract_fixtures
 
 logger = logging.getLogger(__name__)
 

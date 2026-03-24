@@ -1,6 +1,6 @@
 # Fixture Detection Logic
 
-Detection is implemented in `corpus/detector.py` using
+Detection is implemented in `collection/detector.py` using
 [Tree-sitter](https://tree-sitter.github.io/tree-sitter/) grammars.
 Each language has a dedicated detector function that walks the AST
 and matches fixture-defining nodes.

@@ -14,7 +14,7 @@ Usage:
 import json
 import logging
 import re
-from corpus.db import db_session
+from collection.db import db_session
 
 logger = logging.getLogger(__name__)
 

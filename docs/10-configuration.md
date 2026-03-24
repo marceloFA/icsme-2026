@@ -1,6 +1,6 @@
 # Configuration Reference
 
-All collection parameters live in `corpus/config.py`.
+All collection parameters live in `collection/config.py`.
 
 ## Per-language targets
 

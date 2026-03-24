@@ -13,7 +13,7 @@ import logging
 from contextlib import contextmanager
 from pathlib import Path
 
-from corpus.config import DB_PATH
+from collection.config import DB_PATH
 
 logger = logging.getLogger(__name__)
 

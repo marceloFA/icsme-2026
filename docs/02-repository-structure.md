@@ -7,7 +7,7 @@ fixture-corpus/
 ├── requirements.txt         # Python dependencies
 ├── .env.example             # Template for GitHub token configuration
 │
-├── corpus/                  # Core pipeline modules
+├── collection/             # Core pipeline modules
 │   ├── config.py            # All tunable parameters (thresholds, targets, paths)
 │   ├── db.py                # SQLite schema definition and query helpers
 │   ├── search.py            # GitHub Search API client (repo discovery)
