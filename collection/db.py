@@ -43,6 +43,9 @@ CREATE TABLE IF NOT EXISTS repositories (
     status          TEXT DEFAULT 'discovered',
     -- status values: discovered | cloned | analysed | skipped | error
     error_message   TEXT,
+    num_test_files  INTEGER DEFAULT 0,      -- count of test files found
+    num_fixtures    INTEGER DEFAULT 0,      -- count of fixture definitions
+    num_mock_usages INTEGER DEFAULT 0,      -- count of mock usages detected
     collected_at    TEXT DEFAULT (datetime('now'))
 );
 
@@ -250,6 +253,27 @@ def set_repo_status(
         WHERE id = ?
     """,
         (status, error, pinned_commit, repo_id),
+    )
+
+
+def set_repo_analysed(
+    conn: sqlite3.Connection,
+    repo_id: int,
+    num_test_files: int,
+    num_fixtures: int,
+    num_mock_usages: int,
+) -> None:
+    """Mark a repo as analysed and store the extraction counts."""
+    conn.execute(
+        """
+        UPDATE repositories
+        SET status = 'analysed',
+            num_test_files = ?,
+            num_fixtures = ?,
+            num_mock_usages = ?
+        WHERE id = ?
+    """,
+        (num_test_files, num_fixtures, num_mock_usages, repo_id),
     )
 
 

@@ -18,6 +18,7 @@ from collection.db import (
     db_session,
     get_repos_by_status,
     set_repo_status,
+    set_repo_analysed,
     upsert_test_file,
     update_test_file_counts,
     insert_fixture,
@@ -285,7 +286,8 @@ def extract_repo(repo_id: int, full_name: str, language: str) -> dict:
         return {}
 
     test_files = _find_test_files(repo_dir, language)
-    logger.info(f"[extract] {full_name}: {len(test_files)} test files found")
+    num_test_files = len(test_files)
+    logger.info(f"[extract] {full_name}: {num_test_files} test files found")
 
     # Calculate and log total test file size for this repo
     total_test_size_bytes = 0
@@ -377,6 +379,8 @@ def extract_repo(repo_id: int, full_name: str, language: str) -> dict:
             f"only {total_fixtures} fixtures found (threshold: {MIN_FIXTURES_FOUND})"
         )
         with db_session() as conn:
+            set_repo_analysed(conn, repo_id, num_test_files, total_fixtures, total_mocks)
+            # Also update status to skipped
             set_repo_status(
                 conn, repo_id, "skipped", f"only {total_fixtures} fixtures found"
             )
@@ -384,13 +388,13 @@ def extract_repo(repo_id: int, full_name: str, language: str) -> dict:
         return {"fixtures": 0, "mocks": 0}
 
     with db_session() as conn:
-        set_repo_status(conn, repo_id, "analysed")
+        set_repo_analysed(conn, repo_id, num_test_files, total_fixtures, total_mocks)
 
     delete_clone(full_name)
 
     logger.info(
         f"[extract] ✓ {full_name}: "
-        f"{total_fixtures} fixtures, {total_mocks} mock usages"
+        f"{num_test_files} test files, {total_fixtures} fixtures, {total_mocks} mock usages"
     )
     return {"fixtures": total_fixtures, "mocks": total_mocks}
 
