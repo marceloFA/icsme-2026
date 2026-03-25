@@ -78,7 +78,7 @@ This document outlines the comprehensive testing strategy for the fixture extrac
 - ✅ **Line counts**: `loc` (lines of code) is correct
 - ✅ **Fixture type**: Classification (setUp, tearDown, fixture, etc.)
 - ✅ **Fixture scope**: per_test, per_class, per_module, or global
-- ✅ **Complexity metrics**: cyclomatic_complexity, num_parameters, has_yield
+- ✅ **Complexity metrics**: cyclomatic_complexity, num_parameters
 - ✅ **Code metrics**: num_objects_instantiated, num_external_calls
 
 **Files:**

@@ -181,7 +181,6 @@ def _classify_fixture(
     num_objects_instantiated: int,
     num_external_calls: int,
     num_parameters: int,
-    has_yield: int,
     raw_source: str,
     mock_count: int,
 ) -> str:
@@ -213,8 +212,6 @@ def _classify_fixture(
         matched_categories.add("data_builder")
     if num_external_calls >= 2:
         matched_categories.add("environment")
-    if has_yield == 1:
-        matched_categories.add("resource_management")
 
     # 4. Scope-based hints
     if scope in ("per_module", "global"):
@@ -256,7 +253,7 @@ def categorize_all(overwrite: bool = False) -> dict[str, int]:
             query = """
                 SELECT f.id, f.fixture_type, f.scope, f.loc, f.cyclomatic_complexity,
                        f.num_objects_instantiated, f.num_external_calls, f.num_parameters,
-                       f.has_yield, f.raw_source, COALESCE(COUNT(m.id), 0) as mock_count
+                       f.raw_source, COALESCE(COUNT(m.id), 0) as mock_count
                 FROM fixtures f
                 LEFT JOIN mock_usages m ON f.id = m.fixture_id
                 GROUP BY f.id
@@ -265,7 +262,7 @@ def categorize_all(overwrite: bool = False) -> dict[str, int]:
             query = """
                 SELECT f.id, f.fixture_type, f.scope, f.loc, f.cyclomatic_complexity,
                        f.num_objects_instantiated, f.num_external_calls, f.num_parameters,
-                       f.has_yield, f.raw_source, COALESCE(COUNT(m.id), 0) as mock_count
+                       f.raw_source, COALESCE(COUNT(m.id), 0) as mock_count
                 FROM fixtures f
                 LEFT JOIN mock_usages m ON f.id = m.fixture_id
                 WHERE f.category IS NULL
@@ -285,7 +282,6 @@ def categorize_all(overwrite: bool = False) -> dict[str, int]:
                 num_objects_instantiated=row["num_objects_instantiated"],
                 num_external_calls=row["num_external_calls"],
                 num_parameters=row["num_parameters"],
-                has_yield=row["has_yield"],
                 raw_source=row["raw_source"],
                 mock_count=row["mock_count"],
             )

@@ -140,18 +140,6 @@ def db_connection():
         # Scope detection depends on parsing decorator arguments
         pytest.mark.xfail(reason="Scope from decorator argument may not be parsed")
     
-    def test_pytest_fixture_with_yield(self):
-        """@pytest.fixture with yield should be detected and has_yield marked"""
-        code = """
-@pytest.fixture
-def temp_file():
-    f = open('temp.txt', 'w')
-    yield f
-    f.close()
-"""
-        fixture = assert_fixture_detected(code, 'python', 'temp_file')
-        assert fixture.has_yield == True
-    
     def test_multiple_pytest_fixtures(self):
         """Multiple pytest fixtures in one file should all be detected"""
         code = """

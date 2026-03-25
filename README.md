@@ -68,6 +68,27 @@ first cross-language resource treating the fixture as its primary unit of analys
 
 See [docs/01-intro.md](docs/01-intro.md) for the full overview.
 
+### Data Quality & Testing
+
+FixtureDB focuses exclusively on **quantitative, objective aspects** of test fixtures:
+
+- **Framework Detection**: Syntactically unambiguous markers only (decorators, annotations, attributes)
+  - Python: `@pytest.fixture`, `setUp()`/`tearDown()` methods
+  - Java: `@Before`/`@After` annotations
+  - C#: `[SetUp]`/`[TearDown]` attributes (NUnit, MSTest, xUnit)
+  - Go: `TestMain()` function, `SetupSuite()`/`SetupTest()` methods (testify)
+  - JavaScript/TypeScript: AVA's unique `test.before()`/`test.after()` pattern
+
+- **Structural Metrics**: Lines of code, cyclomatic complexity, parameter counts, fixture type/scope
+- **Mock Framework Usage**: Detection of mock object patterns within fixture code
+
+All fixture detectors include **comprehensive unit tests** ([tests/test_framework_detection.py](tests/test_framework_detection.py)) verifying:
+- Correct framework identification across 6 languages
+- AST-based detection accuracy
+- Cross-language consistency
+
+See [docs/11-detection.md](docs/11-detection.md) for technical details on detection algorithms.
+
 ---
 
 ## Exploratory Data Analysis (EDA)

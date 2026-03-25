@@ -86,12 +86,12 @@ TABLE: fixtures
   end_line                 INTEGER  1-indexed end line in the source file
   loc                      INTEGER  Non-blank lines of code
   cyclomatic_complexity    INTEGER  1 + number of branching statements
+  cognitive_complexity     INTEGER  Nesting-depth-weighted code complexity
   num_objects_instantiated INTEGER  Estimated constructor calls
   num_external_calls       INTEGER  Estimated I/O / external API calls
   num_parameters           INTEGER  Number of function parameters
-  has_yield                INTEGER  1 if fixture contains a yield (teardown)
-  raw_source               TEXT     Full source text (excluded from default CSV)
-  category                 TEXT     RQ1 taxonomy label (NULL until classified)
+  raw_source               TEXT     Full source text (excluded from CSV export)
+  category                 TEXT     Fixture taxonomy (internal analysis only; excluded from CSV export — subjective)
 
 TABLE: mock_usages
   id                           INTEGER  Internal primary key
@@ -101,12 +101,11 @@ TABLE: mock_usages
                                         easymock | jest | sinon | vitest |
                                         gomock | testify_mock | moq |
                                         nsubstitute | fakeiteasy | rhino_mocks
-  mock_style                   TEXT     stub | mock | spy | fake (NULL until classified)
+  mock_style                   TEXT     stub | mock | spy | fake (internal; excluded from CSV export)
   target_identifier            TEXT     String passed to the mock call
-  target_layer                 TEXT     boundary | infrastructure | internal |
-                                        framework (NULL until classified)
+  target_layer                 TEXT     boundary | infrastructure | internal | framework (internal; excluded from CSV export)
   num_interactions_configured  INTEGER  return_value / thenReturn calls counted
-  raw_snippet                  TEXT     Short source snippet around the mock call
+  raw_snippet                  TEXT     Short source snippet (excluded from CSV export — GitHub URL provides access)
 """
 
 
@@ -137,17 +136,25 @@ def export_dataset(version: str = "1.0", include_raw_source: bool = False) -> Pa
     # --- CSV exports ---
     _export_table(conn, "repositories", staging / "repositories.csv")
     _export_table(conn, "test_files", staging / "test_files.csv")
-    _export_table(conn, "mock_usages", staging / "mock_usages.csv")
+    # mock_usages: exclude classification fields (subjective) and raw_snippet (redundant with GitHub URL)
+    _export_table(
+        conn,
+        "mock_usages",
+        staging / "mock_usages.csv",
+        exclude_cols=["mock_style", "target_layer", "raw_snippet"],
+    )
 
-    # fixtures: exclude raw_source by default (large text, already in SQLite)
+    # fixtures: exclude raw_source and category by default
+    # raw_source: large text, already in SQLite
+    # category: subjective fixture classification, for internal analysis only
     if include_raw_source:
-        _export_table(conn, "fixtures", staging / "fixtures_with_source.csv")
+        _export_table(conn, "fixtures", staging / "fixtures_with_source.csv", exclude_cols=["category"])
     else:
         _export_table(
             conn,
             "fixtures",
             staging / "fixtures.csv",
-            exclude_cols=["raw_source"],
+            exclude_cols=["raw_source", "category"],
         )
 
     # --- Language-specific fixture CSVs (for Zenodo) ---
@@ -190,10 +197,12 @@ def _export_language_specific_fixtures(conn: sqlite3.Connection, staging: Path) 
     
     Each CSV includes:
     - Repository info (full_name, github_id, stars, etc.)
-    - Fixture metadata (name, fixture_type, scope, LOC, complexity)
+    - Fixture metadata (name, fixture_type, scope, LOC, complexity metrics)
     - Mock usage count for this fixture
     - Test file metadata
     - GitHub URL to the exact fixture location in the source
+    
+    NOTE: Category field is excluded (subjective internal classification).
     
     Generated files: fixtures_python.csv, fixtures_java.csv, etc.
     """
@@ -217,11 +226,11 @@ def _export_language_specific_fixtures(conn: sqlite3.Connection, staging: Path) 
             f.end_line,
             f.loc,
             f.cyclomatic_complexity,
+            f.cognitive_complexity,
             f.num_objects_instantiated,
             f.num_external_calls,
             f.num_parameters,
-            f.has_yield,
-            f.category,
+            f.framework as fixture_framework,
             COALESCE(mock_count.count, 0) as num_mocks,
             COUNT(DISTINCT m1.framework) as num_mock_frameworks
         FROM fixtures f

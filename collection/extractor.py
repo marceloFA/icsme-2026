@@ -44,7 +44,7 @@ class ExtractionTimeoutError(Exception):
     pass
 
 
-def extract_fixtures_with_timeout(tf_path: Path, language: str, timeout: int = FILE_EXTRACTION_TIMEOUT) -> list:
+def extract_fixtures_with_timeout(tf_path: Path, language: str, timeout: int = FILE_EXTRACTION_TIMEOUT):
     """
     Extract fixtures from a test file with a timeout.
     
@@ -57,13 +57,14 @@ def extract_fixtures_with_timeout(tf_path: Path, language: str, timeout: int = F
         timeout: Maximum seconds to spend on this file
     
     Returns:
-        List of fixtures, or empty list if timeout exceeded
+        ExtractResult with fixtures and file-level metrics, or empty result if timeout exceeded
     
     Raises:
         ExtractionTimeoutError: If extraction takes too long
     """
     from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
-    
+    from collection.detector import ExtractResult
+
     try:
         with ThreadPoolExecutor(max_workers=1) as executor:
             future = executor.submit(extract_fixtures, tf_path, language)
@@ -325,19 +326,37 @@ def extract_repo(repo_id: int, full_name: str, language: str) -> dict:
 
         # Extract fixtures with timeout protection
         try:
-            fixtures = extract_fixtures_with_timeout(tf_path, language)
+            extract_result = extract_fixtures_with_timeout(tf_path, language)
         except ExtractionTimeoutError:
             logger.warning(
                 f"[extract] ⏱ Timeout for {full_name}/{relative}: "
                 f"extraction exceeded {FILE_EXTRACTION_TIMEOUT}s limit, skipping file"
             )
+            extract_result = None
+        
+        if extract_result is None:
             fixtures = []
+            file_loc = 0
+            num_test_functions = 0
+            total_fixture_loc = 0
+        else:
+            fixtures = extract_result.fixtures
+            file_loc = extract_result.file_loc
+            num_test_functions = extract_result.num_test_functions
+            total_fixture_loc = sum(f.loc for f in fixtures)
         
         file_fixture_count = len(fixtures)
-        file_test_count = _estimate_test_count(tf_path, language)
+        file_test_count = num_test_functions  # Use the extracted count instead of estimate
 
         with db_session() as conn:
-            update_test_file_counts(conn, file_id, file_test_count, file_fixture_count)
+            update_test_file_counts(
+                conn, 
+                file_id, 
+                file_test_count, 
+                file_fixture_count,
+                file_loc=file_loc,
+                total_fixture_loc=total_fixture_loc
+            )
 
             for fix in fixtures:
                 fixture_record = {
@@ -345,6 +364,7 @@ def extract_repo(repo_id: int, full_name: str, language: str) -> dict:
                     "repo_id": repo_id,
                     "name": fix.name,
                     "fixture_type": fix.fixture_type,
+                    "framework": fix.framework,
                     "scope": fix.scope,
                     "start_line": fix.start_line,
                     "end_line": fix.end_line,
@@ -353,7 +373,6 @@ def extract_repo(repo_id: int, full_name: str, language: str) -> dict:
                     "num_objects_instantiated": fix.num_objects_instantiated,
                     "num_external_calls": fix.num_external_calls,
                     "num_parameters": fix.num_parameters,
-                    "has_yield": int(fix.has_yield),
                     "raw_source": fix.raw_source,
                 }
                 fixture_id = insert_fixture(conn, fixture_record)

@@ -64,10 +64,10 @@ One row per fixture definition. This is the primary analysis table.
 | `end_line`                     | INTEGER | 1-indexed end line |
 | `loc`                          | INTEGER | Non-blank lines of code |
 | `cyclomatic_complexity`        | INTEGER | 1 + number of branching statements (proxy metric) |
+| `cognitive_complexity`         | INTEGER | Nesting-depth-weighted complexity (deeper nesting = higher cost) |
 | `num_objects_instantiated`     | INTEGER | Estimated constructor calls inside the fixture |
 | `num_external_calls`           | INTEGER | Estimated I/O / external API calls (DB, HTTP, filesystem, env) |
 | `num_parameters`               | INTEGER | Number of function parameters |
-| `has_yield`                    | INTEGER | `1` if the fixture contains a `yield` statement (signals a teardown section) |
 | `raw_source`                   | TEXT    | Full source text of the fixture as extracted |
 | `category`                     | TEXT    | RQ1 taxonomy label — `NULL` until manually classified |
 
@@ -110,11 +110,11 @@ One row per mock call detected inside a fixture.
 | `fixture_id`                | INTEGER FK → `fixtures.id`     |                                    |
 | `repo_id`                   | INTEGER FK → `repositories.id` | Denormalised for query convenience |
 | `framework`                 | TEXT                           | Detection pattern — see values below |
-| `mock_style`                | TEXT                           | `stub` \| `mock` \| `spy` \| `fake` — `NULL` until classified |
+| `mock_style`                | TEXT                           | `stub` \| `mock` \| `spy` \| `fake` — database only (excluded from CSV export; subjective) |
 | `target_identifier`         | TEXT                           | String passed to the mock call (e.g. `"mymodule.HttpClient"`) |
-| `target_layer`              | TEXT                           | `boundary` \| `infrastructure` \| `internal` \| `framework` — `NULL` until classified |
+| `target_layer`              | TEXT                           | `boundary` \| `infrastructure` \| `internal` \| `framework` — database only (excluded from CSV export; subjective) |
 | `num_interactions_configured` | INTEGER                      | Count of `return_value` / `thenReturn` / `side_effect` style calls found near the mock |
-| `raw_snippet`               | TEXT                           | Short source snippet surrounding the mock call |
+| `raw_snippet`               | TEXT                           | Short source snippet (excluded from CSV export; GitHub URL provides direct code access) |
 
 ### `framework` values
 

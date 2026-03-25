@@ -16,8 +16,10 @@ This folder contains the complete documentation for FixtureDB, split into dedica
 10. **[Configuration Reference](10-configuration.md)** — All tunable parameters
 11. **[Fixture Detection Logic](11-detection.md)** — Tree-sitter AST and mock detection
 12. **[Limitations and Threats to Validity](12-limitations.md)** — Known constraints and validation status
-13. **[Testing Strategy & Execution](14-testing.md)** — Test suite overview, categories, and how to run
-14. **[License](13-license.md)** — MIT (code) and CC BY 4.0 (dataset)
+13. **[License](13-license.md)** — MIT (code) and CC BY 4.0 (dataset)
+14. **[CSV Export Guide](14-csv-export-guide.md)** — Full column documentation for all exported CSV files
+15. **[Language-Specific Fixture CSV Export](15-language-specific-csv-export.md)** — Python/Java/JavaScript fixtures for Zenodo
+16. **[Testing Strategy & Execution](16-testing.md)** — Test suite overview, categories, and how to run
 
 ## Getting started
 

@@ -57,8 +57,10 @@ CREATE TABLE IF NOT EXISTS test_files (
     repo_id         INTEGER NOT NULL REFERENCES repositories(id),
     relative_path   TEXT NOT NULL,
     language        TEXT NOT NULL,
+    file_loc        INTEGER DEFAULT 0,      -- non-blank lines of code in file
     num_test_funcs  INTEGER DEFAULT 0,
     num_fixtures    INTEGER DEFAULT 0,
+    total_fixture_loc INTEGER DEFAULT 0,   -- sum of fixture LOC in this file
     UNIQUE(repo_id, relative_path)
 );
 
@@ -77,12 +79,13 @@ CREATE TABLE IF NOT EXISTS fixtures (
     end_line                INTEGER,
     loc                     INTEGER,   -- lines of code (non-blank)
     cyclomatic_complexity   INTEGER,
+    cognitive_complexity    INTEGER,
     num_objects_instantiated INTEGER DEFAULT 0,
     num_external_calls      INTEGER DEFAULT 0,
     num_parameters          INTEGER DEFAULT 0,
-    has_yield               INTEGER DEFAULT 0,  -- boolean (teardown pattern)
     raw_source              TEXT,              -- original source text
     category                TEXT,              -- RQ1 taxonomy label (filled by classifier)
+    framework               TEXT,              -- testing framework (pytest, unittest, junit, nunit, testify, etc.)
     UNIQUE(file_id, name, start_line)
 );
 
@@ -307,15 +310,20 @@ def upsert_test_file(
 
 
 def update_test_file_counts(
-    conn: sqlite3.Connection, file_id: int, num_test_funcs: int, num_fixtures: int
+    conn: sqlite3.Connection, 
+    file_id: int, 
+    num_test_funcs: int, 
+    num_fixtures: int,
+    file_loc: int = 0,
+    total_fixture_loc: int = 0,
 ) -> None:
     conn.execute(
         """
         UPDATE test_files
-        SET num_test_funcs = ?, num_fixtures = ?
+        SET num_test_funcs = ?, num_fixtures = ?, file_loc = ?, total_fixture_loc = ?
         WHERE id = ?
     """,
-        (num_test_funcs, num_fixtures, file_id),
+        (num_test_funcs, num_fixtures, file_loc, total_fixture_loc, file_id),
     )
 
 
@@ -332,12 +340,12 @@ def insert_fixture(conn: sqlite3.Connection, fixture: dict) -> int:
             file_id, repo_id, name, fixture_type, scope,
             start_line, end_line, loc, cyclomatic_complexity,
             num_objects_instantiated, num_external_calls,
-            num_parameters, has_yield, raw_source
+            num_parameters, raw_source
         ) VALUES (
             :file_id, :repo_id, :name, :fixture_type, :scope,
             :start_line, :end_line, :loc, :cyclomatic_complexity,
             :num_objects_instantiated, :num_external_calls,
-            :num_parameters, :has_yield, :raw_source
+            :num_parameters, :raw_source
         )
         ON CONFLICT(file_id, name, start_line) DO NOTHING
     """,

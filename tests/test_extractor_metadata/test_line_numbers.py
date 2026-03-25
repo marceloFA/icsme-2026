@@ -264,18 +264,6 @@ def my_fixture(param1, param2):
         # Should have 2 parameters
         assert_fixture_metrics(fixture, num_parameters=2)
     
-    def test_fixture_with_yield(self):
-        """Fixture with yield should have has_yield=True"""
-        code = """
-@pytest.fixture
-def resource():
-    r = create_resource()
-    yield r
-    r.cleanup()
-"""
-        fixture = assert_fixture_detected(code, 'python', 'resource')
-        assert fixture.has_yield == True
-    
     def test_fixture_instantiations(self):
         """Fixture creating objects should track num_objects_instantiated"""
         code = """

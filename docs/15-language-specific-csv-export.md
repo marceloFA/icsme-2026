@@ -54,19 +54,19 @@ The directory is then zipped into `fixturedb_v1.0_<date>.zip` for upload to Zeno
 | `end_line` | INT | 1-indexed end line in test file |
 | `loc` | INT | Non-blank lines of code in the fixture |
 | `cyclomatic_complexity` | INT | Code complexity (branches + 1) |
+| `cognitive_complexity` | INT | Nesting-depth-weighted complexity |
 | `num_objects_instantiated` | INT | Estimated constructor calls |
 | `num_external_calls` | INT | Estimated I/O and external API calls |
 | `num_parameters` | INT | Number of function parameters |
-| `has_yield` | INT | 1 if fixture contains yield (teardown pattern), 0 otherwise |
-| `category` | TEXT | RQ1 taxonomy label (NULL until classified) |
+| `fixture_framework` | TEXT | Testing framework (pytest, unittest, junit, nunit, etc.) |
 | `num_mocks` | INT | Total mock usages in this fixture |
 | `num_mock_frameworks` | INT | Count of distinct mock frameworks used |
 
 ### Example Row
 
 ```csv
-github_id,full_name,stars,forks,test_file_path,fixture_id,fixture_name,fixture_type,scope,start_line,end_line,loc,cyclomatic_complexity,num_objects_instantiated,num_external_calls,num_parameters,has_yield,category,num_mocks,num_mock_frameworks
-101,pytest-dev/pytest,7850,1200,src/pytest/test_config.py,1,setup_test_db,pytest_decorator,per_test,45,62,18,2,3,2,1,0,setup,2,1
+github_id,full_name,stars,forks,test_file_path,fixture_id,fixture_name,fixture_type,scope,start_line,end_line,loc,cyclomatic_complexity,cognitive_complexity,num_objects_instantiated,num_external_calls,num_parameters,fixture_framework,num_mocks,num_mock_frameworks
+101,pytest-dev/pytest,7850,1200,src/pytest/test_config.py,1,setup_test_db,pytest_decorator,per_test,45,62,18,2,3,3,2,1,pytest,2,1
 ```
 
 ## Usage in Analysis

@@ -49,11 +49,12 @@ def temp_db():
         end_line INTEGER,
         loc INTEGER,
         cyclomatic_complexity INTEGER,
+        cognitive_complexity INTEGER,
         num_objects_instantiated INTEGER,
         num_external_calls INTEGER,
         num_parameters INTEGER,
-        has_yield INTEGER,
         category TEXT,
+        framework TEXT,
         UNIQUE(file_id, name, start_line)
     );
     
@@ -82,15 +83,15 @@ def temp_db():
     # Fixtures
     conn.execute(
         """INSERT INTO fixtures VALUES 
-           (1, 1, 1, 'setup_config', 'pytest_decorator', 'per_test', 10, 20, 11, 2, 2, 1, 0, 0, 'setup')"""
+           (1, 1, 1, 'setup_config', 'pytest_decorator', 'per_test', 10, 20, 11, 2, 2, 2, 1, 0, 'setup', 'pytest')"""
     )
     conn.execute(
         """INSERT INTO fixtures VALUES 
-           (2, 1, 1, 'teardown_config', 'pytest_decorator', 'per_test', 22, 25, 4, 1, 0, 0, 0, 1, 'teardown')"""
+           (2, 1, 1, 'teardown_config', 'pytest_decorator', 'per_test', 22, 25, 4, 1, 1, 0, 0, 0, 'teardown', 'pytest')"""
     )
     conn.execute(
         """INSERT INTO fixtures VALUES 
-           (3, 2, 2, 'setUp', 'junit4_before', 'per_test', 15, 25, 11, 2, 1, 0, 0, 0, 'setup')"""
+           (3, 2, 2, 'setUp', 'junit4_before', 'per_test', 15, 25, 11, 2, 2, 1, 0, 0, 'setup', 'junit')"""
     )
     
     # Mock usages
@@ -195,11 +196,12 @@ def test_fixture_csv_has_expected_columns():
         end_line INTEGER,
         loc INTEGER,
         cyclomatic_complexity INTEGER,
+        cognitive_complexity INTEGER,
         num_objects_instantiated INTEGER,
         num_external_calls INTEGER,
         num_parameters INTEGER,
-        has_yield INTEGER,
         category TEXT,
+        framework TEXT,
         UNIQUE(file_id, name, start_line)
     );
     
@@ -217,7 +219,7 @@ def test_fixture_csv_has_expected_columns():
     conn.execute("INSERT INTO test_files VALUES (1, 1, 'test.py', 'python')")
     conn.execute(
         """INSERT INTO fixtures VALUES 
-           (1, 1, 1, 'my_fixture', 'pytest_decorator', 'per_test', 5, 15, 10, 2, 1, 2, 3, 0, NULL)"""
+           (1, 1, 1, 'my_fixture', 'pytest_decorator', 'per_test', 5, 15, 10, 2, 1, 2, 3, 'setup', 'pytest')"""
     )
     
     conn.commit()
@@ -234,9 +236,9 @@ def test_fixture_csv_has_expected_columns():
             expected_columns = [
                 'github_id', 'full_name', 'pinned_commit', 'stars', 'forks', 'test_file_path',
                 'github_url', 'fixture_id', 'fixture_name', 'fixture_type', 'scope',
-                'start_line', 'end_line', 'loc', 'cyclomatic_complexity',
+                'start_line', 'end_line', 'loc', 'cyclomatic_complexity', 'cognitive_complexity',
                 'num_objects_instantiated', 'num_external_calls', 'num_parameters',
-                'has_yield', 'category', 'num_mocks', 'num_mock_frameworks'
+                'fixture_framework', 'num_mocks', 'num_mock_frameworks'
             ]
             
             for col in expected_columns:

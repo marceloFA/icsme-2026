@@ -9,12 +9,17 @@ Commands
   clone         Clone repos in 'discovered' status
   extract       Extract fixtures from repos in 'cloned' status
   run           Run the full pipeline end-to-end
+  toy           Build toy dataset (10 repos/language) for validation
   stats         Print current corpus statistics
 
 Examples
 --------
   # Full pipeline for Python only, 50 repos
   python pipeline.py run --language python --max 50
+
+  # Build toy dataset for testing recent changes
+  python pipeline.py toy
+  python pipeline.py toy --language python
 
   # Search phase only, all languages
   python pipeline.py search --max 200
@@ -167,6 +172,50 @@ def cmd_run(args):
 
     print("\n── Done ─────────────────────────────────────────────")
     cmd_stats(args)
+
+
+def cmd_toy(args):
+    """
+    Run pipeline on a toy dataset: 10 repos per language for quick validation.
+    
+    This is useful for testing pipeline changes without processing a full dataset.
+    """
+    print("╔════════════════════════════════════════════════════╗")
+    print("║  TOY DATASET BUILD (10 repos per language)          ║")
+    print("╚════════════════════════════════════════════════════╝")
+
+    print("\n── Phase 0: Initialise ─────────────────────────────")
+    if db_is_initialised():
+        print("  Database already initialised — skipping.")
+    else:
+        cmd_init(args)
+
+    print("\n── Phase 1: Search GitHub (10 repos per language) ──")
+    args.max = 10
+    args.stratified = False  # Use star-based ranking for more diverse corpus
+    cmd_search(args)
+
+    print("\n── Phase 2: Clone repositories ─────────────────────")
+    args.batch = None  # Clone all discovered repos
+    cmd_clone(args)
+
+    print("\n── Phase 3: Extract fixtures ───────────────────────")
+    cmd_extract(args)
+
+    print("\n── Phase 4: Classify domains ───────────────────────")
+    args.overwrite = False
+    cmd_classify(args)
+
+    print("\n── Phase 5: Categorize fixtures ────────────────────")
+    args.overwrite = False
+    cmd_categorize(args)
+
+    print("\n── Done ─────────────────────────────────────────────")
+    cmd_stats(args)
+    
+    print("\n✓ TOY DATASET BUILD COMPLETE")
+    print("  Ready for testing and validation of recent changes.")
+    print("  To run tests: python -m pytest tests/")
 
 
 def cmd_classify(args):
@@ -448,6 +497,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Collect repos proportionally from each year (balanced sampling). Default: sort by star count (most stars first).",
     )
 
+    # toy
+    p_toy = sub.add_parser(
+        "toy",
+        help="Build toy dataset (10 repos per language) for quick validation"
+    )
+    p_toy.add_argument(
+        "--language",
+        choices=list(LANGUAGE_CONFIGS),
+        help="Limit to one language (default: all languages)",
+    )
+
     # collect
     p_collect = sub.add_parser(
         "collect",
@@ -575,6 +635,7 @@ COMMAND_MAP = {
     "export": cmd_export,
     "validate": cmd_validate,
     "run": cmd_run,
+    "toy": cmd_toy,
     "stats": cmd_stats,
     "quantitative-eda": cmd_quantitative_eda,
     "qualitative-eda": cmd_qualitative_eda,

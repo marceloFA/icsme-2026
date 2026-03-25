@@ -50,7 +50,8 @@ def extract_and_find_fixtures(code: str, language: str, fixture_name: str = None
     """
     temp_file = create_test_file(language, code)
     try:
-        fixtures = extract_fixtures(temp_file, language)
+        extract_result = extract_fixtures(temp_file, language)
+        fixtures = extract_result.fixtures  # Extract fixtures list from ExtractResult
         if fixture_name:
             fixtures = [f for f in fixtures if f.name == fixture_name]
         return fixtures
@@ -105,8 +106,7 @@ def assert_loc(fixture: FixtureResult, expected_loc: int):
 def assert_fixture_metrics(fixture: FixtureResult, 
                           min_complexity: int = None,
                           max_complexity: int = None,
-                          num_parameters: int = None,
-                          has_yield: bool = None):
+                          num_parameters: int = None):
     """Assert fixture metrics."""
     if min_complexity is not None:
         assert fixture.cyclomatic_complexity >= min_complexity, \
@@ -119,10 +119,6 @@ def assert_fixture_metrics(fixture: FixtureResult,
     if num_parameters is not None:
         assert fixture.num_parameters == num_parameters, \
             f"Expected {num_parameters} parameters, got {fixture.num_parameters}"
-    
-    if has_yield is not None:
-        assert fixture.has_yield == has_yield, \
-            f"Expected has_yield={has_yield}, got {fixture.has_yield}"
 
 
 def assert_fixture_with_type_detected(code: str, language: str, fixture_type: str,
