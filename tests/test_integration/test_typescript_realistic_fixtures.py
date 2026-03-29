@@ -16,7 +16,7 @@ from ..conftest import (
 
 class TestTypeScriptJestFixtures:
     """Integration tests using Jest with TypeScript"""
-    
+
     def test_jest_with_type_annotations(self):
         """Jest TypeScript with proper type annotations"""
         code = """
@@ -55,9 +55,9 @@ describe('UserRepository', () => {
     });
 });
 """
-        assert_fixture_with_type_detected(code, 'typescript', 'before_each', count=2)
-        assert_fixture_with_type_detected(code, 'typescript', 'after_each')
+        assert_fixture_with_type_detected(code, "typescript", "before_each", count=2)
+        assert_fixture_with_type_detected(code, "typescript", "after_each")
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

@@ -17,7 +17,7 @@ from ..conftest import (
 
 class TestJavaScriptJestMockPatterns:
     """Jest mock patterns"""
-    
+
     def test_jest_mock_function(self):
         """Jest jest.fn() mock in beforeEach"""
         code = """
@@ -30,9 +30,9 @@ describe('Module', () => {
     });
 });
 """
-        fixture = assert_fixture_with_type_detected(code, 'javascript', 'before_each')
-        assert fixture.fixture_type == 'before_each'
-    
+        fixture = assert_fixture_with_type_detected(code, "javascript", "before_each")
+        assert fixture.fixture_type == "before_each"
+
     def test_jest_mock_module(self):
         """jest.mock() for module mocking"""
         code = """
@@ -43,13 +43,13 @@ beforeEach(() => {
     api.fetch.mockResolvedValue({data: []});
 });
 """
-        fixture = assert_fixture_with_type_detected(code, 'javascript', 'before_each')
-        assert fixture.fixture_type == 'before_each'
+        fixture = assert_fixture_with_type_detected(code, "javascript", "before_each")
+        assert fixture.fixture_type == "before_each"
 
 
 class TestJavaScriptSinonPatterns:
     """Sinon stub/spy patterns"""
-    
+
     def test_sinon_stub_setup(self):
         """Sinon stub/spy setup in beforeEach"""
         code = """
@@ -67,9 +67,9 @@ describe('Test', function() {
     });
 });
 """
-        fixture = assert_fixture_with_type_detected(code, 'javascript', 'before_each')
-        assert fixture.fixture_type == 'before_each'
+        fixture = assert_fixture_with_type_detected(code, "javascript", "before_each")
+        assert fixture.fixture_type == "before_each"
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

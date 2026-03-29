@@ -15,7 +15,7 @@ from ..conftest import (
 
 class TestJavaJUnit5Hierarchy:
     """Integration tests using JUnit 5 patterns"""
-    
+
     def test_junit5_complex_hierarchy(self):
         """JUnit 5 test with multiple lifecycle methods"""
         code = """
@@ -65,15 +65,15 @@ public class UserServiceTest {
 }
 """
         # Should detect all lifecycle methods
-        assert_fixture_detected(code, 'java', 'setUpAll')
-        assert_fixture_detected(code, 'java', 'setUp')
-        assert_fixture_detected(code, 'java', 'tearDown')
-        assert_fixture_detected(code, 'java', 'tearDownAll')
+        assert_fixture_detected(code, "java", "setUpAll")
+        assert_fixture_detected(code, "java", "setUp")
+        assert_fixture_detected(code, "java", "tearDown")
+        assert_fixture_detected(code, "java", "tearDownAll")
 
 
 class TestJavaTestNGHierarchy:
     """Integration tests using TestNG patterns"""
-    
+
     def test_testng_dataprovider_setup(self):
         """TestNG with DataProvider and setup methods"""
         code = """
@@ -110,10 +110,10 @@ public class DataProviderTests {
     }
 }
 """
-        assert_fixture_detected(code, 'java', 'setUpClass')
-        assert_fixture_detected(code, 'java', 'setUp')
-        assert_fixture_detected(code, 'java', 'tearDown')
+        assert_fixture_detected(code, "java", "setUpClass")
+        assert_fixture_detected(code, "java", "setUp")
+        assert_fixture_detected(code, "java", "tearDown")
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

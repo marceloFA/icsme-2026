@@ -14,9 +14,17 @@ import numpy as np
 import pandas as pd
 
 from ..eda_common import (
-    ROOT, DB_PATH, DEFAULT_OUT,
-    LANG_PALETTE, LANG_ORDER,
-    setup_style, save_or_show, load_db, has_data, qdf, lang_display
+    ROOT,
+    DB_PATH,
+    DEFAULT_OUT,
+    LANG_PALETTE,
+    LANG_ORDER,
+    setup_style,
+    save_or_show,
+    load_db,
+    has_data,
+    qdf,
+    lang_display,
 )
 
 
@@ -39,17 +47,17 @@ def plot_creation_timeline(conn, out_dir, show):
 
     all_years = sorted(repos["created_year"].dropna().unique().astype(int))
     year_range = list(range(min(all_years), max(all_years) + 1))
-    
+
     year_counts = {}
     for lang in present:
         sub = repos[repos["language"] == lang]["created_year"].dropna().astype(int)
         yearly = sub.value_counts().reindex(year_range, fill_value=0).sort_index()
         year_counts[lang] = yearly.values
-    
+
     x = np.arange(len(year_range))
     width = 0.6
     bottom = np.zeros(len(year_range))
-    
+
     for lang in present:
         ax.bar(
             x,
@@ -63,7 +71,7 @@ def plot_creation_timeline(conn, out_dir, show):
             linewidth=0.5,
         )
         bottom += year_counts[lang]
-    
+
     ax.set_xlabel("Year")
     ax.set_ylabel("Number of Repositories")
     ax.set_title("When Were Repositories Created?", fontsize=14, fontweight="bold")
@@ -72,7 +80,7 @@ def plot_creation_timeline(conn, out_dir, show):
     ax.yaxis.set_major_locator(mticker.MaxNLocator(integer=True))
     ax.legend(loc="upper left", fontsize=9, framealpha=0.95)
     ax.set_ylim(0, bottom.max() * 1.1)
-    
+
     bottom = np.zeros(len(year_range))
     for lang in present:
         heights = year_counts[lang]
@@ -95,12 +103,16 @@ def plot_creation_timeline(conn, out_dir, show):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="FixtureDB Repository Creation Timeline")
+    parser = argparse.ArgumentParser(
+        description="FixtureDB Repository Creation Timeline"
+    )
     parser.add_argument("--db", default=str(DB_PATH))
     parser.add_argument("--out", default=str(DEFAULT_OUT), help="Base output directory")
     parser.add_argument("--show", action="store_true")
     args = parser.parse_args()
-    
+
     setup_style()
     conn = load_db(args.db)
-    plot_creation_timeline(conn, Path(args.out) / datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), args.show)
+    plot_creation_timeline(
+        conn, Path(args.out) / datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), args.show
+    )

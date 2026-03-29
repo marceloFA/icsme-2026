@@ -15,9 +15,18 @@ import pandas as pd
 import seaborn as sns
 
 from ..eda_common import (
-    ROOT, DB_PATH, DEFAULT_OUT,
-    LANG_PALETTE, LANG_ORDER, STATUS_PALETTE,
-    setup_style, save_or_show, load_db, has_data, qdf, lang_display
+    ROOT,
+    DB_PATH,
+    DEFAULT_OUT,
+    LANG_PALETTE,
+    LANG_ORDER,
+    STATUS_PALETTE,
+    setup_style,
+    save_or_show,
+    load_db,
+    has_data,
+    qdf,
+    lang_display,
 )
 
 # -----------
@@ -39,18 +48,18 @@ def plot_star_distribution(conn, out_dir, show):
 
     # Ridge plot: one density curve per language
     from scipy import stats
-    
+
     repos_clipped = repos.copy()
     repos_clipped["stars"] = repos_clipped["stars"].clip(lower=1)
     repos_clipped["log_stars"] = np.log10(repos_clipped["stars"])
-    
+
     x_range = np.logspace(
         np.log10(repos_clipped["stars"].min()),
         np.log10(repos_clipped["stars"].max()),
-        200
+        200,
     )
     x_log = np.log10(x_range)
-    
+
     y_offset = 0
     for i, lang in enumerate(present):
         sub = repos_clipped[repos_clipped["language"] == lang]["log_stars"].values
@@ -59,7 +68,7 @@ def plot_star_distribution(conn, out_dir, show):
             density = kde(x_log)
             # Normalize density for stacking
             density = density / density.max() * 0.8
-            
+
             # Fill area under curve
             ax.fill_between(
                 x_range,
@@ -110,7 +119,6 @@ def plot_star_distribution(conn, out_dir, show):
     save_or_show(fig, "02_star_distribution", out_dir, show)
 
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="FixtureDB Star Distribution")
     parser.add_argument("--db", default=str(DB_PATH))
@@ -127,9 +135,9 @@ if __name__ == "__main__":
 
     conn = load_db(Path(args.db))
     setup_style()
-    
+
     print(f"\n[Star Distribution]")
     plot_star_distribution(conn, out_dir, args.show)
-    
+
     conn.close()
     print("Done\n")

@@ -16,7 +16,7 @@ from ..conftest import (
 
 class TestJavaMockitoPatterns:
     """Mockito mock patterns"""
-    
+
     def test_mockito_mock_in_setup(self):
         """Mockito mock setup in @Before fixture"""
         code = """
@@ -33,9 +33,9 @@ public class UserServiceTest {
     }
 }
 """
-        fixture = assert_fixture_detected(code, 'java', 'setUp')
-        assert fixture.fixture_type == 'junit4_before'
-    
+        fixture = assert_fixture_detected(code, "java", "setUp")
+        assert fixture.fixture_type == "junit4_before"
+
     def test_spy_pattern(self):
         """Spy/partial mock pattern in setUp"""
         code = """
@@ -48,13 +48,13 @@ public class Test extends TestCase {
     }
 }
 """
-        fixture = assert_fixture_detected(code, 'java', 'setUp')
+        fixture = assert_fixture_detected(code, "java", "setUp")
         assert fixture.num_objects_instantiated >= 2
 
 
 class TestJavaPowerMockPatterns:
     """PowerMock patterns"""
-    
+
     def test_powermock_setup(self):
         """PowerMock setup in test fixture"""
         code = """
@@ -67,9 +67,9 @@ public class TestClass {
     }
 }
 """
-        fixture = assert_fixture_detected(code, 'java', 'setUp')
-        assert fixture.name == 'setUp'
+        fixture = assert_fixture_detected(code, "java", "setUp")
+        assert fixture.name == "setUp"
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

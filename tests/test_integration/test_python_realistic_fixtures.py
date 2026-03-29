@@ -15,7 +15,7 @@ from ..conftest import (
 
 class TestPythonDjangoFixtures:
     """Integration tests using Django test code"""
-    
+
     def test_django_test_case_hierarchy(self):
         """Realistic Django test case with multiple fixtures"""
         code = """
@@ -44,17 +44,17 @@ class UserModelTests(TestCase):
         User.objects.all().delete()
         self.user = None
 """
-        assert_fixture_count(code, 'python', 4)
-        
-        assert_fixture_detected(code, 'python', 'setUpClass')
-        assert_fixture_detected(code, 'python', 'tearDownClass')
-        assert_fixture_detected(code, 'python', 'setUp')
-        assert_fixture_detected(code, 'python', 'tearDown')
+        assert_fixture_count(code, "python", 4)
+
+        assert_fixture_detected(code, "python", "setUpClass")
+        assert_fixture_detected(code, "python", "tearDownClass")
+        assert_fixture_detected(code, "python", "setUp")
+        assert_fixture_detected(code, "python", "tearDown")
 
 
 class TestPythonPytestFixtures:
     """Integration tests using pytest patterns"""
-    
+
     def test_pytest_parametrized_fixture(self):
         """Pytest with parametrized fixtures"""
         code = """
@@ -78,14 +78,14 @@ class TestBackends:
     def test_all_backends(self, cleanup):
         assert cleanup is not None
 """
-        assert_fixture_count(code, 'python', 2)
-        assert_fixture_detected(code, 'python', 'backend')
-        assert_fixture_detected(code, 'python', 'cleanup')
+        assert_fixture_count(code, "python", 2)
+        assert_fixture_detected(code, "python", "backend")
+        assert_fixture_detected(code, "python", "cleanup")
 
 
 class TestPythonSQLAlchemyFixtures:
     """Integration tests using SQLAlchemy patterns"""
-    
+
     def test_sqlalchemy_session_fixture(self):
         """Real SQLAlchemy session fixture pattern"""
         code = """
@@ -118,12 +118,12 @@ def populated_session(session):
     session.commit()
     return session
 """
-        assert_fixture_count(code, 'python', 3)
+        assert_fixture_count(code, "python", 3)
 
 
 class TestPythonLargeTestModule:
     """Integration test on larger, more complex test module"""
-    
+
     def test_large_python_test_module(self):
         """Integration test on 200+ line fixture-heavy module"""
         code = """
@@ -185,12 +185,12 @@ def teardown_module():
     MODULE_SETUP_DONE = False
 """
         # Should detect all fixtures
-        assert_fixture_count(code, 'python', 9)
+        assert_fixture_count(code, "python", 9)
 
 
 class TestPythonFixtureDependencies:
     """Integration tests for fixtures with dependencies"""
-    
+
     def test_pytest_fixture_dependency_chain(self):
         """Fixtures depending on other fixtures"""
         code = """
@@ -210,16 +210,16 @@ def authenticated_user(user):
 def test_auth(authenticated_user):
     assert authenticated_user.is_authenticated
 """
-        fixtures = extract_and_find_fixtures(code, 'python')
-        user_data = [f for f in fixtures if f.name == 'user_data'][0]
-        user = [f for f in fixtures if f.name == 'user'][0]
-        auth_user = [f for f in fixtures if f.name == 'authenticated_user'][0]
-        
+        fixtures = extract_and_find_fixtures(code, "python")
+        user_data = [f for f in fixtures if f.name == "user_data"][0]
+        user = [f for f in fixtures if f.name == "user"][0]
+        auth_user = [f for f in fixtures if f.name == "authenticated_user"][0]
+
         # All should have correct parameters
         assert user_data.num_parameters == 0
         assert user.num_parameters == 1
         assert auth_user.num_parameters == 1
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

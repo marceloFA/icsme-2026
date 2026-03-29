@@ -16,7 +16,7 @@ from ..conftest import (
 
 class TestPythonUnittestMockPatterns:
     """Python unittest.mock patterns"""
-    
+
     def test_unittest_mock_detection(self):
         """unittest.mock usage in setUp should be detected as part of fixture"""
         code = """
@@ -32,9 +32,9 @@ class Test(unittest.TestCase):
     def tearDown(self):
         self.patcher.stop()
 """
-        fixture = assert_fixture_detected(code, 'python', 'setUp')
-        assert fixture.name == 'setUp'
-    
+        fixture = assert_fixture_detected(code, "python", "setUp")
+        assert fixture.name == "setUp"
+
     def test_magicmock_usage(self):
         """MagicMock in setUp fixture"""
         code = """
@@ -44,13 +44,13 @@ def setUp(self):
     self.magic = MagicMock()
     self.magic.method.return_value = 42
 """
-        fixture = assert_fixture_detected(code, 'python', 'setUp')
+        fixture = assert_fixture_detected(code, "python", "setUp")
         assert fixture.num_objects_instantiated >= 1
 
 
 class TestPytestMockPatterns:
     """Python pytest-mock patterns"""
-    
+
     def test_pytest_mock_fixture(self):
         """pytest-mock mocker fixture should be detected"""
         code = """
@@ -60,10 +60,10 @@ def user_service(mocker):
     mocker.patch.object(service, 'get_user', return_value={'id': 1})
     return service
 """
-        fixture = assert_fixture_detected(code, 'python', 'user_service')
-        assert fixture.fixture_type == 'pytest_decorator'
+        fixture = assert_fixture_detected(code, "python", "user_service")
+        assert fixture.fixture_type == "pytest_decorator"
         assert fixture.num_parameters >= 1
-    
+
     def test_monkeypatch_fixture(self):
         """pytest monkeypatch built-in fixture parameter"""
         code = """
@@ -72,13 +72,13 @@ def config(monkeypatch):
     monkeypatch.setenv('ENV', 'test')
     return {'key': 'value'}
 """
-        fixture = assert_fixture_detected(code, 'python', 'config')
+        fixture = assert_fixture_detected(code, "python", "config")
         assert fixture.num_parameters >= 1
 
 
 class TestPythonMockFrameworkDetection:
     """Validate detection of mock framework types"""
-    
+
     def test_unittest_mock_imports(self):
         """Code using unittest.mock should be distinguishable"""
         code = """
@@ -87,9 +87,9 @@ from unittest.mock import Mock, patch, MagicMock
 def setUp(self):
     self.mock = Mock()
 """
-        fixture = assert_fixture_detected(code, 'python', 'setUp')
+        fixture = assert_fixture_detected(code, "python", "setUp")
         assert fixture.num_objects_instantiated >= 1
-    
+
     def test_pytest_mock_imports(self):
         """Code using pytest-mock should be distinguishable"""
         code = """
@@ -98,9 +98,9 @@ def my_test(mocker):
     mock = mocker.Mock()
     return mock
 """
-        fixture = assert_fixture_detected(code, 'python', 'my_test')
+        fixture = assert_fixture_detected(code, "python", "my_test")
         assert fixture.num_parameters >= 1
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

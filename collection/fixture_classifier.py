@@ -268,7 +268,7 @@ def categorize_all(overwrite: bool = False) -> dict[str, int]:
                 WHERE f.category IS NULL
                 GROUP BY f.id
             """
-        
+
         rows = conn.execute(query).fetchall()
         logger.info(f"Categorizing {len(rows)} fixtures …")
 

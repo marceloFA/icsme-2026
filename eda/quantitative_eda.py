@@ -73,8 +73,10 @@ def main():
     analysed = pd.read_sql_query(
         "SELECT COUNT(*) n FROM repositories WHERE status='analysed'", conn
     ).iloc[0]["n"]
-    
-    print(f"\nFixtureDB Quantitative EDA — {int(total):,} repos  ({int(analysed):,} analysed)")
+
+    print(
+        f"\nFixtureDB Quantitative EDA — {int(total):,} repos  ({int(analysed):,} analysed)"
+    )
     print(f"Track: ICSME Data Showcase (no subjective interpretation)")
     print(f"Output → {out_dir or 'screen'}\n")
 

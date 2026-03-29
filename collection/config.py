@@ -47,7 +47,9 @@ class LanguageConfig:
     name: str  # human-readable
     github_language: str  # label used by GitHub search API
     min_stars: int = 100
-    target_repos: int = 1000  # target count of final analyzed repos (with >=1 fixture extracted)
+    target_repos: int = (
+        1000  # target count of final analyzed repos (with >=1 fixture extracted)
+    )
 
     # Paths that signal "this is a test file"
     test_path_patterns: list[str] = field(default_factory=list)
@@ -196,18 +198,22 @@ MIN_FIXTURES_FOUND = 1  # repos where we detect zero fixtures are dropped
 # Format: {language: survival_rate}
 LANGUAGE_SURVIVAL_RATES = {
     "python": 0.076,  # 7.6% actual from completed collection
-    "java": 0.15,     # estimate (Java typically has higher survival)
-    "go": 0.09,       # estimate
-    "csharp": 0.10,   # estimate
+    "java": 0.15,  # estimate (Java typically has higher survival)
+    "go": 0.09,  # estimate
+    "csharp": 0.10,  # estimate
     "javascript": 0.08,  # estimate
     "typescript": 0.08,  # estimate
 }
 
 # Discovery and collection tuning
-DISCOVERY_SURVIVAL_RATE = 0.09  # fallback/default if language not in LANGUAGE_SURVIVAL_RATES
+DISCOVERY_SURVIVAL_RATE = (
+    0.09  # fallback/default if language not in LANGUAGE_SURVIVAL_RATES
+)
 DISCOVERY_SAFETY_BUFFER = 1.25  # 25% buffer to reduce iterations
 MAX_DISCOVERIES_PER_ITERATION = 3000  # cap to manage disk space
-MAX_REPOS_PER_ITERATION = 500  # max repos (discovered + cloned + extracted) per collection iteration
+MAX_REPOS_PER_ITERATION = (
+    500  # max repos (discovered + cloned + extracted) per collection iteration
+)
 
 # Maximum repos to clone in a single run (useful for incremental collection)
 CLONE_BATCH_SIZE = 50

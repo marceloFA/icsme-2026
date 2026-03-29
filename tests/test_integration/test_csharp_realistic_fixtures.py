@@ -15,7 +15,7 @@ from ..conftest import (
 
 class TestCSharpxUnitFixtures:
     """Integration tests using xUnit patterns"""
-    
+
     def test_xunit_with_collection_fixtures(self):
         """xUnit test class with collection fixtures"""
         code = """
@@ -55,13 +55,13 @@ public class UserRepositoryTests {
     }
 }
 """
-        assert_fixture_detected(code, 'csharp', 'InitializeAsync')
-        assert_fixture_detected(code, 'csharp', 'DisposeAsync')
+        assert_fixture_detected(code, "csharp", "InitializeAsync")
+        assert_fixture_detected(code, "csharp", "DisposeAsync")
 
 
 class TestCSharpNUnitFixtures:
     """Integration tests using NUnit patterns"""
-    
+
     def test_nunit_with_inheritance(self):
         """NUnit test with inheritance hierarchy"""
         code = """
@@ -102,11 +102,11 @@ public class UserRepositoryTests : BaseRepositoryTests {
     }
 }
 """
-        assert_fixture_detected(code, 'csharp', 'OneTimeSetUp')
-        assert_fixture_detected(code, 'csharp', 'Setup')
-        assert_fixture_detected(code, 'csharp', 'TearDown')
-        assert_fixture_detected(code, 'csharp', 'OneTimeTearDown')
+        assert_fixture_detected(code, "csharp", "OneTimeSetUp")
+        assert_fixture_detected(code, "csharp", "Setup")
+        assert_fixture_detected(code, "csharp", "TearDown")
+        assert_fixture_detected(code, "csharp", "OneTimeTearDown")
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

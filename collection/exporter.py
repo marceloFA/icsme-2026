@@ -148,7 +148,12 @@ def export_dataset(version: str = "1.0", include_raw_source: bool = False) -> Pa
     # raw_source: large text, already in SQLite
     # category: subjective fixture classification, for internal analysis only
     if include_raw_source:
-        _export_table(conn, "fixtures", staging / "fixtures_with_source.csv", exclude_cols=["category"])
+        _export_table(
+            conn,
+            "fixtures",
+            staging / "fixtures_with_source.csv",
+            exclude_cols=["category"],
+        )
     else:
         _export_table(
             conn,
@@ -194,20 +199,20 @@ def _export_table(
 def _export_language_specific_fixtures(conn: sqlite3.Connection, staging: Path) -> None:
     """
     Export fixtures as language-specific CSVs (one row per fixture, with repo context).
-    
+
     Each CSV includes:
     - Repository info (full_name, github_id, stars, etc.)
     - Fixture metadata (name, fixture_type, scope, LOC, complexity metrics)
     - Mock usage count for this fixture
     - Test file metadata
     - GitHub URL to the exact fixture location in the source
-    
+
     NOTE: Category field is excluded (subjective internal classification).
-    
+
     Generated files: fixtures_python.csv, fixtures_java.csv, etc.
     """
     languages = ["python", "java", "javascript", "typescript", "go", "csharp"]
-    
+
     for lang in languages:
         # Query: one row per fixture with all related data
         query = """
@@ -246,22 +251,22 @@ def _export_language_specific_fixtures(conn: sqlite3.Connection, staging: Path) 
         GROUP BY f.id
         ORDER BY r.stars DESC, r.full_name, f.id
         """
-        
+
         df = pd.read_sql(query, conn, params=(lang,))
-        
+
         if len(df) > 0:
             # Add GitHub URL column (direct link to the fixture in the source)
-            df['github_url'] = df.apply(
+            df["github_url"] = df.apply(
                 lambda row: f"https://github.com/{row['full_name']}/blob/{row['pinned_commit']}/{row['test_file_path']}#L{row['start_line']}",
-                axis=1
+                axis=1,
             )
-            
+
             # Reorder columns: put github_url early for easy access
             cols = df.columns.tolist()
-            cols.remove('github_url')
-            cols.insert(5, 'github_url')  # Insert after test_file_path
+            cols.remove("github_url")
+            cols.insert(5, "github_url")  # Insert after test_file_path
             df = df[cols]
-            
+
             dest = staging / f"fixtures_{lang}.csv"
             df.to_csv(dest, index=False)
             logger.info(f"  fixtures_{lang}: {len(df):,} fixtures → {dest.name}")

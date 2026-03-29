@@ -22,14 +22,14 @@ from ..eda_common import qdf, lang_display, save_or_show, LANG_ORDER
 
 # Color palette for categories (semantic: primary patterns first)
 CATEGORY_COLORS = {
-    "data_builder": "#2E86AB",        # Blue - most common, primary pattern
-    "hybrid": "#A23B72",             # Purple - multi-purpose
-    "mock_setup": "#F18F01",         # Orange - test isolation
-    "resource_management": "#C73E1D", # Rust - resource handling
-    "service_setup": "#6A994E",      # Green - dependency management
-    "state_reset": "#BC4749",        # Red - state management
-    "configuration_setup": "#D4A574", # Tan - configuration
-    "environment": "#5A189A",        # Dark purple - environment
+    "data_builder": "#2E86AB",  # Blue - most common, primary pattern
+    "hybrid": "#A23B72",  # Purple - multi-purpose
+    "mock_setup": "#F18F01",  # Orange - test isolation
+    "resource_management": "#C73E1D",  # Rust - resource handling
+    "service_setup": "#6A994E",  # Green - dependency management
+    "state_reset": "#BC4749",  # Red - state management
+    "configuration_setup": "#D4A574",  # Tan - configuration
+    "environment": "#5A189A",  # Dark purple - environment
 }
 
 # Order by frequency (for better visual hierarchy)
@@ -56,7 +56,9 @@ def plot_fixture_categories(conn, out_dir, show):
     """,
     )
     if fixtures.empty or fixtures["category"].isna().all():
-        print("  [skip] No fixture categories yet. Run `python pipeline.py categorize`.")
+        print(
+            "  [skip] No fixture categories yet. Run `python pipeline.py categorize`."
+        )
         return
 
     # Count by category
@@ -66,7 +68,7 @@ def plot_fixture_categories(conn, out_dir, show):
         .size()
         .reset_index(name="count")
     )
-    cat_counts["pct"] = (cat_counts["count"] / cat_counts["count"].sum() * 100)
+    cat_counts["pct"] = cat_counts["count"] / cat_counts["count"].sum() * 100
 
     # Sort by count descending
     cat_counts = cat_counts.sort_values("count", ascending=True)

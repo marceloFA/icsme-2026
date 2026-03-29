@@ -157,7 +157,9 @@ def plot_corpus_by_tier(conn, out_dir, show):
         return
 
     fig, ax = plt.subplots(figsize=(10, 5), facecolor="#FAFAFA")
-    fig.suptitle("Repositories by Language & Star Tier", fontsize=14, fontweight="bold", y=1.02)
+    fig.suptitle(
+        "Repositories by Language & Star Tier", fontsize=14, fontweight="bold", y=1.02
+    )
 
     present = [l for l in LANG_ORDER if l in repos["language"].values]
 
@@ -244,7 +246,9 @@ def plot_pipeline_status(conn, out_dir, show):
     )
 
     # Pivot to wide format
-    pivot = status_data.pivot(index="language", columns="status", values="count").fillna(0)
+    pivot = status_data.pivot(
+        index="language", columns="status", values="count"
+    ).fillna(0)
     pivot = pivot.reindex(present)
     pivot = pivot[[s for s in status_order if s in pivot.columns]]
 
@@ -337,18 +341,18 @@ def plot_star_distribution(conn, out_dir, show):
 
     # Ridge plot: one density curve per language
     from scipy import stats
-    
+
     repos_clipped = repos.copy()
     repos_clipped["stars"] = repos_clipped["stars"].clip(lower=1)
     repos_clipped["log_stars"] = np.log10(repos_clipped["stars"])
-    
+
     x_range = np.logspace(
         np.log10(repos_clipped["stars"].min()),
         np.log10(repos_clipped["stars"].max()),
-        200
+        200,
     )
     x_log = np.log10(x_range)
-    
+
     y_offset = 0
     for i, lang in enumerate(present):
         sub = repos_clipped[repos_clipped["language"] == lang]["log_stars"].values
@@ -357,7 +361,7 @@ def plot_star_distribution(conn, out_dir, show):
             density = kde(x_log)
             # Normalize density for stacking
             density = density / density.max() * 0.8
-            
+
             # Fill area under curve
             ax.fill_between(
                 x_range,
@@ -432,23 +436,25 @@ def plot_repos_creation_timeline(conn, out_dir, show):
     present = [l for l in LANG_ORDER if l in repos["language"].values]
 
     fig, ax = plt.subplots(figsize=(10, 5), facecolor="#FAFAFA")
-    fig.suptitle("When Were Repositories Created?", fontsize=14, fontweight="bold", y=1.02)
+    fig.suptitle(
+        "When Were Repositories Created?", fontsize=14, fontweight="bold", y=1.02
+    )
 
     all_years = sorted(repos["created_year"].dropna().unique().astype(int))
     year_range = list(range(min(all_years), max(all_years) + 1))
-    
+
     # Build matrix: rows = languages, columns = years
     year_counts = {}
     for lang in present:
         sub = repos[repos["language"] == lang]["created_year"].dropna().astype(int)
         yearly = sub.value_counts().reindex(year_range, fill_value=0).sort_index()
         year_counts[lang] = yearly.values
-    
+
     # Stacked bar chart
     x = np.arange(len(year_range))
     width = 0.6
     bottom = np.zeros(len(year_range))
-    
+
     for lang in present:
         ax.bar(
             x,
@@ -462,7 +468,7 @@ def plot_repos_creation_timeline(conn, out_dir, show):
             linewidth=0.5,
         )
         bottom += year_counts[lang]
-    
+
     ax.set_xlabel("Year")
     ax.set_ylabel("Number of Repositories")
     ax.set_title("Distribution across 2015–2017")
@@ -471,7 +477,7 @@ def plot_repos_creation_timeline(conn, out_dir, show):
     ax.yaxis.set_major_locator(mticker.MaxNLocator(integer=True))
     ax.legend(loc="upper right", fontsize=8, framealpha=0.95)
     ax.set_ylim(0, bottom.max() * 1.1)
-    
+
     # Add count labels on each segment
     bottom = np.zeros(len(year_range))
     for lang in present:
@@ -514,7 +520,9 @@ def plot_repos_activity(conn, out_dir, show):
     present = [l for l in LANG_ORDER if l in repos["language"].values]
 
     fig, ax = plt.subplots(figsize=(10, 5), facecolor="#FAFAFA")
-    fig.suptitle("How Recently Were Repos Active?", fontsize=14, fontweight="bold", y=1.02)
+    fig.suptitle(
+        "How Recently Were Repos Active?", fontsize=14, fontweight="bold", y=1.02
+    )
 
     plot_data = repos[repos["language"].isin(present)].copy()
     plot_data["years_since_push"] = plot_data["days_since_push"] / 365.25
@@ -715,7 +723,9 @@ def plot_fixture_distribution(conn, out_dir, show):
     present = [l for l in LANG_ORDER if l in fixtures["language"].values]
 
     fig, ax = plt.subplots(1, 1, figsize=(8, 5), facecolor="#FAFAFA")
-    fig.suptitle("How Many Fixtures Does Each Repo Have?", fontsize=14, fontweight="bold", y=1.00)
+    fig.suptitle(
+        "How Many Fixtures Does Each Repo Have?", fontsize=14, fontweight="bold", y=1.00
+    )
 
     per_repo = (
         fixtures.groupby(["language", "full_name"])
@@ -728,14 +738,14 @@ def plot_fixture_distribution(conn, out_dir, show):
 
     # Ridge plot: one density curve per language
     from scipy import stats
-    
+
     x_range = np.logspace(
         np.log10(per_repo["fixture_count"].min()),
         np.log10(per_repo["fixture_count"].max()),
-        200
+        200,
     )
     x_log = np.log10(x_range)
-    
+
     y_offset = 0
     for i, lang in enumerate(present):
         sub = per_repo[per_repo["language"] == lang]["log_count"].values
@@ -744,7 +754,7 @@ def plot_fixture_distribution(conn, out_dir, show):
             density = kde(x_log)
             # Normalize density for stacking
             density = density / density.max() * 0.8
-            
+
             # Fill area under curve
             ax.fill_between(
                 x_range,
@@ -764,7 +774,7 @@ def plot_fixture_distribution(conn, out_dir, show):
                 zorder=len(present) - i + 1,
             )
             y_offset += 1
-    
+
     ax.set_xscale("log")
     ax.xaxis.set_major_formatter(
         mticker.FuncFormatter(lambda v, _: str(int(v)) if v >= 1 else "")
@@ -815,24 +825,24 @@ def plot_fixture_types(conn, out_dir, show):
         .fillna(0)
     )
     pivot_scope_pct = pivot_scope.div(pivot_scope.sum(axis=1), axis=0) * 100
-    
+
     # Order scopes from most to least common
     scope_order = ["per_test", "per_class", "per_module", "global"]
     scope_order = [s for s in scope_order if s in pivot_scope_pct.columns]
     pivot_scope_pct = pivot_scope_pct[scope_order]
-    
+
     # Color palette for scopes (semantic: light=frequent, dark=rare)
     scope_colors = {
-        "per_test": "#4ECDC4",      # Teal - most common, lightweight
-        "per_class": "#FFE66D",     # Yellow - moderate
-        "per_module": "#FF6B6B",    # Red - less common
-        "global": "#95B8D1",        # Blue - rare
+        "per_test": "#4ECDC4",  # Teal - most common, lightweight
+        "per_class": "#FFE66D",  # Yellow - moderate
+        "per_module": "#FF6B6B",  # Red - less common
+        "global": "#95B8D1",  # Blue - rare
     }
-    
+
     x_pos = np.arange(len(present))
     width = 0.55
     bottom = np.zeros(len(present))
-    
+
     for scope in scope_order:
         vals = pivot_scope_pct[scope].values
         color = scope_colors.get(scope, "#CCCCCC")
@@ -847,7 +857,7 @@ def plot_fixture_types(conn, out_dir, show):
             edgecolor="white",
             linewidth=0.5,
         )
-        
+
         # Add percentage labels for segments > 5%
         for i, (bar, val) in enumerate(zip(bars, vals)):
             if val > 5:
@@ -862,14 +872,14 @@ def plot_fixture_types(conn, out_dir, show):
                     color="white" if scope != "per_class" else "#333",
                 )
         bottom += vals
-    
+
     ax.set_ylabel("Share of Fixtures (%)")
     ax.set_xlabel("")
     ax.set_title(
         "Which Fixture Scopes Do Developers Prefer?\n"
         "(Per-test fixtures run before each test; per-class fixtures run once per class)",
         fontsize=11,
-        pad=10
+        pad=10,
     )
     ax.set_xticks(x_pos)
     ax.set_xticklabels([lang_display(l) for l in present])
@@ -1062,7 +1072,7 @@ def plot_mock_styles(conn, out_dir, show):
         GROUP BY r.language, m.mock_style
     """,
     )
-    
+
     fixtures = qdf(
         conn,
         """
@@ -1071,7 +1081,7 @@ def plot_mock_styles(conn, out_dir, show):
         WHERE r.status = 'analysed'
     """,
     )
-    
+
     if fixtures.empty:
         return
 
@@ -1083,12 +1093,15 @@ def plot_mock_styles(conn, out_dir, show):
     if mock_styles.empty:
         # No mock_style data has been classified yet
         ax.text(
-            0.5, 0.5, 
+            0.5,
+            0.5,
             "No mock style data yet\n(will populate after fixture extraction & classification)",
-            ha="center", va="center", 
-            transform=ax.transAxes, 
-            fontsize=10, color="#999",
-            bbox=dict(boxstyle="round,pad=0.5", facecolor="#f0f0f0", edgecolor="#ddd")
+            ha="center",
+            va="center",
+            transform=ax.transAxes,
+            fontsize=10,
+            color="#999",
+            bbox=dict(boxstyle="round,pad=0.5", facecolor="#f0f0f0", edgecolor="#ddd"),
         )
         ax.set_xticks([])
         ax.set_yticks([])
@@ -1101,15 +1114,15 @@ def plot_mock_styles(conn, out_dir, show):
         )
         style_pct = style_pivot.div(style_pivot.sum(axis=1), axis=0) * 100
         styles = list(style_pct.columns)
-        
+
         # Shade palette for mock styles: semantic color meanings
         style_colors = {
-            "mock": "#FF6B6B",      # Red - full mock replacement
-            "stub": "#4ECDC4",      # Teal - minimal stub
-            "spy": "#FFE66D",       # Yellow - spy/observation
-            "fake": "#95E1D3",      # Mint - lightweight fake impl
+            "mock": "#FF6B6B",  # Red - full mock replacement
+            "stub": "#4ECDC4",  # Teal - minimal stub
+            "spy": "#FFE66D",  # Yellow - spy/observation
+            "fake": "#95E1D3",  # Mint - lightweight fake impl
         }
-        
+
         y_pos = range(len(present))
         for i, lang in enumerate(present):
             left = 0.0
@@ -1132,12 +1145,16 @@ def plot_mock_styles(conn, out_dir, show):
                             fontweight="bold",
                         )
                 left += w
-        
+
         ax.set_yticks(list(y_pos))
         ax.set_yticklabels([lang_display(l) for l in present])
         ax.set_xlabel("Distribution of mock techniques (%)")
         ax.set_xlim(0, 105)
-        ax.set_title("What Mock Techniques Do Developers Use?\n(stub, mock, spy, fake patterns)", fontsize=11, pad=10)
+        ax.set_title(
+            "What Mock Techniques Do Developers Use?\n(stub, mock, spy, fake patterns)",
+            fontsize=11,
+            pad=10,
+        )
 
     plt.tight_layout()
     save_or_show(fig, "07c_mock_styles", out_dir, show)
@@ -1160,7 +1177,9 @@ def plot_fixture_categories(conn, out_dir, show):
     """,
     )
     if fixtures.empty or fixtures["category"].isna().all():
-        print("  [skip] No fixture categories yet. Run `python pipeline.py categorize`.")
+        print(
+            "  [skip] No fixture categories yet. Run `python pipeline.py categorize`."
+        )
         return
 
     # Count by category
@@ -1170,21 +1189,21 @@ def plot_fixture_categories(conn, out_dir, show):
         .size()
         .reset_index(name="count")
     )
-    cat_counts["pct"] = (cat_counts["count"] / cat_counts["count"].sum() * 100)
+    cat_counts["pct"] = cat_counts["count"] / cat_counts["count"].sum() * 100
 
     # Sort by count descending
     cat_counts = cat_counts.sort_values("count", ascending=True)
 
     # Color palette for categories (semantic: primary patterns first)
     category_colors = {
-        "data_builder": "#2E86AB",        # Blue - most common, primary pattern
-        "hybrid": "#A23B72",             # Purple - multi-purpose
-        "mock_setup": "#F18F01",         # Orange - test isolation
-        "resource_management": "#C73E1D", # Rust - resource handling
-        "service_setup": "#6A994E",      # Green - dependency management
-        "state_reset": "#BC4749",        # Red - state management
-        "configuration_setup": "#D4A574", # Tan - configuration
-        "environment": "#5A189A",        # Dark purple - environment
+        "data_builder": "#2E86AB",  # Blue - most common, primary pattern
+        "hybrid": "#A23B72",  # Purple - multi-purpose
+        "mock_setup": "#F18F01",  # Orange - test isolation
+        "resource_management": "#C73E1D",  # Rust - resource handling
+        "service_setup": "#6A994E",  # Green - dependency management
+        "state_reset": "#BC4749",  # Red - state management
+        "configuration_setup": "#D4A574",  # Tan - configuration
+        "environment": "#5A189A",  # Dark purple - environment
     }
 
     fig, ax = plt.subplots(1, 1, figsize=(10, 6), facecolor="#FAFAFA")

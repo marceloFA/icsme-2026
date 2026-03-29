@@ -16,7 +16,7 @@ from ..conftest import (
 
 class TestCSharpMoqPatterns:
     """Moq mock patterns"""
-    
+
     def test_moq_setup(self):
         """Moq mock setup in [SetUp] fixture"""
         code = """
@@ -35,14 +35,14 @@ public class UserServiceTests {
     }
 }
 """
-        fixture = assert_fixture_detected(code, 'csharp', 'Setup')
-        assert fixture.fixture_type == 'nunit_setup'
+        fixture = assert_fixture_detected(code, "csharp", "Setup")
+        assert fixture.fixture_type == "nunit_setup"
         assert fixture.num_objects_instantiated >= 1
 
 
 class TestCSharpNSubstitutePatterns:
     """NSubstitute mock patterns"""
-    
+
     def test_nsubstitute_setup(self):
         """NSubstitute setup in [SetUp]"""
         code = """
@@ -60,9 +60,9 @@ public class UserServiceTests {
     }
 }
 """
-        fixture = assert_fixture_detected(code, 'csharp', 'Setup')
+        fixture = assert_fixture_detected(code, "csharp", "Setup")
         assert fixture.num_objects_instantiated >= 1
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

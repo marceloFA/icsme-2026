@@ -13,9 +13,17 @@ import matplotlib.ticker as mticker
 import pandas as pd
 
 from ..eda_common import (
-    ROOT, DB_PATH, DEFAULT_OUT,
-    LANG_PALETTE, LANG_ORDER,
-    setup_style, save_or_show, load_db, has_data, qdf, lang_display
+    ROOT,
+    DB_PATH,
+    DEFAULT_OUT,
+    LANG_PALETTE,
+    LANG_ORDER,
+    setup_style,
+    save_or_show,
+    load_db,
+    has_data,
+    qdf,
+    lang_display,
 )
 
 
@@ -28,7 +36,9 @@ def plot_corpus_by_tier(conn, out_dir, show):
     present = [l for l in LANG_ORDER if l in repos["language"].values]
 
     fig, ax = plt.subplots(figsize=(10, 5), facecolor="#FAFAFA")
-    fig.suptitle("Repositories by Language & Star Tier", fontsize=14, fontweight="bold", y=1.02)
+    fig.suptitle(
+        "Repositories by Language & Star Tier", fontsize=14, fontweight="bold", y=1.02
+    )
 
     tier_alpha = {"core": 1.0, "extended": 0.40}
     tier_label = {"core": "≥500 stars (core)", "extended": "100–499 stars (extended)"}
@@ -96,7 +106,9 @@ if __name__ == "__main__":
     parser.add_argument("--out", default=str(DEFAULT_OUT), help="Base output directory")
     parser.add_argument("--show", action="store_true")
     args = parser.parse_args()
-    
+
     setup_style()
     conn = load_db(args.db)
-    plot_corpus_by_tier(conn, Path(args.out) / datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), args.show)
+    plot_corpus_by_tier(
+        conn, Path(args.out) / datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), args.show
+    )

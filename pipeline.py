@@ -93,7 +93,9 @@ def cmd_init(args):
 def cmd_search(args):
     language = args.language
     max_repos = args.max
-    sort_by_stars = not getattr(args, "stratified", False)  # Default to True unless --stratified is passed
+    sort_by_stars = not getattr(
+        args, "stratified", False
+    )  # Default to True unless --stratified is passed
     stratified = getattr(args, "stratified", False)
 
     if language:
@@ -103,13 +105,21 @@ def cmd_search(args):
                 f"Choose from: {list(LANGUAGE_CONFIGS)}"
             )
             sys.exit(1)
-        count = collect_repos_for_language(language, max_repos=max_repos, sort_by_stars=sort_by_stars, stratified=stratified)
+        count = collect_repos_for_language(
+            language,
+            max_repos=max_repos,
+            sort_by_stars=sort_by_stars,
+            stratified=stratified,
+        )
         print(f"✓ {count} repos discovered for {language}")
     else:
-        results = collect_all_languages(max_per_language=max_repos, sort_by_stars=sort_by_stars, stratified=stratified)
+        results = collect_all_languages(
+            max_per_language=max_repos,
+            sort_by_stars=sort_by_stars,
+            stratified=stratified,
+        )
         for lang, count in results.items():
             print(f"  {lang:12s}: {count} repos")
-
 
 
 def cmd_cleanup(args):
@@ -177,7 +187,7 @@ def cmd_run(args):
 def cmd_toy(args):
     """
     Run pipeline on a toy dataset: 10 repos per language for quick validation.
-    
+
     This is useful for testing pipeline changes without processing a full dataset.
     """
     print("╔════════════════════════════════════════════════════╗")
@@ -212,7 +222,7 @@ def cmd_toy(args):
 
     print("\n── Done ─────────────────────────────────────────────")
     cmd_stats(args)
-    
+
     print("\n✓ TOY DATASET BUILD COMPLETE")
     print("  Ready for testing and validation of recent changes.")
     print("  To run tests: python -m pytest tests/")
@@ -231,122 +241,144 @@ def cmd_categorize(args):
 def cmd_collect(args):
     """
     Automated collection for a single language until target analyzed repos reached.
-    
+
     This command loops: search → clone → extract until the target count of
     successfully analyzed repos (status='analysed') is reached for the language.
-    
+
     Recommended usage:
       python pipeline.py collect --language python --target 1500
       python pipeline.py collect --language java --target 1500
     """
     language = args.language
     target_analyzed = args.target
-    
+
     if not language:
         print("ERROR: --language is required for collect command")
         sys.exit(1)
-    
+
     if language not in LANGUAGE_CONFIGS:
         print(f"Unknown language '{language}'. Choose from: {list(LANGUAGE_CONFIGS)}")
         sys.exit(1)
-    
+
     if not target_analyzed or target_analyzed < 1:
         print("ERROR: --target must be a positive integer")
         sys.exit(1)
-    
+
     stratified = getattr(args, "stratified", False)
-    
+
     # Initialize DB if needed
     if not db_is_initialised():
         print("── Initializing database ──")
         cmd_init(args)
-    
+
     iteration = 0
     while True:
         iteration += 1
-        
+
         with db_session() as conn:
             current_analyzed = get_analyzed_count_for_language(conn, language)
-        
+
         print(f"\n{'='*60}")
         print(f"Collection Iteration {iteration} for {language}")
         print(f"  Current analyzed repos: {current_analyzed}/{target_analyzed}")
         print(f"{'='*60}")
-        
+
         if current_analyzed >= target_analyzed:
-            print(f"\n✓ TARGET REACHED: {language} has {current_analyzed} analyzed repos (≥{target_analyzed})")
+            print(
+                f"\n✓ TARGET REACHED: {language} has {current_analyzed} analyzed repos (≥{target_analyzed})"
+            )
             break
-        
+
         # Check if there are already discovered repos waiting to be cloned
         with db_session() as conn:
             pending_discovered = get_discovered_count_for_language(conn, language)
-        
+
         needed = target_analyzed - current_analyzed
-        
+
         print(f"\n  Repos still needed: {needed}")
         print(f"  Pending discovered repos waiting: {pending_discovered}")
-        
+
         if pending_discovered > 0:
-            print(f"\n  → Processing {pending_discovered} pending discovered repos (skipping new search)...")
+            print(
+                f"\n  → Processing {pending_discovered} pending discovered repos (skipping new search)..."
+            )
         else:
             # Only search if no pending repos
             # Get language-specific survival rate (from observed data or config)
             with db_session() as conn:
                 observed_rate = get_survival_rate_for_language(conn, language)
-                total_discovered = get_discovered_count_for_language(conn, language) + get_analyzed_count_for_language(conn, language)
-            
+                total_discovered = get_discovered_count_for_language(
+                    conn, language
+                ) + get_analyzed_count_for_language(conn, language)
+
             # Use observed rate if we have enough data (>20 discovered repos), else use config estimate
             if observed_rate > 0 and total_discovered >= 20:
                 survival_rate = observed_rate
                 rate_source = f"observed ({total_discovered} repos)"
             else:
-                survival_rate = LANGUAGE_SURVIVAL_RATES.get(language, DISCOVERY_SURVIVAL_RATE)
+                survival_rate = LANGUAGE_SURVIVAL_RATES.get(
+                    language, DISCOVERY_SURVIVAL_RATE
+                )
                 rate_source = "config estimate"
-            
+
             # Based on empirical survival rate, calculate required discoveries
             # Apply safety buffer to account for estimation variability
-            discoveries_needed = max(1, int(needed / survival_rate * DISCOVERY_SAFETY_BUFFER))
+            discoveries_needed = max(
+                1, int(needed / survival_rate * DISCOVERY_SAFETY_BUFFER)
+            )
             # Cap discovery to match the cloning/extraction cap per iteration
             discover_target = min(discoveries_needed, MAX_REPOS_PER_ITERATION)
-            
-            print(f"  Discovery survival rate: {survival_rate*100:.1f}% ({rate_source})")
+
+            print(
+                f"  Discovery survival rate: {survival_rate*100:.1f}% ({rate_source})"
+            )
             print(f"  Safety buffer: {DISCOVERY_SAFETY_BUFFER:.0%}")
-            print(f"  Calculated discoveries needed (with buffer): {discoveries_needed}")
-            print(f"  Will discover this iteration: {discover_target} (capped at {MAX_DISCOVERIES_PER_ITERATION})")
-            
-            print(f"\n  → Searching for ~{discover_target} more repos (to reach analyzed target)...")
+            print(
+                f"  Calculated discoveries needed (with buffer): {discoveries_needed}"
+            )
+            print(
+                f"  Will discover this iteration: {discover_target} (capped at {MAX_DISCOVERIES_PER_ITERATION})"
+            )
+
+            print(
+                f"\n  → Searching for ~{discover_target} more repos (to reach analyzed target)..."
+            )
             args.max = discover_target
             args.stratified = stratified
             cmd_search(args)
-        
-        print(f"\n  → Cloning discovered repos (capped at {MAX_REPOS_PER_ITERATION} per iteration)...")
+
+        print(
+            f"\n  → Cloning discovered repos (capped at {MAX_REPOS_PER_ITERATION} per iteration)..."
+        )
         args.batch = MAX_REPOS_PER_ITERATION  # cap repos per iteration
         cmd_clone(args)
-        
+
         print(f"\n  → Extracting fixtures from cloned repos...")
         early_stopped = cmd_extract(args, target_analyzed=target_analyzed)
-        
+
         # If we hit target during extraction, stop searching for more repos
         if early_stopped:
-            print(f"\n  ✓ Target {target_analyzed} analyzed repos reached during extraction.")
+            print(
+                f"\n  ✓ Target {target_analyzed} analyzed repos reached during extraction."
+            )
             print(f"  Stopping collection loop.")
             break
-    
+
     # Classify and categorize all extracted repos (once, after all iterations)
     print(f"\n  → Classifying domains for all extracted repos...")
     args.overwrite = False
     cmd_classify(args)
-    
+
     print(f"\n  → Categorizing fixtures...")
     args.overwrite = False
     cmd_categorize(args)
-    
+
     print(f"\n{'='*60}")
     print(f"Final status for {language}:")
     with db_session() as conn:
         analyzed = get_analyzed_count_for_language(conn, language)
         stats = get_corpus_stats(conn)
-    
+
     print(f"  Analyzed repos: {analyzed}")
     print(f"  Total fixtures: {stats.get('fixtures', 0)}")
     print(f"  Total test files: {stats.get('test_files', 0)}")
@@ -401,17 +433,19 @@ def cmd_quantitative_eda(args):
     """Generate quantitative EDA plots suitable for ICSME Data Showcase track."""
     import subprocess
     from pathlib import Path
-    
+
     eda_script = Path(__file__).parent / "eda" / "quantitative_eda.py"
     cmd = [
         sys.executable,
         str(eda_script),
-        "--db", args.db,
-        "--out", args.out,
+        "--db",
+        args.db,
+        "--out",
+        args.out,
     ]
     if args.show:
         cmd.append("--show")
-    
+
     result = subprocess.run(cmd, cwd=str(Path(__file__).parent))
     sys.exit(result.returncode)
 
@@ -420,17 +454,19 @@ def cmd_qualitative_eda(args):
     """Generate qualitative EDA plots for internal analysis only."""
     import subprocess
     from pathlib import Path
-    
+
     eda_script = Path(__file__).parent / "eda" / "qualitative_eda.py"
     cmd = [
         sys.executable,
         str(eda_script),
-        "--db", args.db,
-        "--out", args.out,
+        "--db",
+        args.db,
+        "--out",
+        args.out,
     ]
     if args.show:
         cmd.append("--show")
-    
+
     result = subprocess.run(cmd, cwd=str(Path(__file__).parent))
     sys.exit(result.returncode)
 
@@ -499,8 +535,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     # toy
     p_toy = sub.add_parser(
-        "toy",
-        help="Build toy dataset (10 repos per language) for quick validation"
+        "toy", help="Build toy dataset (10 repos per language) for quick validation"
     )
     p_toy.add_argument(
         "--language",
@@ -549,9 +584,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     # categorize
-    p_categorize = sub.add_parser("categorize", help="Categorize fixtures by usage pattern (data_builder/service_setup/…)")
+    p_categorize = sub.add_parser(
+        "categorize",
+        help="Categorize fixtures by usage pattern (data_builder/service_setup/…)",
+    )
     p_categorize.add_argument(
-        "--overwrite", action="store_true", help="Re-categorize already-categorized fixtures"
+        "--overwrite",
+        action="store_true",
+        help="Re-categorize already-categorized fixtures",
     )
 
     # export
@@ -587,33 +627,43 @@ def build_parser() -> argparse.ArgumentParser:
     # quantitative_eda
     p_quant_eda = sub.add_parser(
         "quantitative-eda",
-        help="Generate quantitative EDA plots (ICSME Data Showcase track)"
+        help="Generate quantitative EDA plots (ICSME Data Showcase track)",
     )
     p_quant_eda.add_argument(
-        "--db", default="data/corpus.db", help="Path to database (default: data/corpus.db)"
+        "--db",
+        default="data/corpus.db",
+        help="Path to database (default: data/corpus.db)",
     )
     p_quant_eda.add_argument(
-        "--out", default="output/eda/quantitative",
-        help="Base output directory for plots"
+        "--out",
+        default="output/eda/quantitative",
+        help="Base output directory for plots",
     )
     p_quant_eda.add_argument(
-        "--show", action="store_true", help="Display plots interactively instead of saving"
+        "--show",
+        action="store_true",
+        help="Display plots interactively instead of saving",
     )
 
     # qualitative_eda
     p_qual_eda = sub.add_parser(
         "qualitative-eda",
-        help="Generate qualitative EDA plots (internal analysis only)"
+        help="Generate qualitative EDA plots (internal analysis only)",
     )
     p_qual_eda.add_argument(
-        "--db", default="data/corpus.db", help="Path to database (default: data/corpus.db)"
+        "--db",
+        default="data/corpus.db",
+        help="Path to database (default: data/corpus.db)",
     )
     p_qual_eda.add_argument(
-        "--out", default="output/eda/qualitative",
-        help="Base output directory for plots"
+        "--out",
+        default="output/eda/qualitative",
+        help="Base output directory for plots",
     )
     p_qual_eda.add_argument(
-        "--show", action="store_true", help="Display plots interactively instead of saving"
+        "--show",
+        action="store_true",
+        help="Display plots interactively instead of saving",
     )
 
     return parser

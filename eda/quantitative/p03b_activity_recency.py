@@ -13,9 +13,17 @@ import pandas as pd
 import seaborn as sns
 
 from ..eda_common import (
-    ROOT, DB_PATH, DEFAULT_OUT,
-    LANG_PALETTE, LANG_ORDER,
-    setup_style, save_or_show, load_db, has_data, qdf, lang_display
+    ROOT,
+    DB_PATH,
+    DEFAULT_OUT,
+    LANG_PALETTE,
+    LANG_ORDER,
+    setup_style,
+    save_or_show,
+    load_db,
+    has_data,
+    qdf,
+    lang_display,
 )
 
 
@@ -59,7 +67,9 @@ def plot_activity_recency(conn, out_dir, show):
     ax.set_xticklabels([lang_display(l) for l in present])
     ax.set_xlabel("")
     ax.set_ylabel("Years Since Last Commit Push")
-    ax.set_title("How Recently Were Repositories Active?", fontsize=14, fontweight="bold")
+    ax.set_title(
+        "How Recently Were Repositories Active?", fontsize=14, fontweight="bold"
+    )
     ax.axhline(
         1.0, color="#888", linewidth=0.8, linestyle="--", alpha=0.7, label="1 year ago"
     )
@@ -70,12 +80,16 @@ def plot_activity_recency(conn, out_dir, show):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="FixtureDB Repository Activity Recency")
+    parser = argparse.ArgumentParser(
+        description="FixtureDB Repository Activity Recency"
+    )
     parser.add_argument("--db", default=str(DB_PATH))
     parser.add_argument("--out", default=str(DEFAULT_OUT), help="Base output directory")
     parser.add_argument("--show", action="store_true")
     args = parser.parse_args()
-    
+
     setup_style()
     conn = load_db(args.db)
-    plot_activity_recency(conn, Path(args.out) / datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), args.show)
+    plot_activity_recency(
+        conn, Path(args.out) / datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), args.show
+    )

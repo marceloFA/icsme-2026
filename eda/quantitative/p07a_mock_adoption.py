@@ -12,9 +12,17 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from ..eda_common import (
-    ROOT, DB_PATH, DEFAULT_OUT,
-    LANG_PALETTE, LANG_ORDER,
-    setup_style, save_or_show, load_db, has_data, qdf, lang_display
+    ROOT,
+    DB_PATH,
+    DEFAULT_OUT,
+    LANG_PALETTE,
+    LANG_ORDER,
+    setup_style,
+    save_or_show,
+    load_db,
+    has_data,
+    qdf,
+    lang_display,
 )
 
 
@@ -58,7 +66,7 @@ def plot_mock_adoption(conn, out_dir, show):
         height=0.55,
         zorder=3,
     )
-    
+
     for y, pct, lang in zip(y_pos, prevalence.values, present):
         ax.text(
             pct + 1.2,
@@ -87,7 +95,9 @@ if __name__ == "__main__":
     parser.add_argument("--out", default=str(DEFAULT_OUT), help="Base output directory")
     parser.add_argument("--show", action="store_true")
     args = parser.parse_args()
-    
+
     setup_style()
     conn = load_db(args.db)
-    plot_mock_adoption(conn, Path(args.out) / datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), args.show)
+    plot_mock_adoption(
+        conn, Path(args.out) / datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), args.show
+    )

@@ -104,6 +104,7 @@ class FixtureResult:
 @dataclass
 class ExtractResult:
     """Result of extracting fixtures from a file, including file-level metrics."""
+
     fixtures: list[FixtureResult]
     file_loc: int  # non-blank lines in the file
     num_test_functions: int  # count of test functions in the file
@@ -144,70 +145,81 @@ def _cyclomatic_complexity(node, src_bytes: bytes) -> int:
 def _cognitive_complexity(node, src_bytes: bytes) -> int:
     """
     Calculate cognitive complexity using tree-sitter AST.
-    
+
     Cognitive complexity weights code constructs by nesting depth:
     - Control structures (if, while, for, case, catch) increment base score
     - Nesting depth multiplies the score (deeper = harder to understand)
     - Boolean operators (&&, ||) increment at their nesting level
     - Recursion adds a constant penalty
-    
+
     This is language-agnostic using tree-sitter's consistent node type names.
     """
     complexity = 0
-    
+
     def walk(n, depth=0):
         nonlocal complexity
-        
+
         # Control structures that increment complexity
         # Tree-sitter node types are consistent across languages
         control_structures = {
             # Conditionals
-            'if_statement', 'conditional_expression',
-            # Loops  
-            'for_statement', 'while_statement', 'do_statement',
+            "if_statement",
+            "conditional_expression",
+            # Loops
+            "for_statement",
+            "while_statement",
+            "do_statement",
             # Switch/Case
-            'switch_statement', 'case_statement',
+            "switch_statement",
+            "case_statement",
             # Exception handling
-            'try_statement', 'catch_clause', 'throw_statement', 'raise_statement',
+            "try_statement",
+            "catch_clause",
+            "throw_statement",
+            "raise_statement",
             # C# specific
-            'try_catch_clause',
+            "try_catch_clause",
         }
-        
+
         if n.type in control_structures:
             # Base increment of 1, multiplied by nesting depth
             complexity += max(1, depth)
-        
+
         # Boolean operators (only count when part of binary expression)
-        if n.type == 'binary_expression':
-            op_text = _source(n.child_by_field_name('operator'), src_bytes).strip()
-            if op_text in ('&&', 'and', '||', 'or'):
+        if n.type == "binary_expression":
+            op_text = _source(n.child_by_field_name("operator"), src_bytes).strip()
+            if op_text in ("&&", "and", "||", "or"):
                 complexity += max(1, depth)
-        
+
         # Recursion detection (rough heuristic)
-        if n.type in ('function_declaration', 'method_definition', 'function_definition'):
+        if n.type in (
+            "function_declaration",
+            "method_definition",
+            "function_definition",
+        ):
             # Try to detect recursive calls
             func_name = None
-            name_node = n.child_by_field_name('name')
+            name_node = n.child_by_field_name("name")
             if name_node:
                 func_name = _source(name_node, src_bytes).strip()
-            
+
             if func_name:
                 # Search for calls to this function within itself
-                body = n.child_by_field_name('body')
+                body = n.child_by_field_name("body")
                 if body:
                     body_text = _source(body, src_bytes)
                     if f"{func_name}(" in body_text or f"{func_name} (" in body_text:
                         complexity += 5  # Recursion adds fixed penalty
-        
+
         # Recurse into children with increased depth for nested structures
         for child in n.children:
             # Depth only increases inside control structure bodies
             next_depth = depth
             if n.type in control_structures:
                 next_depth = depth + 1
-            
+
             walk(child, next_depth)
-    
+
     walk(node)
     return max(1, complexity)  # Minimum complexity of 1
 
@@ -370,7 +382,7 @@ def _detect_python(tree, src_bytes: bytes) -> list[FixtureResult]:
             name_node = node.child_by_field_name("name")
             if name_node:
                 name = _source(name_node, src_bytes)
-                
+
                 # unittest-style fixtures: setUp/tearDown/setUpClass/tearDownClass/setUpModule/tearDownModule
                 if name in (
                     "setUp",
@@ -397,7 +409,7 @@ def _detect_python(tree, src_bytes: bytes) -> list[FixtureResult]:
                             framework="unittest",
                         )
                     )
-                
+
                 # TestCase method style (setup_method/teardown_method)
                 elif name in (
                     "setup_method",
@@ -420,7 +432,7 @@ def _detect_python(tree, src_bytes: bytes) -> list[FixtureResult]:
                             framework="pytest",
                         )
                     )
-                
+
                 # Nose-style fixtures: setup/teardown/setup_module/teardown_module/setup_package/teardown_package
                 elif name in (
                     "setup",
@@ -466,7 +478,10 @@ JUNIT_FIXTURE_ANNOTATIONS = {
     "@After": ("junit4_after", "per_test"),
     "@AfterClass": ("junit4_after_class", "per_class"),
     "@BeforeMethod": ("testng_before_method", "per_test"),  # TestNG
-    "@BeforeClass": ("testng_before_class", "per_class"),  # TestNG (same name as JUnit4, handled specially)
+    "@BeforeClass": (
+        "testng_before_class",
+        "per_class",
+    ),  # TestNG (same name as JUnit4, handled specially)
     "@AfterMethod": ("testng_after_method", "per_test"),  # TestNG
     "@AfterClass": ("testng_after_class", "per_class"),  # TestNG
     "@DataProvider": ("testng_data_provider", "per_test"),  # TestNG data-driven fixture
@@ -486,14 +501,17 @@ def _detect_java(tree, src_bytes: bytes) -> list[FixtureResult]:
                 if c.type == "modifiers":
                     # Look for marker_annotation or annotation inside modifiers
                     for mod_child in c.children:
-                        if mod_child.type == "marker_annotation" or mod_child.type == "annotation":
+                        if (
+                            mod_child.type == "marker_annotation"
+                            or mod_child.type == "annotation"
+                        ):
                             annotations.append(_source(mod_child, src_bytes).strip())
-            
+
             # Also check for direct annotation children (fallback)
             for c in node.children:
                 if c.type == "marker_annotation" or c.type == "annotation":
                     annotations.append(_source(c, src_bytes).strip())
-            
+
             for ann in annotations:
                 # Strip parameter content for lookup
                 ann_key = "@" + ann.lstrip("@").split("(")[0].strip()
@@ -510,7 +528,7 @@ def _detect_java(tree, src_bytes: bytes) -> list[FixtureResult]:
                         )
                     )
                     break
-            
+
             # JUnit 3 style: setUp() / tearDown() methods (no annotations, in TestCase subclass)
             # These are plain methods with specific names, not indicated by annotations
             name_node = node.child_by_field_name("name")
@@ -518,10 +536,18 @@ def _detect_java(tree, src_bytes: bytes) -> list[FixtureResult]:
                 method_name = _source(name_node, src_bytes).strip()
                 if method_name in ("setUp", "tearDown"):
                     # Check if not already matched by annotation
-                    has_annotation = any(ann for ann in annotations if "@Before" in ann or "@After" in ann)
+                    has_annotation = any(
+                        ann
+                        for ann in annotations
+                        if "@Before" in ann or "@After" in ann
+                    )
                     if not has_annotation:
                         scope = "per_test"
-                        fixture_type = "junit3_setup" if method_name == "setUp" else "junit3_teardown"
+                        fixture_type = (
+                            "junit3_setup"
+                            if method_name == "setUp"
+                            else "junit3_teardown"
+                        )
                         results.append(
                             _build_result(
                                 node=node,
@@ -532,16 +558,19 @@ def _detect_java(tree, src_bytes: bytes) -> list[FixtureResult]:
                                 framework="junit",
                             )
                         )
-        
+
         # Handle @Rule and @ClassRule field declarations
         elif node.type == "field_declaration":
             annotations = []
             for c in node.children:
                 if c.type == "modifiers":
                     for mod_child in c.children:
-                        if mod_child.type == "marker_annotation" or mod_child.type == "annotation":
+                        if (
+                            mod_child.type == "marker_annotation"
+                            or mod_child.type == "annotation"
+                        ):
                             annotations.append(_source(mod_child, src_bytes).strip())
-            
+
             for ann in annotations:
                 ann_key = "@" + ann.lstrip("@").split("(")[0].strip()
                 if ann_key in ("@Rule", "@ClassRule"):
@@ -574,8 +603,14 @@ JS_FIXTURE_CALLS = {
     "beforeAll": ("before_all", "per_class"),
     "afterEach": ("after_each", "per_test"),
     "afterAll": ("after_all", "per_class"),
-    "before": ("mocha_before", "per_test"),  # default to per_test for ambiguous mocha hooks
-    "after": ("mocha_after", "per_test"),  # default to per_test for ambiguous mocha hooks
+    "before": (
+        "mocha_before",
+        "per_test",
+    ),  # default to per_test for ambiguous mocha hooks
+    "after": (
+        "mocha_after",
+        "per_test",
+    ),  # default to per_test for ambiguous mocha hooks
 }
 
 # AVA fixture patterns - using member access like test.before()
@@ -603,7 +638,7 @@ def _detect_js(tree, src_bytes: bytes) -> list[FixtureResult]:
             func_node = target.child_by_field_name("function")
             if func_node:
                 name = _source(func_node, src_bytes).strip()
-                
+
                 # Check standard hooks (Jest/Mocha style) - ambiguous, so framework=None
                 if name in JS_FIXTURE_CALLS:
                     fixture_type, scope = JS_FIXTURE_CALLS[name]
@@ -617,13 +652,13 @@ def _detect_js(tree, src_bytes: bytes) -> list[FixtureResult]:
                             framework=None,  # Ambiguous: could be Jest, Mocha, Vitest, Jasmine, etc.
                         )
                     )
-                
+
                 # Check AVA patterns: test.before, test.after, test.serial.before, test.serial.after
                 # These appear as member_access_expression like "test.before" or "test.serial.before"
                 elif func_node.type == "member_expression":
                     # Get the full member access chain
                     member_src = _source(func_node, src_bytes).strip()
-                    
+
                     # Check if it's a test.* pattern
                     if member_src.startswith("test."):
                         ava_pattern = member_src[5:]  # Remove "test." prefix
@@ -639,7 +674,7 @@ def _detect_js(tree, src_bytes: bytes) -> list[FixtureResult]:
                                     framework="ava",
                                 )
                             )
-        
+
         # TypeScript decorator patterns: @Before, @After, @BeforeEach, etc.
         elif node.type == "method_definition":
             # Check if there's a preceding decorator node
@@ -651,7 +686,7 @@ def _detect_js(tree, src_bytes: bytes) -> list[FixtureResult]:
                     if child == node:
                         node_index = i
                         break
-                
+
                 # Check if the preceding sibling is a decorator
                 if node_index is not None and node_index > 0:
                     prev_sibling = parent.children[node_index - 1]
@@ -659,7 +694,7 @@ def _detect_js(tree, src_bytes: bytes) -> list[FixtureResult]:
                         dec_text = _source(prev_sibling, src_bytes).strip()
                         # Remove @ symbol and check if it's a known decorator
                         dec_name = dec_text.lstrip("@").split("(")[0].strip()
-                        
+
                         # Mapping of TypeScript decorators to fixture types
                         decorator_map = {
                             "Before": ("mocha_before", "per_test"),
@@ -669,7 +704,7 @@ def _detect_js(tree, src_bytes: bytes) -> list[FixtureResult]:
                             "BeforeAll": ("before_all", "per_class"),
                             "AfterAll": ("after_all", "per_class"),
                         }
-                        
+
                         if dec_name in decorator_map:
                             fixture_type, scope = decorator_map[dec_name]
                             results.append(
@@ -721,14 +756,14 @@ def _detect_csharp(tree, src_bytes: bytes) -> list[FixtureResult]:
                         attr_text = _source(attr_node, src_bytes).strip()
                         attributes.append(attr_text)
         return attributes
-    
+
     def get_method_name(node, src_bytes):
         """Get method name from method_declaration or local_function_statement."""
         # For method_declaration, try 'name' field
         name_node = node.child_by_field_name("name")
         if name_node:
             return _source(name_node, src_bytes)
-        
+
         # For local_function_statement, find the first identifier
         for c in node.children:
             if c.type == "identifier":
@@ -740,22 +775,38 @@ def _detect_csharp(tree, src_bytes: bytes) -> list[FixtureResult]:
         if node.type in ("method_declaration", "local_function_statement"):
             # Get method name
             method_name = get_method_name(node, src_bytes)
-            
+
             # Collect all attributes for this method
             attributes = detect_fixture_attributes(node, src_bytes)
-            
+
             # Check if any known fixture attribute is present
             # Sort by length descending so more specific attributes match first (e.g., OneTimeSetUp before SetUp)
             for attr in attributes:
                 matched = False
-                for attr_name in sorted(CSHARP_FIXTURE_ATTRIBUTES.keys(), key=len, reverse=True):
+                for attr_name in sorted(
+                    CSHARP_FIXTURE_ATTRIBUTES.keys(), key=len, reverse=True
+                ):
                     # Use word boundary checking to avoid "SetUp" matching "OneTimeSetUp"
-                    if attr_name == attr or attr.startswith(attr_name + "[") or attr.startswith(attr_name + "("):
+                    if (
+                        attr_name == attr
+                        or attr.startswith(attr_name + "[")
+                        or attr.startswith(attr_name + "(")
+                    ):
                         fixture_type, scope = CSHARP_FIXTURE_ATTRIBUTES[attr_name]
                         # Determine framework based on attribute
-                        if attr_name in ("SetUp", "TearDown", "OneTimeSetUp", "OneTimeTearDown"):
+                        if attr_name in (
+                            "SetUp",
+                            "TearDown",
+                            "OneTimeSetUp",
+                            "OneTimeTearDown",
+                        ):
                             framework = "nunit"
-                        elif attr_name in ("TestInitialize", "TestCleanup", "ClassInitialize", "ClassCleanup"):
+                        elif attr_name in (
+                            "TestInitialize",
+                            "TestCleanup",
+                            "ClassInitialize",
+                            "ClassCleanup",
+                        ):
                             framework = "mstest"
                         elif attr_name in ("Fact", "Theory"):
                             framework = "xunit"
@@ -775,12 +826,18 @@ def _detect_csharp(tree, src_bytes: bytes) -> list[FixtureResult]:
                         break
                 if matched:
                     break  # Only one fixture type per method
-            
+
             # IAsyncLifetime interface methods: InitializeAsync and DisposeAsync
             # Only for method_declaration (not local functions)
-            if node.type == "method_declaration" and not attributes:  # Only if no explicit attributes were found
+            if (
+                node.type == "method_declaration" and not attributes
+            ):  # Only if no explicit attributes were found
                 if method_name in ("InitializeAsync", "DisposeAsync"):
-                    fixture_type = "xunit_async_initialize" if method_name == "InitializeAsync" else "xunit_async_dispose"
+                    fixture_type = (
+                        "xunit_async_initialize"
+                        if method_name == "InitializeAsync"
+                        else "xunit_async_dispose"
+                    )
                     scope = "per_class"
                     results.append(
                         _build_result(
@@ -860,7 +917,8 @@ def _detect_go(tree, src_bytes: bytes) -> list[FixtureResult]:
     # Semantic filtering: only keep helpers with setup/teardown/fixture-like keywords
     setup_keywords = r"\b(setup|setUp|initialize|Init|prepare|create|build|Before|After|teardown|cleanup|Clean|Destroy|tear)\b"
     multi_used_helpers = {
-        n for n, cnt in helper_call_count.items() 
+        n
+        for n, cnt in helper_call_count.items()
         if cnt >= 3  # Threshold raised from 2 to 3
         and re.search(setup_keywords, n, re.IGNORECASE)  # Semantic filtering
     }
@@ -895,14 +953,18 @@ def _detect_go(tree, src_bytes: bytes) -> list[FixtureResult]:
                             framework=None,  # Heuristic-detected helper, not framework-specific
                         )
                     )
-        
+
         # testify/suite methods: SetupSuite, TeardownSuite, SetupTest, TeardownTest
         elif node.type == "method_declaration":
             name_node = node.child_by_field_name("name")
             if name_node:
                 name = _source(name_node, src_bytes)
                 if name in ("SetupSuite", "TeardownSuite", "SetupTest", "TeardownTest"):
-                    scope = "per_class" if name in ("SetupSuite", "TeardownSuite") else "per_test"
+                    scope = (
+                        "per_class"
+                        if name in ("SetupSuite", "TeardownSuite")
+                        else "per_test"
+                    )
                     fixture_type_map = {
                         "SetupSuite": "go_setup_suite",
                         "TeardownSuite": "go_teardown_suite",
@@ -933,7 +995,12 @@ def _detect_go(tree, src_bytes: bytes) -> list[FixtureResult]:
 
 
 def _build_result(
-    node, func_node, src_bytes: bytes, fixture_type: str, scope: str, framework: str = None
+    node,
+    func_node,
+    src_bytes: bytes,
+    fixture_type: str,
+    scope: str,
+    framework: str = None,
 ) -> FixtureResult:
     src_text = _source(func_node, src_bytes)
     name_node = func_node.child_by_field_name("name")
@@ -972,9 +1039,11 @@ def _build_result(
 # Test function counting helpers
 # ---------------------------------------------------------------------------
 
+
 def _count_test_functions_python(tree, src_bytes: bytes) -> int:
     """Count test functions/methods in Python (test_* or inside TestCase)."""
     count = 0
+
     def visit(node):
         nonlocal count
         if node.type == "function_definition":
@@ -985,6 +1054,7 @@ def _count_test_functions_python(tree, src_bytes: bytes) -> int:
                     count += 1
         for child in node.children:
             visit(child)
+
     visit(tree.root_node)
     return count
 
@@ -992,8 +1062,16 @@ def _count_test_functions_python(tree, src_bytes: bytes) -> int:
 def _count_test_functions_java(tree, src_bytes: bytes) -> int:
     """Count test methods in Java (annotated with @Test or similar)."""
     count = 0
-    test_annotations = {"@Test", "@Before", "@After", "@BeforeClass", "@AfterClass", "@BeforeEach", "@AfterEach"}
-    
+    test_annotations = {
+        "@Test",
+        "@Before",
+        "@After",
+        "@BeforeClass",
+        "@AfterClass",
+        "@BeforeEach",
+        "@AfterEach",
+    }
+
     def visit(node):
         nonlocal count
         if node.type == "method_declaration":
@@ -1014,6 +1092,7 @@ def _count_test_functions_java(tree, src_bytes: bytes) -> int:
                     count += 1
         for child in node.children:
             visit(child)
+
     visit(tree.root_node)
     return count
 
@@ -1021,6 +1100,7 @@ def _count_test_functions_java(tree, src_bytes: bytes) -> int:
 def _count_test_functions_js(tree, src_bytes: bytes) -> int:
     """Count test blocks in JavaScript/TypeScript (describe, it, test calls)."""
     count = 0
+
     def visit(node):
         nonlocal count
         if node.type == "call_expression":
@@ -1031,6 +1111,7 @@ def _count_test_functions_js(tree, src_bytes: bytes) -> int:
                     count += 1
         for child in node.children:
             visit(child)
+
     visit(tree.root_node)
     return count
 
@@ -1038,6 +1119,7 @@ def _count_test_functions_js(tree, src_bytes: bytes) -> int:
 def _count_test_functions_go(tree, src_bytes: bytes) -> int:
     """Count test functions in Go (functions starting with Test)."""
     count = 0
+
     def visit(node):
         nonlocal count
         if node.type == "function_declaration":
@@ -1054,6 +1136,7 @@ def _count_test_functions_go(tree, src_bytes: bytes) -> int:
                     count += 1
         for child in node.children:
             visit(child)
+
     visit(tree.root_node)
     return count
 
@@ -1062,7 +1145,7 @@ def _count_test_functions_csharp(tree, src_bytes: bytes) -> int:
     """Count test methods in C# (with test attributes or StartsWith Test)."""
     count = 0
     test_attributes = {"[Test]", "[TestMethod]", "[Fact]", "[Theory]"}
-    
+
     def visit(node):
         nonlocal count
         if node.type in ("method_declaration", "local_function_statement"):
@@ -1072,7 +1155,10 @@ def _count_test_functions_csharp(tree, src_bytes: bytes) -> int:
                     for attr_node in c.children:
                         if attr_node.type == "attribute":
                             attr_text = _source(attr_node, src_bytes).strip()
-                            if any(attr_text.startswith(ta.rstrip("]")) for ta in test_attributes):
+                            if any(
+                                attr_text.startswith(ta.rstrip("]"))
+                                for ta in test_attributes
+                            ):
                                 count += 1
                                 return
             # Heuristic: count methods/functions starting with "Test"
@@ -1083,6 +1169,7 @@ def _count_test_functions_csharp(tree, src_bytes: bytes) -> int:
                     count += 1
         for child in node.children:
             visit(child)
+
     visit(tree.root_node)
     return count
 
@@ -1119,7 +1206,7 @@ def extract_fixtures(file_path: Path, language: str) -> ExtractResult:
     """
     Parse a test file and return all fixture definitions found in it,
     along with file-level metrics (LOC, test function count).
-    
+
     Returns ExtractResult with empty fixtures list if the file cannot be parsed
     or the language is not supported.
     """
@@ -1131,16 +1218,20 @@ def extract_fixtures(file_path: Path, language: str) -> ExtractResult:
     try:
         file_size_bytes = file_path.stat().st_size
         file_size_mb = file_size_bytes / (1024 * 1024)
-        #logger.info(f"[extract] Reading {file_path.name} ({file_size_mb:.2f} MB) for {language}")
-        
+        # logger.info(f"[extract] Reading {file_path.name} ({file_size_mb:.2f} MB) for {language}")
+
         # Skip files larger than MAX_FILE_SIZE_BYTES (not real test files)
         if file_size_bytes > MAX_FILE_SIZE_BYTES:
-            logger.warning(f"[extract] Skipping oversized file: {file_path.name} is {file_size_mb:.2f} MB (> {MAX_FILE_SIZE_BYTES / (1024*1024):.0f} MB limit)")
+            logger.warning(
+                f"[extract] Skipping oversized file: {file_path.name} is {file_size_mb:.2f} MB (> {MAX_FILE_SIZE_BYTES / (1024*1024):.0f} MB limit)"
+            )
             return ExtractResult(fixtures=[], file_loc=0, num_test_functions=0)
-        
+
         # Warn if file is large but within limits
         if file_size_mb > 3:
-            logger.info(f"[extract] Processing large test file: {file_path.name} ({file_size_mb:.2f} MB)")
+            logger.info(
+                f"[extract] Processing large test file: {file_path.name} ({file_size_mb:.2f} MB)"
+            )
     except Exception as e:
         logger.debug(f"Could not get file size for {file_path}: {e}")
 
@@ -1164,7 +1255,9 @@ def extract_fixtures(file_path: Path, language: str) -> ExtractResult:
         fixtures = DETECTORS[language](tree, src_bytes)
         file_loc = _count_file_loc(src_bytes)
         num_test_functions = _count_test_functions(tree, src_bytes, language)
-        return ExtractResult(fixtures=fixtures, file_loc=file_loc, num_test_functions=num_test_functions)
+        return ExtractResult(
+            fixtures=fixtures, file_loc=file_loc, num_test_functions=num_test_functions
+        )
     except Exception as e:
         logger.warning(f"Detection error in {file_path}: {e}")
         return ExtractResult(fixtures=[], file_loc=0, num_test_functions=0)

@@ -16,7 +16,7 @@ from ..conftest import (
 
 class TestJavaScriptJestFixtures:
     """Integration tests using Jest patterns"""
-    
+
     def test_jest_complex_setup(self):
         """Jest test file with multiple setup methods"""
         code = """
@@ -45,15 +45,15 @@ describe('User API', () => {
     });
 });
 """
-        assert_fixture_with_type_detected(code, 'javascript', 'before_all')
-        assert_fixture_with_type_detected(code, 'javascript', 'before_each')
-        assert_fixture_with_type_detected(code, 'javascript', 'after_each')
-        assert_fixture_with_type_detected(code, 'javascript', 'after_all')
+        assert_fixture_with_type_detected(code, "javascript", "before_all")
+        assert_fixture_with_type_detected(code, "javascript", "before_each")
+        assert_fixture_with_type_detected(code, "javascript", "after_each")
+        assert_fixture_with_type_detected(code, "javascript", "after_all")
 
 
 class TestJavaScriptMochaFixtures:
     """Integration tests using Mocha patterns"""
-    
+
     def test_mocha_with_context(self):
         """Mocha test with describe/context blocks"""
         code = """
@@ -80,8 +80,8 @@ describe('Array', () => {
 });
 """
         # Should detect nested beforeEach fixtures
-        assert_fixture_count(code, 'javascript', 2)
+        assert_fixture_count(code, "javascript", 2)
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

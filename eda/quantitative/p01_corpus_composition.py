@@ -15,9 +15,18 @@ import pandas as pd
 import seaborn as sns
 
 from ..eda_common import (
-    ROOT, DB_PATH, DEFAULT_OUT,
-    LANG_PALETTE, LANG_ORDER, STATUS_PALETTE,
-    setup_style, save_or_show, load_db, has_data, qdf, lang_display
+    ROOT,
+    DB_PATH,
+    DEFAULT_OUT,
+    LANG_PALETTE,
+    LANG_ORDER,
+    STATUS_PALETTE,
+    setup_style,
+    save_or_show,
+    load_db,
+    has_data,
+    qdf,
+    lang_display,
 )
 
 # -----------
@@ -141,7 +150,6 @@ def plot_corpus_composition(conn, out_dir, show):
     save_or_show(fig, "01_corpus_composition", out_dir, show)
 
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="FixtureDB Corpus Composition")
     parser.add_argument("--db", default=str(DB_PATH))
@@ -158,9 +166,9 @@ if __name__ == "__main__":
 
     conn = load_db(Path(args.db))
     setup_style()
-    
+
     print(f"\n[Corpus Composition]")
     plot_corpus_composition(conn, out_dir, args.show)
-    
+
     conn.close()
     print("Done\n")

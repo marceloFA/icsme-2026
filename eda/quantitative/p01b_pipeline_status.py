@@ -13,9 +13,15 @@ import matplotlib.ticker as mticker
 import pandas as pd
 
 from ..eda_common import (
-    ROOT, DB_PATH, DEFAULT_OUT,
+    ROOT,
+    DB_PATH,
+    DEFAULT_OUT,
     STATUS_PALETTE,
-    setup_style, save_or_show, load_db, has_data, qdf
+    setup_style,
+    save_or_show,
+    load_db,
+    has_data,
+    qdf,
 )
 
 
@@ -75,7 +81,9 @@ if __name__ == "__main__":
     parser.add_argument("--out", default=str(DEFAULT_OUT), help="Base output directory")
     parser.add_argument("--show", action="store_true")
     args = parser.parse_args()
-    
+
     setup_style()
     conn = load_db(args.db)
-    plot_pipeline_status(conn, Path(args.out) / datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), args.show)
+    plot_pipeline_status(
+        conn, Path(args.out) / datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), args.show
+    )

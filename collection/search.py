@@ -162,7 +162,7 @@ def _build_query(config: LanguageConfig, min_stars: int | None = None) -> str:
     We split the search into date-range buckets to work around the 1,000-result
     cap that GitHub imposes per query. Each bucket covers ~6 months, going back
     far enough to collect repositories created since 2015.
-    
+
     Args:
         config: Language configuration
         min_stars: Minimum stars (overrides config.min_stars). Use for tier-based collection.
@@ -214,18 +214,21 @@ def collect_repos_for_language(
 
 
 def _collect_repos_by_stars(
-    language_key: str, config: LanguageConfig, max_repos: int, min_stars: int | None = None
+    language_key: str,
+    config: LanguageConfig,
+    max_repos: int,
+    min_stars: int | None = None,
 ) -> int:
     """
     Collect repos sorted by star count (most stars first).
-    
+
     This is the preferred strategy when you want to maximize high-quality (500+ star)
     repositories. By collecting in order of star count, you get the most popular
     repos first, naturally maximizing the percentage of core-tier repos.
-    
+
     The GitHub API search already returns results sorted by stars (descending),
     so this approach simply pages through without splitting into date buckets.
-    
+
     Args:
         language_key: e.g., 'python'
         config: Language configuration
@@ -305,20 +308,23 @@ def _collect_repos_by_stars(
 
 
 def _collect_repos_stratified(
-    language_key: str, config: LanguageConfig, max_repos: int, min_stars: int | None = None
+    language_key: str,
+    config: LanguageConfig,
+    max_repos: int,
+    min_stars: int | None = None,
 ) -> int:
     """
     Collect repos proportionally from each year to avoid temporal bias.
-    
+
     This ensures the corpus represents the evolution of testing practices
     rather than being skewed toward legacy codebases.
-    
+
     For example: 1500 repos × 10 years = 150 repos per year
-    
+
     Args:
         language_key: e.g., 'python'
         config: Language configuration
-        max_repos: Target total repos  
+        max_repos: Target total repos
         min_stars: Minimum stars filter (uses config.min_stars if None)
     """
     bucket_starts = _generate_date_buckets(
@@ -326,13 +332,13 @@ def _collect_repos_stratified(
         end=datetime.utcnow().strftime("%Y-%m-%d"),
         months=12,  # 1 year per bucket for stratification
     )
-    
+
     num_years = len(bucket_starts)
     repos_per_year = max_repos // num_years if num_years > 0 else max_repos
     remaining_repos = max_repos % num_years  # Distribute remainder
-    
+
     total_written = 0
-    
+
     stars_desc = " (500+ stars)" if min_stars and min_stars >= 500 else ""
     logger.info(
         f"[{language_key}] Starting STRATIFIED collection{stars_desc}. "
@@ -342,9 +348,11 @@ def _collect_repos_stratified(
 
     for idx, (bucket_start, bucket_end) in enumerate(bucket_starts):
         # Allocate more repos to later years to use remainder
-        target_for_year = repos_per_year + (1 if idx >= (num_years - remaining_repos) else 0)
+        target_for_year = repos_per_year + (
+            1 if idx >= (num_years - remaining_repos) else 0
+        )
         year_written = 0
-        
+
         base_query = _build_query(config, min_stars=min_stars)
         query = f"{base_query} created:{bucket_start}..{bucket_end}"
         page = 1
@@ -353,7 +361,9 @@ def _collect_repos_stratified(
             rl = _check_rate_limit()
             _wait_for_rate_limit(rl)
 
-            logger.debug(f"[{language_key}] {bucket_start} page {page} ({year_written}/{target_for_year})")
+            logger.debug(
+                f"[{language_key}] {bucket_start} page {page} ({year_written}/{target_for_year})"
+            )
             data = _search_page(query, page=page)
             items = data.get("items", [])
 
@@ -407,15 +417,18 @@ def _collect_repos_stratified(
 
 
 def _collect_repos_chronological(
-    language_key: str, config: LanguageConfig, max_repos: int, min_stars: int | None = None
+    language_key: str,
+    config: LanguageConfig,
+    max_repos: int,
+    min_stars: int | None = None,
 ) -> int:
     """
     Collect repos chronologically (oldest first) until max_repos is reached.
-    
+
     This is the original behavior. WARNING: Prone to temporal bias since
     it stops once max_repos is collected, typically resulting in mostly
     2015-2017 repos. Use stratified=True for better representativeness.
-    
+
     Args:
         language_key: e.g., 'python'
         config: Language configuration
@@ -494,7 +507,9 @@ def _collect_repos_chronological(
             f"{new_written} new repos collected"
         )
 
-    logger.info(f"[{language_key}] Chronological collection complete. New repos: {new_written}")
+    logger.info(
+        f"[{language_key}] Chronological collection complete. New repos: {new_written}"
+    )
     return new_written
 
 
@@ -535,9 +550,18 @@ def _generate_date_buckets(
 # ---------------------------------------------------------------------------
 
 
-def collect_all_languages(max_per_language: int | None = None, sort_by_stars: bool = True, stratified: bool = False) -> dict[str, int]:
+def collect_all_languages(
+    max_per_language: int | None = None,
+    sort_by_stars: bool = True,
+    stratified: bool = False,
+) -> dict[str, int]:
     results = {}
     for lang in LANGUAGE_CONFIGS:
-        count = collect_repos_for_language(lang, max_repos=max_per_language, sort_by_stars=sort_by_stars, stratified=stratified)
+        count = collect_repos_for_language(
+            lang,
+            max_repos=max_per_language,
+            sort_by_stars=sort_by_stars,
+            stratified=stratified,
+        )
         results[lang] = count
     return results

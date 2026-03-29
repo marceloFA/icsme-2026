@@ -14,9 +14,17 @@ import numpy as np
 import pandas as pd
 
 from ..eda_common import (
-    ROOT, DB_PATH, DEFAULT_OUT,
-    LANG_PALETTE, LANG_ORDER,
-    setup_style, save_or_show, load_db, has_data, qdf, lang_display
+    ROOT,
+    DB_PATH,
+    DEFAULT_OUT,
+    LANG_PALETTE,
+    LANG_ORDER,
+    setup_style,
+    save_or_show,
+    load_db,
+    has_data,
+    qdf,
+    lang_display,
 )
 
 
@@ -52,14 +60,14 @@ def plot_fixtures_per_repo(conn, out_dir, show):
     per_repo["log_count"] = np.log10(per_repo["fixture_count"])
 
     from scipy import stats
-    
+
     x_range = np.logspace(
         np.log10(per_repo["fixture_count"].min()),
         np.log10(per_repo["fixture_count"].max()),
-        200
+        200,
     )
     x_log = np.log10(x_range)
-    
+
     y_offset = 0
     for i, lang in enumerate(present):
         sub = per_repo[per_repo["language"] == lang]["log_count"].values
@@ -67,7 +75,7 @@ def plot_fixtures_per_repo(conn, out_dir, show):
             kde = stats.gaussian_kde(sub, bw_method=0.15)
             density = kde(x_log)
             density = density / density.max() * 0.8
-            
+
             ax.fill_between(
                 x_range,
                 y_offset,
@@ -85,14 +93,16 @@ def plot_fixtures_per_repo(conn, out_dir, show):
                 zorder=len(present) - i + 1,
             )
             y_offset += 1
-    
+
     ax.set_xscale("log")
     ax.xaxis.set_major_formatter(
         mticker.FuncFormatter(lambda v, _: str(int(v)) if v >= 1 else "")
     )
     ax.set_xlabel("Fixtures per Repository (log scale)")
     ax.set_ylabel("Language (density, offset)")
-    ax.set_title("How Many Fixtures Does Each Repository Have?", fontsize=14, fontweight="bold")
+    ax.set_title(
+        "How Many Fixtures Does Each Repository Have?", fontsize=14, fontweight="bold"
+    )
     ax.set_yticks([])
     ax.legend(fontsize=9, loc="upper right")
 
@@ -106,7 +116,9 @@ if __name__ == "__main__":
     parser.add_argument("--out", default=str(DEFAULT_OUT), help="Base output directory")
     parser.add_argument("--show", action="store_true")
     args = parser.parse_args()
-    
+
     setup_style()
     conn = load_db(args.db)
-    plot_fixtures_per_repo(conn, Path(args.out) / datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), args.show)
+    plot_fixtures_per_repo(
+        conn, Path(args.out) / datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), args.show
+    )

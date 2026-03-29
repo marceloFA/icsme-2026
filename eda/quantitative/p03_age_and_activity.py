@@ -15,9 +15,18 @@ import pandas as pd
 import seaborn as sns
 
 from ..eda_common import (
-    ROOT, DB_PATH, DEFAULT_OUT,
-    LANG_PALETTE, LANG_ORDER, STATUS_PALETTE,
-    setup_style, save_or_show, load_db, has_data, qdf, lang_display
+    ROOT,
+    DB_PATH,
+    DEFAULT_OUT,
+    LANG_PALETTE,
+    LANG_ORDER,
+    STATUS_PALETTE,
+    setup_style,
+    save_or_show,
+    load_db,
+    has_data,
+    qdf,
+    lang_display,
 )
 
 # -----------
@@ -51,19 +60,19 @@ def plot_age_and_activity(conn, out_dir, show):
     ax = axes[0]
     all_years = sorted(repos["created_year"].dropna().unique().astype(int))
     year_range = list(range(min(all_years), max(all_years) + 1))
-    
+
     # Build matrix: rows = languages, columns = years
     year_counts = {}
     for lang in present:
         sub = repos[repos["language"] == lang]["created_year"].dropna().astype(int)
         yearly = sub.value_counts().reindex(year_range, fill_value=0).sort_index()
         year_counts[lang] = yearly.values
-    
+
     # Stacked bar chart
     x = np.arange(len(year_range))
     width = 0.6
     bottom = np.zeros(len(year_range))
-    
+
     for lang in present:
         ax.bar(
             x,
@@ -77,7 +86,7 @@ def plot_age_and_activity(conn, out_dir, show):
             linewidth=0.5,
         )
         bottom += year_counts[lang]
-    
+
     ax.set_xlabel("Year")
     ax.set_ylabel("Number of Repositories")
     ax.set_title("When Were Repositories Created?\n(distribution across 2015–2017)")
@@ -86,7 +95,7 @@ def plot_age_and_activity(conn, out_dir, show):
     ax.yaxis.set_major_locator(mticker.MaxNLocator(integer=True))
     ax.legend(loc="upper left", fontsize=8, framealpha=0.95)
     ax.set_ylim(0, bottom.max() * 1.1)
-    
+
     # Add count labels on each segment
     bottom = np.zeros(len(year_range))
     for lang in present:
@@ -138,7 +147,6 @@ def plot_age_and_activity(conn, out_dir, show):
     save_or_show(fig, "03_age_and_activity", out_dir, show)
 
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="FixtureDB Repository Age & Activity")
     parser.add_argument("--db", default=str(DB_PATH))
@@ -155,9 +163,9 @@ if __name__ == "__main__":
 
     conn = load_db(Path(args.db))
     setup_style()
-    
+
     print(f"\n[Repository Age & Activity]")
     plot_age_and_activity(conn, out_dir, args.show)
-    
+
     conn.close()
     print("Done\n")

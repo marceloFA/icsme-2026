@@ -17,7 +17,7 @@ from ..conftest import (
 
 class TestTypeScriptMockitoPatterns:
     """ts-mockito patterns"""
-    
+
     def test_ts_mockito_setup(self):
         """ts-mockito setup in @Before"""
         code = """
@@ -33,13 +33,13 @@ export class TestClass {
     }
 }
 """
-        fixture = assert_fixture_detected(code, 'typescript', 'setUp')
-        assert fixture.name == 'setUp'
+        fixture = assert_fixture_detected(code, "typescript", "setUp")
+        assert fixture.name == "setUp"
 
 
 class TestTypeScriptJestMockPatterns:
     """Jest mock patterns with TypeScript"""
-    
+
     def test_jest_mock_with_types(self):
         """Jest mock with TypeScript type annotations"""
         code = """
@@ -52,9 +52,9 @@ beforeEach(() => {
     mockService.prototype.getUser.mockResolvedValue({id: 1, name: 'John'});
 });
 """
-        fixture = assert_fixture_with_type_detected(code, 'typescript', 'before_each')
-        assert fixture.fixture_type == 'before_each'
+        fixture = assert_fixture_with_type_detected(code, "typescript", "before_each")
+        assert fixture.fixture_type == "before_each"
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

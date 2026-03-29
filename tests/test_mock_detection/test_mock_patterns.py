@@ -17,7 +17,7 @@ from ..conftest import (
 
 class TestPythonMockPatterns:
     """Validate detection of Python mock patterns"""
-    
+
     def test_unittest_mock_detection(self):
         """unittest.mock usage in setUp should be detected as part of fixture"""
         code = """
@@ -33,11 +33,11 @@ class Test(unittest.TestCase):
     def tearDown(self):
         self.patcher.stop()
 """
-        fixture = assert_fixture_detected(code, 'python', 'setUp')
-        assert fixture.name == 'setUp'
+        fixture = assert_fixture_detected(code, "python", "setUp")
+        assert fixture.name == "setUp"
         # Should detect num_objects_instantiated > 0
         assert fixture.num_objects_instantiated >= 1
-    
+
     def test_pytest_mock_fixture(self):
         """pytest-mock mocker fixture should be detected"""
         code = """
@@ -47,11 +47,11 @@ def user_service(mocker):
     mocker.patch.object(service, 'get_user', return_value={'id': 1})
     return service
 """
-        fixture = assert_fixture_detected(code, 'python', 'user_service')
-        assert fixture.fixture_type == 'pytest_decorator'
+        fixture = assert_fixture_detected(code, "python", "user_service")
+        assert fixture.fixture_type == "pytest_decorator"
         # Has parameters (mocker)
         assert fixture.num_parameters >= 1
-    
+
     def test_mock_as_decorator(self):
         """@patch decorator on test method (not a fixture)"""
         code = """
@@ -61,8 +61,8 @@ def test_something(self, mock_func):
     assert test_function() == 42
 """
         # test_something is a test method, not a fixture
-        assert_fixture_not_detected(code, 'python', 'test_something')
-    
+        assert_fixture_not_detected(code, "python", "test_something")
+
     def test_monkeypatch_fixture(self):
         """pytest monkeypatch built-in fixture parameter"""
         code = """
@@ -71,9 +71,9 @@ def config(monkeypatch):
     monkeypatch.setenv('ENV', 'test')
     return {'key': 'value'}
 """
-        fixture = assert_fixture_detected(code, 'python', 'config')
+        fixture = assert_fixture_detected(code, "python", "config")
         assert fixture.num_parameters >= 1
-    
+
     def test_mock_spec_fixture(self):
         """Fixture using Mock with spec parameter"""
         code = """
@@ -82,13 +82,13 @@ def db_mock():
     from unittest.mock import Mock
     return Mock(spec=Database)
 """
-        fixture = assert_fixture_detected(code, 'python', 'db_mock')
+        fixture = assert_fixture_detected(code, "python", "db_mock")
         assert fixture.num_objects_instantiated >= 1  # Mock() creates an object
 
 
 class TestJavaMockPatterns:
     """Validate detection of Java mock patterns"""
-    
+
     def test_mockito_mock_in_setup(self):
         """Mockito mock setup in @Before fixture"""
         code = """
@@ -105,9 +105,9 @@ public class UserServiceTest {
     }
 }
 """
-        fixture = assert_fixture_detected(code, 'java', 'setUp')
-        assert fixture.fixture_type == 'junit4_before'
-    
+        fixture = assert_fixture_detected(code, "java", "setUp")
+        assert fixture.fixture_type == "junit4_before"
+
     def test_powermock_setup(self):
         """PowerMock setup in test fixture"""
         code = """
@@ -120,9 +120,9 @@ public class TestClass {
     }
 }
 """
-        fixture = assert_fixture_detected(code, 'java', 'setUp')
-        assert fixture.name == 'setUp'
-    
+        fixture = assert_fixture_detected(code, "java", "setUp")
+        assert fixture.name == "setUp"
+
     def test_spy_pattern(self):
         """Spy/partial mock pattern in setUp"""
         code = """
@@ -135,13 +135,13 @@ public class Test extends TestCase {
     }
 }
 """
-        fixture = assert_fixture_detected(code, 'java', 'setUp')
+        fixture = assert_fixture_detected(code, "java", "setUp")
         assert fixture.num_objects_instantiated >= 2
 
 
 class TestJavaScriptMockPatterns:
     """Validate detection of JavaScript mock patterns"""
-    
+
     def test_jest_mock_function(self):
         """Jest jest.fn() mock in beforeEach"""
         code = """
@@ -154,9 +154,9 @@ describe('Module', () => {
     });
 });
 """
-        fixture = assert_fixture_with_type_detected(code, 'javascript', 'before_each')
-        assert fixture.fixture_type == 'before_each'
-    
+        fixture = assert_fixture_with_type_detected(code, "javascript", "before_each")
+        assert fixture.fixture_type == "before_each"
+
     def test_sinon_stub_setup(self):
         """Sinon stub/spy setup in beforeEach"""
         code = """
@@ -174,9 +174,9 @@ describe('Test', function() {
     });
 });
 """
-        fixture = assert_fixture_with_type_detected(code, 'javascript', 'before_each')
-        assert fixture.fixture_type == 'before_each'
-    
+        fixture = assert_fixture_with_type_detected(code, "javascript", "before_each")
+        assert fixture.fixture_type == "before_each"
+
     def test_jest_mock_module(self):
         """jest.mock() for module mocking"""
         code = """
@@ -187,13 +187,13 @@ beforeEach(() => {
     api.fetch.mockResolvedValue({data: []});
 });
 """
-        fixture = assert_fixture_with_type_detected(code, 'javascript', 'before_each')
-        assert fixture.fixture_type == 'before_each'
+        fixture = assert_fixture_with_type_detected(code, "javascript", "before_each")
+        assert fixture.fixture_type == "before_each"
 
 
 class TestTypeScriptMockPatterns:
     """Validate detection of TypeScript mock patterns"""
-    
+
     def test_ts_mockito_setup(self):
         """ts-mockito setup in @Before"""
         code = """
@@ -209,9 +209,9 @@ export class TestClass {
     }
 }
 """
-        fixture = assert_fixture_detected(code, 'typescript', 'setUp')
-        assert fixture.name == 'setUp'
-    
+        fixture = assert_fixture_detected(code, "typescript", "setUp")
+        assert fixture.name == "setUp"
+
     def test_jest_mock_with_types(self):
         """Jest mock with TypeScript type annotations"""
         code = """
@@ -224,13 +224,13 @@ beforeEach(() => {
     mockService.prototype.getUser.mockResolvedValue({id: 1, name: 'John'});
 });
 """
-        fixture = assert_fixture_with_type_detected(code, 'typescript', 'before_each')
-        assert fixture.fixture_type == 'before_each'
+        fixture = assert_fixture_with_type_detected(code, "typescript", "before_each")
+        assert fixture.fixture_type == "before_each"
 
 
 class TestGoMockPatterns:
     """Validate detection of Go mock patterns"""
-    
+
     def test_gomock_interface_setup(self):
         """GoMock interface mock in setup function"""
         code = """
@@ -246,9 +246,9 @@ func TestExample(t *testing.T) {
 """
         # Go uses factory pattern, not fixtures like other languages
         # Just verify no crashes
-        fixtures = extract_and_find_fixtures(code, 'go')
+        fixtures = extract_and_find_fixtures(code, "go")
         assert isinstance(fixtures, list)
-    
+
     def test_mock_assignment(self):
         """Simple mock object assignment in test"""
         code = """
@@ -261,13 +261,13 @@ func setupTest() *MockService {
 }
 """
         # Go helper functions might be detected as fixtures
-        fixtures = extract_and_find_fixtures(code, 'go')
+        fixtures = extract_and_find_fixtures(code, "go")
         assert isinstance(fixtures, list)
 
 
 class TestCSharpMockPatterns:
     """Validate detection of C# mock patterns"""
-    
+
     def test_moq_setup(self):
         """Moq mock setup in [SetUp] fixture"""
         code = """
@@ -286,10 +286,10 @@ public class UserServiceTests {
     }
 }
 """
-        fixture = assert_fixture_detected(code, 'csharp', 'Setup')
-        assert fixture.fixture_type == 'nunit_setup'
+        fixture = assert_fixture_detected(code, "csharp", "Setup")
+        assert fixture.fixture_type == "nunit_setup"
         assert fixture.num_objects_instantiated >= 1
-    
+
     def test_nsubstitute_setup(self):
         """NSubstitute mock setup"""
         code = """
@@ -307,9 +307,9 @@ public class UserServiceTests {
     }
 }
 """
-        fixture = assert_fixture_detected(code, 'csharp', 'Setup')
+        fixture = assert_fixture_detected(code, "csharp", "Setup")
         assert fixture.num_objects_instantiated >= 1
-    
+
     def test_xunit_fixture_database(self):
         """xUnit async fixture with mock database"""
         code = """
@@ -326,14 +326,14 @@ public class DatabaseFixture : IAsyncLifetime {
     }
 }
 """
-        fixture = assert_fixture_detected(code, 'csharp', 'InitializeAsync')
+        fixture = assert_fixture_detected(code, "csharp", "InitializeAsync")
         # Should detect async pattern
         assert fixture is not None
 
 
 class TestMockDetectionAccuracy:
     """Validate false positive/negative rates in mock detection"""
-    
+
     def test_mock_in_test_body_not_fixture(self):
         """Mock created in test body should not be detected as fixture"""
         code = """
@@ -342,10 +342,10 @@ def test_something(self):
     mock.return_value = 42
     assert function(mock) == 42
 """
-        fixtures = extract_and_find_fixtures(code, 'python')
+        fixtures = extract_and_find_fixtures(code, "python")
         # test_something is a test method, not a fixture
-        assert not any(f.name == 'test_something' for f in fixtures)
-    
+        assert not any(f.name == "test_something" for f in fixtures)
+
     def test_mock_factory_function_detected(self):
         """Helper function creating mocks might be detected as fixture"""
         code = """
@@ -355,9 +355,9 @@ def mock_user_factory():
         return Mock(spec=User, name=name)
     return create_mock
 """
-        fixture = assert_fixture_detected(code, 'python', 'mock_user_factory')
-        assert fixture.fixture_type == 'pytest_decorator'
-    
+        fixture = assert_fixture_detected(code, "python", "mock_user_factory")
+        assert fixture.fixture_type == "pytest_decorator"
+
     def test_mock_config_as_fixture(self):
         """Config/setup object should be detected if it's a fixture"""
         code = """
@@ -368,13 +368,13 @@ def mock_config():
     cfg.timeout = 30
     return cfg
 """
-        fixture = assert_fixture_detected(code, 'python', 'mock_config')
+        fixture = assert_fixture_detected(code, "python", "mock_config")
         assert fixture.num_objects_instantiated >= 1
 
 
 class TestMockFrameworkDetection:
     """Validate detection of mock framework types"""
-    
+
     def test_unittest_mock_imports(self):
         """Code using unittest.mock should be distinguishable"""
         code = """
@@ -383,10 +383,10 @@ from unittest.mock import Mock, patch, MagicMock
 def setUp(self):
     self.mock = Mock()
 """
-        fixture = assert_fixture_detected(code, 'python', 'setUp')
+        fixture = assert_fixture_detected(code, "python", "setUp")
         # Fixture uses Mock objects
         assert fixture.num_objects_instantiated >= 1
-    
+
     def test_pytest_mock_imports(self):
         """Code using pytest-mock should be distinguishable"""
         code = """
@@ -395,9 +395,9 @@ def my_test(mocker):
     mock = mocker.Mock()
     return mock
 """
-        fixture = assert_fixture_detected(code, 'python', 'my_test')
+        fixture = assert_fixture_detected(code, "python", "my_test")
         assert fixture.num_parameters >= 1
-    
+
     def test_multiple_mock_frameworks(self):
         """Code mixing mock frameworks should be handled"""
         code = """
@@ -410,10 +410,10 @@ def hybrid_mock(mocker: MockerFixture):
     m2 = mocker.Mock()
     return (m1, m2)
 """
-        fixture = assert_fixture_detected(code, 'python', 'hybrid_mock')
+        fixture = assert_fixture_detected(code, "python", "hybrid_mock")
         assert fixture.num_parameters >= 1
         assert fixture.num_objects_instantiated >= 1
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

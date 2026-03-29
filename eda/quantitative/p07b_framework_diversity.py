@@ -13,9 +13,17 @@ import matplotlib.colors as mcolors
 import pandas as pd
 
 from ..eda_common import (
-    ROOT, DB_PATH, DEFAULT_OUT,
-    LANG_PALETTE, LANG_ORDER,
-    setup_style, save_or_show, load_db, has_data, qdf, lang_display
+    ROOT,
+    DB_PATH,
+    DEFAULT_OUT,
+    LANG_PALETTE,
+    LANG_ORDER,
+    setup_style,
+    save_or_show,
+    load_db,
+    has_data,
+    qdf,
+    lang_display,
 )
 
 
@@ -94,7 +102,9 @@ def plot_framework_diversity(conn, out_dir, show):
     ax.set_yticklabels([lang_display(l) for l in present])
     ax.set_xlabel("Share of mock calls using each framework (%)")
     ax.set_xlim(0, 105)
-    ax.set_title("Which Mocking Frameworks Do Developers Use?", fontsize=14, fontweight="bold")
+    ax.set_title(
+        "Which Mocking Frameworks Do Developers Use?", fontsize=14, fontweight="bold"
+    )
 
     plt.tight_layout()
     save_or_show(fig, "07b_framework_diversity", out_dir, show)
@@ -106,7 +116,9 @@ if __name__ == "__main__":
     parser.add_argument("--out", default=str(DEFAULT_OUT), help="Base output directory")
     parser.add_argument("--show", action="store_true")
     args = parser.parse_args()
-    
+
     setup_style()
     conn = load_db(args.db)
-    plot_framework_diversity(conn, Path(args.out) / datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), args.show)
+    plot_framework_diversity(
+        conn, Path(args.out) / datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), args.show
+    )

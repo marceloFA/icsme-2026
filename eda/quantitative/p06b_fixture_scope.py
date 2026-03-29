@@ -13,9 +13,17 @@ import numpy as np
 import pandas as pd
 
 from ..eda_common import (
-    ROOT, DB_PATH, DEFAULT_OUT,
-    LANG_PALETTE, LANG_ORDER,
-    setup_style, save_or_show, load_db, has_data, qdf, lang_display
+    ROOT,
+    DB_PATH,
+    DEFAULT_OUT,
+    LANG_PALETTE,
+    LANG_ORDER,
+    setup_style,
+    save_or_show,
+    load_db,
+    has_data,
+    qdf,
+    lang_display,
 )
 
 
@@ -53,22 +61,22 @@ def plot_fixture_scope(conn, out_dir, show):
         .fillna(0)
     )
     pivot_scope_pct = pivot_scope.div(pivot_scope.sum(axis=1), axis=0) * 100
-    
+
     scope_order = ["per_test", "per_class", "per_module", "global"]
     scope_order = [s for s in scope_order if s in pivot_scope_pct.columns]
     pivot_scope_pct = pivot_scope_pct[scope_order]
-    
+
     scope_colors = {
         "per_test": "#4ECDC4",
         "per_class": "#FFE66D",
         "per_module": "#FF6B6B",
         "global": "#95B8D1",
     }
-    
+
     x_pos = np.arange(len(present))
     width = 0.55
     bottom = np.zeros(len(present))
-    
+
     for scope in scope_order:
         vals = pivot_scope_pct[scope].values
         color = scope_colors.get(scope, "#CCCCCC")
@@ -83,7 +91,7 @@ def plot_fixture_scope(conn, out_dir, show):
             edgecolor="white",
             linewidth=0.5,
         )
-        
+
         for i, (bar, val) in enumerate(zip(bars, vals)):
             if val > 5:
                 ax.text(
@@ -97,10 +105,12 @@ def plot_fixture_scope(conn, out_dir, show):
                     color="white" if scope != "per_class" else "#333",
                 )
         bottom += vals
-    
+
     ax.set_ylabel("Share of Fixtures (%)")
     ax.set_xlabel("")
-    ax.set_title("Fixture Scope Distribution per Language", fontsize=14, fontweight="bold")
+    ax.set_title(
+        "Fixture Scope Distribution per Language", fontsize=14, fontweight="bold"
+    )
     ax.set_xticks(x_pos)
     ax.set_xticklabels([lang_display(l) for l in present])
     ax.set_ylim(0, 105)
@@ -117,7 +127,9 @@ if __name__ == "__main__":
     parser.add_argument("--out", default=str(DEFAULT_OUT), help="Base output directory")
     parser.add_argument("--show", action="store_true")
     args = parser.parse_args()
-    
+
     setup_style()
     conn = load_db(args.db)
-    plot_fixture_scope(conn, Path(args.out) / datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), args.show)
+    plot_fixture_scope(
+        conn, Path(args.out) / datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), args.show
+    )

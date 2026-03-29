@@ -140,7 +140,9 @@ def clone_repo(
     # Pre-check 1: Verify the remote repo is accessible before cloning
     # This avoids wasting time/bandwidth on 404s or network errors
     if not _is_accessible_remote(clone_url):
-        logger.debug(f"[clone] Skip {full_name}: remote not accessible or repo does not exist")
+        logger.debug(
+            f"[clone] Skip {full_name}: remote not accessible or repo does not exist"
+        )
         return repo_id, "error", None
 
     # Pre-check 2: Quick verify via GitHub API that repo has test files
@@ -235,11 +237,11 @@ def _has_sufficient_test_files(full_name: str, language: str) -> bool:
     """
     Check if the repository has at least MIN_TEST_FILES via GitHub API.
     This avoids cloning repos that clearly have no test files.
-    
+
     Uses the GitHub code search API to count test files by examining
     standard test path patterns for the given language.
-    
-    Returns True if the repo likely has sufficient test files, 
+
+    Returns True if the repo likely has sufficient test files,
     False if we're confident it doesn't.
     Returns True on API errors (fallback: proceed with clone and check locally).
     """
@@ -247,28 +249,28 @@ def _has_sufficient_test_files(full_name: str, language: str) -> bool:
         config = LANGUAGE_CONFIGS.get(language)
         if not config or not config.test_path_patterns:
             return True  # No test patterns defined, skip check
-        
+
         # Build search query: look for files in test directories
         # Example: repo:owner/name filename:test_*.py OR path:tests
         test_patterns = config.test_path_patterns[:3]  # Limit to 3 most common
-        pattern_queries = " OR ".join([f'path:{p}' for p in test_patterns])
-        query = f'repo:{full_name} ({pattern_queries})'
-        
+        pattern_queries = " OR ".join([f"path:{p}" for p in test_patterns])
+        query = f"repo:{full_name} ({pattern_queries})"
+
         headers = {
             "Accept": "application/vnd.github+json",
             "X-GitHub-Api-Version": "2022-11-28",
         }
         if GITHUB_TOKEN:
             headers["Authorization"] = f"Bearer {GITHUB_TOKEN}"
-        
+
         url = "https://api.github.com/search/code"
         params = {
             "q": query,
             "per_page": 1,  # Just need to know if files exist
         }
-        
+
         response = requests.get(url, headers=headers, params=params, timeout=5)
-        
+
         if response.status_code == 200:
             data = response.json()
             count = data.get("total_count", 0)
@@ -280,12 +282,14 @@ def _has_sufficient_test_files(full_name: str, language: str) -> bool:
             return True
         elif response.status_code == 422:
             # Invalid search query (too complex) — fallback to clone
-            logger.debug(f"[clone] Could not validate test files for {full_name} via API")
+            logger.debug(
+                f"[clone] Could not validate test files for {full_name} via API"
+            )
             return True
         else:
             # Other errors — don't skip, let clone do the check
             return True
-            
+
     except Exception as e:
         logger.debug(f"[clone] Error checking test files for {full_name}: {e}")
         # On error, return True to proceed with clone (don't skip on error)
@@ -372,7 +376,7 @@ def clone_pending_repos(
     batch_total = len(batch)
     logger.info(f"Cloning batch of {batch_total} repos with {CLONE_WORKERS} workers …")
     summary = {"cloned": 0, "skipped": 0, "error": 0}
-    
+
     # Progress tracking
     processed = 0
     start_time = time.time()
@@ -393,10 +397,10 @@ def clone_pending_repos(
             repo_id, status, commit = future.result()
             summary[status] = summary.get(status, 0) + 1
             processed += 1
-            
+
             with db_session() as conn:
                 set_repo_status(conn, repo_id, status, pinned_commit=commit)
-            
+
             # Log progress periodically
             if processed % progress_interval == 0 or processed == batch_total:
                 elapsed = time.time() - start_time
@@ -405,7 +409,7 @@ def clone_pending_repos(
                 eta_secs = remaining / rate if rate > 0 else 0
                 eta_mins = eta_secs / 60
                 percent = (processed / batch_total) * 100
-                
+
                 logger.info(
                     f"[progress] Cloned {processed:4d}/{batch_total} ({percent:5.1f}%) | "
                     f"cloned:{summary['cloned']:3d} skipped:{summary['skipped']:3d} error:{summary['error']:1d} | "

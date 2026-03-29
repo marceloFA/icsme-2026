@@ -16,7 +16,7 @@ from ..conftest import (
 
 class TestRealWorldPythonFixtures:
     """Integration tests using realistic Python test code"""
-    
+
     def test_django_test_case_hierarchy(self):
         """Realistic Django test case with multiple fixtures"""
         code = """
@@ -45,14 +45,14 @@ class UserModelTests(TestCase):
         User.objects.all().delete()
         self.user = None
 """
-        assert_fixture_count(code, 'python', 4)
-        
+        assert_fixture_count(code, "python", 4)
+
         # Verify each fixture is detected
-        assert_fixture_detected(code, 'python', 'setUpClass')
-        assert_fixture_detected(code, 'python', 'tearDownClass')
-        assert_fixture_detected(code, 'python', 'setUp')
-        assert_fixture_detected(code, 'python', 'tearDown')
-    
+        assert_fixture_detected(code, "python", "setUpClass")
+        assert_fixture_detected(code, "python", "tearDownClass")
+        assert_fixture_detected(code, "python", "setUp")
+        assert_fixture_detected(code, "python", "tearDown")
+
     def test_pytest_parametrized_fixture(self):
         """Pytest with parametrized fixtures"""
         code = """
@@ -76,10 +76,10 @@ class TestBackends:
     def test_all_backends(self, cleanup):
         assert cleanup is not None
 """
-        assert_fixture_count(code, 'python', 2)
-        assert_fixture_detected(code, 'python', 'backend')
-        assert_fixture_detected(code, 'python', 'cleanup')
-    
+        assert_fixture_count(code, "python", 2)
+        assert_fixture_detected(code, "python", "backend")
+        assert_fixture_detected(code, "python", "cleanup")
+
     def test_sqlalchemy_session_fixture(self):
         """Real SQLAlchemy session fixture pattern"""
         code = """
@@ -112,12 +112,12 @@ def populated_session(session):
     session.commit()
     return session
 """
-        assert_fixture_count(code, 'python', 3)
+        assert_fixture_count(code, "python", 3)
 
 
 class TestRealWorldJavaFixtures:
     """Integration tests using realistic Java test code"""
-    
+
     def test_junit5_complex_hierarchy(self):
         """JUnit 5 test with multiple lifecycle methods"""
         code = """
@@ -167,11 +167,11 @@ public class UserServiceTest {
 }
 """
         # Should detect all lifecycle methods
-        assert_fixture_detected(code, 'java', 'setUpAll')
-        assert_fixture_detected(code, 'java', 'setUp')
-        assert_fixture_detected(code, 'java', 'tearDown')
-        assert_fixture_detected(code, 'java', 'tearDownAll')
-    
+        assert_fixture_detected(code, "java", "setUpAll")
+        assert_fixture_detected(code, "java", "setUp")
+        assert_fixture_detected(code, "java", "tearDown")
+        assert_fixture_detected(code, "java", "tearDownAll")
+
     def test_testng_dataprovider_setup(self):
         """TestNG with DataProvider and setup methods"""
         code = """
@@ -208,14 +208,14 @@ public class DataProviderTests {
     }
 }
 """
-        assert_fixture_detected(code, 'java', 'setUpClass')
-        assert_fixture_detected(code, 'java', 'setUp')
-        assert_fixture_detected(code, 'java', 'tearDown')
+        assert_fixture_detected(code, "java", "setUpClass")
+        assert_fixture_detected(code, "java", "setUp")
+        assert_fixture_detected(code, "java", "tearDown")
 
 
 class TestRealWorldJavaScriptFixtures:
     """Integration tests using realistic JavaScript test code"""
-    
+
     def test_jest_complex_setup(self):
         """Jest test file with multiple setup methods and fixtures"""
         code = """
@@ -258,11 +258,11 @@ describe('User API', () => {
     });
 });
 """
-        assert_fixture_with_type_detected(code, 'javascript', 'before_all')
-        assert_fixture_with_type_detected(code, 'javascript', 'before_each', count=2)
-        assert_fixture_with_type_detected(code, 'javascript', 'after_each', count=2)
-        assert_fixture_with_type_detected(code, 'javascript', 'after_all')
-    
+        assert_fixture_with_type_detected(code, "javascript", "before_all")
+        assert_fixture_with_type_detected(code, "javascript", "before_each", count=2)
+        assert_fixture_with_type_detected(code, "javascript", "after_each", count=2)
+        assert_fixture_with_type_detected(code, "javascript", "after_all")
+
     def test_mocha_with_context(self):
         """Mocha test with describe/context blocks"""
         code = """
@@ -289,12 +289,12 @@ describe('Array', () => {
 });
 """
         # Should detect nested beforeEach fixtures
-        assert_fixture_count(code, 'javascript', 2)
+        assert_fixture_count(code, "javascript", 2)
 
 
 class TestRealWorldTypeScriptFixtures:
     """Integration tests using realistic TypeScript test code"""
-    
+
     def test_jest_with_type_annotations(self):
         """Jest TypeScript with proper type annotations"""
         code = """
@@ -333,13 +333,13 @@ describe('UserRepository', () => {
     });
 });
 """
-        assert_fixture_with_type_detected(code, 'typescript', 'before_each', count=2)
-        assert_fixture_with_type_detected(code, 'typescript', 'after_each')
+        assert_fixture_with_type_detected(code, "typescript", "before_each", count=2)
+        assert_fixture_with_type_detected(code, "typescript", "after_each")
 
 
 class TestRealWorldGoFixtures:
     """Integration tests using realistic Go test code"""
-    
+
     def test_go_table_driven_tests(self):
         """Go table-driven test pattern"""
         code = """
@@ -382,13 +382,13 @@ func setupTestDB(t *testing.T) *Database {
 }
 """
         # Go doesn't have traditional fixtures, but verify no crashes
-        fixtures = extract_and_find_fixtures(code, 'go')
+        fixtures = extract_and_find_fixtures(code, "go")
         assert isinstance(fixtures, list)
 
 
 class TestRealWorldCSharpFixtures:
     """Integration tests using realistic C# test code"""
-    
+
     def test_xunit_with_collection_fixtures(self):
         """xUnit test class with collection fixtures"""
         code = """
@@ -435,9 +435,9 @@ public class UserRepositoryTests {
     }
 }
 """
-        assert_fixture_detected(code, 'csharp', 'InitializeAsync')
-        assert_fixture_detected(code, 'csharp', 'DisposeAsync')
-    
+        assert_fixture_detected(code, "csharp", "InitializeAsync")
+        assert_fixture_detected(code, "csharp", "DisposeAsync")
+
     def test_nunit_with_inheritance(self):
         """NUnit test with inheritance hierarchy"""
         code = """
@@ -478,26 +478,26 @@ public class UserRepositoryTests : BaseRepositoryTests {
     }
 }
 """
-        assert_fixture_detected(code, 'csharp', 'OneTimeSetUp')
-        assert_fixture_detected(code, 'csharp', 'Setup')
-        assert_fixture_detected(code, 'csharp', 'TearDown')
-        assert_fixture_detected(code, 'csharp', 'OneTimeTearDown')
+        assert_fixture_detected(code, "csharp", "OneTimeSetUp")
+        assert_fixture_detected(code, "csharp", "Setup")
+        assert_fixture_detected(code, "csharp", "TearDown")
+        assert_fixture_detected(code, "csharp", "OneTimeTearDown")
 
 
 class TestMultiLanguageConsistency:
     """Validate consistent detection across multiple languages in one test"""
-    
+
     def test_equivalent_fixtures_all_languages(self):
         """Same fixture pattern should be detected across all languages"""
-        
+
         # Per-test setup pattern in each language
         examples = {
-            'python': """
+            "python": """
 class Test(unittest.TestCase):
     def setUp(self):
         self.resource = create_resource()
 """,
-            'java': """
+            "java": """
 public class Test {
     @Before
     public void setUp() {
@@ -505,7 +505,7 @@ public class Test {
     }
 }
 """,
-            'javascript': """
+            "javascript": """
 describe('Test', () => {
     let resource;
     
@@ -514,7 +514,7 @@ describe('Test', () => {
     });
 });
 """,
-            'csharp': """
+            "csharp": """
 [TestFixture]
 public class Test {
     [SetUp]
@@ -522,19 +522,20 @@ public class Test {
         resource = CreateResource();
     }
 }
-"""
+""",
         }
-        
+
         for language, code in examples.items():
             fixtures = extract_and_find_fixtures(code, language)
             assert len(fixtures) > 0, f"No fixtures detected in {language}"
-            assert fixtures[0].scope == 'per_test', \
-                f"Wrong scope for {language}: {fixtures[0].scope}"
+            assert (
+                fixtures[0].scope == "per_test"
+            ), f"Wrong scope for {language}: {fixtures[0].scope}"
 
 
 class TestLargeComplexTestFiles:
     """Integration tests on larger, more complex test files"""
-    
+
     def test_large_python_test_module(self):
         """Integration test on 200+ line fixture-heavy Python module"""
         code = """
@@ -596,12 +597,12 @@ def teardown_module():
     MODULE_SETUP_DONE = False
 """
         # Should detect all fixtures
-        assert_fixture_count(code, 'python', 9)
+        assert_fixture_count(code, "python", 9)
 
 
 class TestFixtureDependencies:
     """Test extraction of fixtures with dependencies"""
-    
+
     def test_pytest_fixture_dependency_chain(self):
         """Fixtures depending on other fixtures"""
         code = """
@@ -621,16 +622,16 @@ def authenticated_user(user):
 def test_auth(authenticated_user):
     assert authenticated_user.is_authenticated
 """
-        fixtures = extract_and_find_fixtures(code, 'python')
-        user_data = [f for f in fixtures if f.name == 'user_data'][0]
-        user = [f for f in fixtures if f.name == 'user'][0]
-        auth_user = [f for f in fixtures if f.name == 'authenticated_user'][0]
-        
+        fixtures = extract_and_find_fixtures(code, "python")
+        user_data = [f for f in fixtures if f.name == "user_data"][0]
+        user = [f for f in fixtures if f.name == "user"][0]
+        auth_user = [f for f in fixtures if f.name == "authenticated_user"][0]
+
         # All should have correct parameters
         assert user_data.num_parameters == 0
         assert user.num_parameters == 1
         assert auth_user.num_parameters == 1
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

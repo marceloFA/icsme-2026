@@ -2,7 +2,7 @@
 Unit tests for framework detection across all supported languages.
 
 Tests verify that fixtures are correctly identified with their respective
-testing frameworks (pytest, unittest, junit, nunit, mstest, xunit, testify, 
+testing frameworks (pytest, unittest, junit, nunit, mstest, xunit, testify,
 golang_testing, ava, etc.).
 """
 
@@ -12,7 +12,7 @@ from .conftest import extract_and_find_fixtures, assert_fixture_detected
 
 class TestPythonFrameworkDetection:
     """Test Python framework detection (pytest and unittest)"""
-    
+
     def test_pytest_decorator_framework(self):
         """Pytest fixtures with @pytest.fixture decorator should have framework='pytest'"""
         code = """
@@ -29,15 +29,15 @@ def config():
     return load_config()
 """
         # Check first fixture
-        fixtures = extract_and_find_fixtures(code, 'python', 'db_connection')
+        fixtures = extract_and_find_fixtures(code, "python", "db_connection")
         assert len(fixtures) > 0
-        assert fixtures[0].framework == 'pytest'
-        
+        assert fixtures[0].framework == "pytest"
+
         # Check second fixture
-        fixtures = extract_and_find_fixtures(code, 'python', 'config')
+        fixtures = extract_and_find_fixtures(code, "python", "config")
         assert len(fixtures) > 0
-        assert fixtures[0].framework == 'pytest'
-    
+        assert fixtures[0].framework == "pytest"
+
     def test_unittest_setUp_framework(self):
         """unittest setUp/tearDown should have framework='unittest'"""
         code = """
@@ -55,15 +55,15 @@ class TestDatabase(unittest.TestCase):
         self.assertEqual(result, [1])
 """
         # Check setUp
-        fixtures = extract_and_find_fixtures(code, 'python', 'setUp')
+        fixtures = extract_and_find_fixtures(code, "python", "setUp")
         assert len(fixtures) > 0
-        assert fixtures[0].framework == 'unittest'
-        
+        assert fixtures[0].framework == "unittest"
+
         # Check tearDown
-        fixtures = extract_and_find_fixtures(code, 'python', 'tearDown')
+        fixtures = extract_and_find_fixtures(code, "python", "tearDown")
         assert len(fixtures) > 0
-        assert fixtures[0].framework == 'unittest'
-    
+        assert fixtures[0].framework == "unittest"
+
     def test_unittest_classmethod_fixtures(self):
         """unittest setUpClass/tearDownClass should have framework='unittest'"""
         code = """
@@ -79,19 +79,19 @@ class TestSuite(unittest.TestCase):
         cleanup_resources(cls.resources)
 """
         # Check setUpClass
-        fixtures = extract_and_find_fixtures(code, 'python', 'setUpClass')
+        fixtures = extract_and_find_fixtures(code, "python", "setUpClass")
         assert len(fixtures) > 0
-        assert fixtures[0].framework == 'unittest'
-        
+        assert fixtures[0].framework == "unittest"
+
         # Check tearDownClass
-        fixtures = extract_and_find_fixtures(code, 'python', 'tearDownClass')
+        fixtures = extract_and_find_fixtures(code, "python", "tearDownClass")
         assert len(fixtures) > 0
-        assert fixtures[0].framework == 'unittest'
+        assert fixtures[0].framework == "unittest"
 
 
 class TestJavaFrameworkDetection:
     """Test Java framework detection (JUnit)"""
-    
+
     def test_junit_before_after_annotations(self):
         """JUnit @Before/@After annotations should have framework='junit'"""
         code = """
@@ -118,15 +118,15 @@ public class TestCalculator {
 }
 """
         # Check @Before
-        fixtures = extract_and_find_fixtures(code, 'java', 'setUp')
+        fixtures = extract_and_find_fixtures(code, "java", "setUp")
         assert len(fixtures) > 0
-        assert fixtures[0].framework == 'junit'
-        
+        assert fixtures[0].framework == "junit"
+
         # Check @After
-        fixtures = extract_and_find_fixtures(code, 'java', 'tearDown')
+        fixtures = extract_and_find_fixtures(code, "java", "tearDown")
         assert len(fixtures) > 0
-        assert fixtures[0].framework == 'junit'
-    
+        assert fixtures[0].framework == "junit"
+
     def test_junit_class_annotations(self):
         """JUnit @BeforeClass/@AfterClass should have framework='junit'"""
         code = """
@@ -148,15 +148,15 @@ public class ExpensiveResourceTest {
 }
 """
         # Check @BeforeClass
-        fixtures = extract_and_find_fixtures(code, 'java', 'setUpClass')
+        fixtures = extract_and_find_fixtures(code, "java", "setUpClass")
         assert len(fixtures) > 0
-        assert fixtures[0].framework == 'junit'
-        
+        assert fixtures[0].framework == "junit"
+
         # Check @AfterClass
-        fixtures = extract_and_find_fixtures(code, 'java', 'tearDownClass')
+        fixtures = extract_and_find_fixtures(code, "java", "tearDownClass")
         assert len(fixtures) > 0
-        assert fixtures[0].framework == 'junit'
-    
+        assert fixtures[0].framework == "junit"
+
     def test_junit_rule_annotations(self):
         """JUnit @Rule/@ClassRule should have framework='junit'"""
         code = """
@@ -172,22 +172,24 @@ public class TemporaryFolderTest {
 }
 """
         # @Rule/@ClassRule fields are detected as anonymous fixtures with specific types
-        all_fixtures = extract_and_find_fixtures(code, 'java')
-        
+        all_fixtures = extract_and_find_fixtures(code, "java")
+
         # Check for junit_rule type
-        rule_fixtures = [f for f in all_fixtures if f.fixture_type == 'junit_rule']
+        rule_fixtures = [f for f in all_fixtures if f.fixture_type == "junit_rule"]
         assert len(rule_fixtures) > 0, "@Rule fixture should be detected"
-        assert rule_fixtures[0].framework == 'junit'
-        
+        assert rule_fixtures[0].framework == "junit"
+
         # Check for junit_class_rule type
-        class_rule_fixtures = [f for f in all_fixtures if f.fixture_type == 'junit_class_rule']
+        class_rule_fixtures = [
+            f for f in all_fixtures if f.fixture_type == "junit_class_rule"
+        ]
         assert len(class_rule_fixtures) > 0, "@ClassRule fixture should be detected"
-        assert class_rule_fixtures[0].framework == 'junit'
+        assert class_rule_fixtures[0].framework == "junit"
 
 
 class TestCSharpFrameworkDetection:
     """Test C# framework detection (NUnit, MSTest, xUnit)"""
-    
+
     def test_nunit_attributes(self):
         """NUnit [SetUp]/[TearDown] should have framework='nunit'"""
         code = """
@@ -214,15 +216,15 @@ public class DatabaseTests {
 }
 """
         # Check [SetUp]
-        fixtures = extract_and_find_fixtures(code, 'csharp', 'Setup')
+        fixtures = extract_and_find_fixtures(code, "csharp", "Setup")
         assert len(fixtures) > 0
-        assert fixtures[0].framework == 'nunit'
-        
+        assert fixtures[0].framework == "nunit"
+
         # Check [TearDown]
-        fixtures = extract_and_find_fixtures(code, 'csharp', 'Cleanup')
+        fixtures = extract_and_find_fixtures(code, "csharp", "Cleanup")
         assert len(fixtures) > 0
-        assert fixtures[0].framework == 'nunit'
-    
+        assert fixtures[0].framework == "nunit"
+
     def test_nunit_class_attributes(self):
         """NUnit [OneTimeSetUp]/[OneTimeTearDown] should have framework='nunit'"""
         code = """
@@ -244,15 +246,15 @@ public class ExpensiveResourceTests {
 }
 """
         # Check [OneTimeSetUp]
-        fixtures = extract_and_find_fixtures(code, 'csharp', 'ClassSetUp')
+        fixtures = extract_and_find_fixtures(code, "csharp", "ClassSetUp")
         assert len(fixtures) > 0
-        assert fixtures[0].framework == 'nunit'
-        
+        assert fixtures[0].framework == "nunit"
+
         # Check [OneTimeTearDown]
-        fixtures = extract_and_find_fixtures(code, 'csharp', 'ClassCleanUp')
+        fixtures = extract_and_find_fixtures(code, "csharp", "ClassCleanUp")
         assert len(fixtures) > 0
-        assert fixtures[0].framework == 'nunit'
-    
+        assert fixtures[0].framework == "nunit"
+
     def test_mstest_attributes(self):
         """MSTest [TestInitialize]/[TestCleanup] should have framework='mstest'"""
         code = """
@@ -280,15 +282,15 @@ public class ApiTests {
 }
 """
         # Check [TestInitialize]
-        fixtures = extract_and_find_fixtures(code, 'csharp', 'TestSetUp')
+        fixtures = extract_and_find_fixtures(code, "csharp", "TestSetUp")
         assert len(fixtures) > 0
-        assert fixtures[0].framework == 'mstest'
-        
+        assert fixtures[0].framework == "mstest"
+
         # Check [TestCleanup]
-        fixtures = extract_and_find_fixtures(code, 'csharp', 'TestCleanUp')
+        fixtures = extract_and_find_fixtures(code, "csharp", "TestCleanUp")
         assert len(fixtures) > 0
-        assert fixtures[0].framework == 'mstest'
-    
+        assert fixtures[0].framework == "mstest"
+
     def test_mstest_class_attributes(self):
         """MSTest [ClassInitialize]/[ClassCleanup] should have framework='mstest'"""
         code = """
@@ -310,15 +312,15 @@ public class DatabaseTests {
 }
 """
         # Check [ClassInitialize]
-        fixtures = extract_and_find_fixtures(code, 'csharp', 'SetUpDatabase')
+        fixtures = extract_and_find_fixtures(code, "csharp", "SetUpDatabase")
         assert len(fixtures) > 0
-        assert fixtures[0].framework == 'mstest'
-        
+        assert fixtures[0].framework == "mstest"
+
         # Check [ClassCleanup]
-        fixtures = extract_and_find_fixtures(code, 'csharp', 'TearDownDatabase')
+        fixtures = extract_and_find_fixtures(code, "csharp", "TearDownDatabase")
         assert len(fixtures) > 0
-        assert fixtures[0].framework == 'mstest'
-    
+        assert fixtures[0].framework == "mstest"
+
     def test_xunit_attributes(self):
         """xUnit [Fact] and [Theory] should have framework='xunit'"""
         code = """
@@ -341,14 +343,14 @@ public class XunitTests {
 """
         # Note: [Fact] and [Theory] detection may return anonymous fixtures
         # Check that xunit fixtures are detected with correct framework
-        all_fixtures = extract_and_find_fixtures(code, 'csharp')
-        xunit_fixtures = [f for f in all_fixtures if f.framework == 'xunit']
+        all_fixtures = extract_and_find_fixtures(code, "csharp")
+        xunit_fixtures = [f for f in all_fixtures if f.framework == "xunit"]
         assert len(xunit_fixtures) > 0, "xUnit fixtures should be detected"
 
 
 class TestGoFrameworkDetection:
     """Test Go framework detection (golang_testing and testify)"""
-    
+
     def test_golang_testing_testmain(self):
         """Go TestMain() should have framework='golang_testing'"""
         code = """
@@ -370,10 +372,10 @@ func TestSomething(t *testing.T) {
 }
 """
         # Check TestMain
-        fixtures = extract_and_find_fixtures(code, 'go', 'TestMain')
+        fixtures = extract_and_find_fixtures(code, "go", "TestMain")
         assert len(fixtures) > 0
-        assert fixtures[0].framework == 'golang_testing'
-    
+        assert fixtures[0].framework == "golang_testing"
+
     def test_testify_suite_methods(self):
         """testify SetupSuite/SetupTest should have framework='testify'"""
         code = """
@@ -415,24 +417,24 @@ func TestDatabaseTestSuite(t *testing.T) {
 }
 """
         # Check SetupSuite
-        fixtures = extract_and_find_fixtures(code, 'go', 'SetupSuite')
+        fixtures = extract_and_find_fixtures(code, "go", "SetupSuite")
         assert len(fixtures) > 0
-        assert fixtures[0].framework == 'testify'
-        
+        assert fixtures[0].framework == "testify"
+
         # Check SetupTest
-        fixtures = extract_and_find_fixtures(code, 'go', 'SetupTest')
+        fixtures = extract_and_find_fixtures(code, "go", "SetupTest")
         assert len(fixtures) > 0
-        assert fixtures[0].framework == 'testify'
-        
+        assert fixtures[0].framework == "testify"
+
         # Check TeardownSuite
-        fixtures = extract_and_find_fixtures(code, 'go', 'TeardownSuite')
+        fixtures = extract_and_find_fixtures(code, "go", "TeardownSuite")
         assert len(fixtures) > 0
-        assert fixtures[0].framework == 'testify'
+        assert fixtures[0].framework == "testify"
 
 
 class TestJavaScriptTypeScriptFrameworkDetection:
     """Test JavaScript/TypeScript framework detection (AVA, Jest/Mocha ambiguous)"""
-    
+
     def test_ava_before_after_framework(self):
         """AVA test.before/test.after should have framework='ava'"""
         code = """
@@ -455,14 +457,15 @@ test('query test', t => {
 });
 """
         # All AVA fixtures should have framework='ava'
-        all_fixtures = extract_and_find_fixtures(code, 'typescript')
-        ava_fixtures = [f for f in all_fixtures if 'ava' in f.fixture_type.lower()]
-        
+        all_fixtures = extract_and_find_fixtures(code, "typescript")
+        ava_fixtures = [f for f in all_fixtures if "ava" in f.fixture_type.lower()]
+
         assert len(ava_fixtures) > 0, "AVA fixtures should be detected"
         for fixture in ava_fixtures:
-            assert fixture.framework == 'ava', \
-                f"AVA fixture {fixture.name} should have framework='ava', got {fixture.framework}"
-    
+            assert (
+                fixture.framework == "ava"
+            ), f"AVA fixture {fixture.name} should have framework='ava', got {fixture.framework}"
+
     def test_jest_mocha_ambiguous_framework(self):
         """Jest/Mocha beforeEach should have framework=None (ambiguous)"""
         code = """
@@ -483,14 +486,17 @@ describe('Database', () => {
 });
 """
         # Jest/Mocha fixtures should have framework=None (ambiguous)
-        all_fixtures = extract_and_find_fixtures(code, 'javascript')
-        hook_fixtures = [f for f in all_fixtures if f.fixture_type in ['before_each', 'after_each']]
-        
+        all_fixtures = extract_and_find_fixtures(code, "javascript")
+        hook_fixtures = [
+            f for f in all_fixtures if f.fixture_type in ["before_each", "after_each"]
+        ]
+
         assert len(hook_fixtures) > 0, "beforeEach/afterEach hooks should be detected"
         for fixture in hook_fixtures:
-            assert fixture.framework is None, \
-                f"Jest/Mocha hook {fixture.name} should have framework=None (ambiguous), got {fixture.framework}"
-    
+            assert (
+                fixture.framework is None
+            ), f"Jest/Mocha hook {fixture.name} should have framework=None (ambiguous), got {fixture.framework}"
+
     def test_ava_javascript(self):
         """AVA in JavaScript should also have framework='ava'"""
         code = """
@@ -504,49 +510,63 @@ test('main', t => {
   t.assert(t.context.setup);
 });
 """
-        all_fixtures = extract_and_find_fixtures(code, 'javascript')
-        ava_fixtures = [f for f in all_fixtures if f.framework == 'ava']
-        
+        all_fixtures = extract_and_find_fixtures(code, "javascript")
+        ava_fixtures = [f for f in all_fixtures if f.framework == "ava"]
+
         assert len(ava_fixtures) > 0, "AVA fixtures should be detected in JavaScript"
 
 
 class TestFrameworkDetectionConsistency:
     """Cross-language consistency tests for framework detection"""
-    
+
     def test_framework_field_always_string_or_none(self):
         """Framework field should always be string or None, never empty string"""
         # Test across multiple languages
         test_cases = [
-            ('python', '''
+            (
+                "python",
+                """
 @pytest.fixture
 def fix():
     pass
-'''),
-            ('java', '''
+""",
+            ),
+            (
+                "java",
+                """
 import org.junit.Before;
 public class T {
     @Before public void f() {}
 }
-'''),
-            ('javascript', '''
+""",
+            ),
+            (
+                "javascript",
+                """
 describe('s', () => {
     beforeEach(() => {});
 });
-'''),
-            ('typescript', '''
+""",
+            ),
+            (
+                "typescript",
+                """
 import test from 'ava';
 test.before(t => {});
-'''),
+""",
+            ),
         ]
-        
+
         for language, code in test_cases:
             fixtures = extract_and_find_fixtures(code, language)
             for fixture in fixtures:
-                assert fixture.framework is None or isinstance(fixture.framework, str), \
-                    f"Framework must be None or str, got {type(fixture.framework)} for {language}"
-                assert fixture.framework != '', \
-                    f"Framework should be None, not empty string for {language}"
-    
+                assert fixture.framework is None or isinstance(
+                    fixture.framework, str
+                ), f"Framework must be None or str, got {type(fixture.framework)} for {language}"
+                assert (
+                    fixture.framework != ""
+                ), f"Framework should be None, not empty string for {language}"
+
     def test_framework_detection_doesnt_affect_other_fields(self):
         """Framework detection should not affect other fixture properties"""
         code = """
@@ -559,16 +579,16 @@ def setup():
 def test_use(setup):
     assert len(setup) == 3
 """
-        fixtures = extract_and_find_fixtures(code, 'python', 'setup')
+        fixtures = extract_and_find_fixtures(code, "python", "setup")
         assert len(fixtures) > 0
-        
+
         fixture = fixtures[0]
         # Verify other fields are still present
-        assert hasattr(fixture, 'name')
-        assert hasattr(fixture, 'fixture_type')
-        assert hasattr(fixture, 'loc')
-        assert hasattr(fixture, 'start_line')
-        assert hasattr(fixture, 'end_line')
+        assert hasattr(fixture, "name")
+        assert hasattr(fixture, "fixture_type")
+        assert hasattr(fixture, "loc")
+        assert hasattr(fixture, "start_line")
+        assert hasattr(fixture, "end_line")
         # And framework is now also present
-        assert hasattr(fixture, 'framework')
-        assert fixture.framework == 'pytest'
+        assert hasattr(fixture, "framework")
+        assert fixture.framework == "pytest"

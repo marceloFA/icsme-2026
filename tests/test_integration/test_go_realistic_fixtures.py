@@ -15,7 +15,7 @@ from ..conftest import (
 
 class TestGoTableDrivenPatterns:
     """Integration tests using Go table-driven patterns"""
-    
+
     def test_go_table_driven_tests(self):
         """Go table-driven test pattern"""
         code = """
@@ -58,9 +58,9 @@ func setupTestDB(t *testing.T) *Database {
 }
 """
         # Go doesn't have traditional fixtures, but verify no crashes
-        fixtures = extract_and_find_fixtures(code, 'go')
+        fixtures = extract_and_find_fixtures(code, "go")
         assert isinstance(fixtures, list)
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

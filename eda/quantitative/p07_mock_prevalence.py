@@ -15,9 +15,18 @@ import pandas as pd
 import seaborn as sns
 
 from ..eda_common import (
-    ROOT, DB_PATH, DEFAULT_OUT,
-    LANG_PALETTE, LANG_ORDER, STATUS_PALETTE,
-    setup_style, save_or_show, load_db, has_data, qdf, lang_display
+    ROOT,
+    DB_PATH,
+    DEFAULT_OUT,
+    LANG_PALETTE,
+    LANG_ORDER,
+    STATUS_PALETTE,
+    setup_style,
+    save_or_show,
+    load_db,
+    has_data,
+    qdf,
+    lang_display,
 )
 
 # -----------
@@ -154,8 +163,16 @@ def plot_mock_prevalence(conn, out_dir, show):
         ax2.set_xlim(0, 105)
         ax2.set_title("Which Mocking Frameworks Do Developers Use?")
     else:
-        ax2.text(0.5, 0.5, "No framework data available", ha="center", va="center", 
-                 transform=ax2.transAxes, fontsize=10, color="#999")
+        ax2.text(
+            0.5,
+            0.5,
+            "No framework data available",
+            ha="center",
+            va="center",
+            transform=ax2.transAxes,
+            fontsize=10,
+            color="#999",
+        )
         ax2.set_xticks([])
         ax2.set_yticks([])
 
@@ -171,7 +188,7 @@ def plot_mock_prevalence(conn, out_dir, show):
         GROUP BY r.language, m.mock_style
     """,
     )
-    
+
     if not mock_styles.empty:
         style_pivot = (
             mock_styles[mock_styles["language"].isin(present)]
@@ -181,7 +198,7 @@ def plot_mock_prevalence(conn, out_dir, show):
         )
         style_pct = style_pivot.div(style_pivot.sum(axis=1), axis=0) * 100
         styles = list(style_pct.columns)
-        
+
         # Shade palette for mock styles
         style_colors = {
             "mock": "#FF6B6B",
@@ -189,7 +206,7 @@ def plot_mock_prevalence(conn, out_dir, show):
             "spy": "#FFE66D",
             "fake": "#95E1D3",
         }
-        
+
         y_pos3 = range(len(present))
         for i, lang in enumerate(present):
             left = 0.0
@@ -210,21 +227,30 @@ def plot_mock_prevalence(conn, out_dir, show):
                             fontweight="bold",
                         )
                 left += w
-        
+
         ax3.set_yticks(list(y_pos3))
         ax3.set_yticklabels([lang_display(l) for l in present])
         ax3.set_xlabel("Distribution of mock techniques (%)")
         ax3.set_xlim(0, 105)
-        ax3.set_title("What Mock Techniques Do Developers Prefer?\n(stub, mock, spy, fake patterns)")
+        ax3.set_title(
+            "What Mock Techniques Do Developers Prefer?\n(stub, mock, spy, fake patterns)"
+        )
     else:
-        ax3.text(0.5, 0.5, "No mock style data yet\n(run full pipeline to extract)", 
-                 ha="center", va="center", transform=ax3.transAxes, fontsize=9, color="#999")
+        ax3.text(
+            0.5,
+            0.5,
+            "No mock style data yet\n(run full pipeline to extract)",
+            ha="center",
+            va="center",
+            transform=ax3.transAxes,
+            fontsize=9,
+            color="#999",
+        )
         ax3.set_xticks([])
         ax3.set_yticks([])
 
     plt.tight_layout()
     save_or_show(fig, "07_mock_prevalence", out_dir, show)
-
 
 
 if __name__ == "__main__":
@@ -243,9 +269,9 @@ if __name__ == "__main__":
 
     conn = load_db(Path(args.db))
     setup_style()
-    
+
     print(f"\n[Mocking Practices]")
     plot_mock_prevalence(conn, out_dir, args.show)
-    
+
     conn.close()
     print("Done\n")

@@ -15,9 +15,18 @@ import pandas as pd
 import seaborn as sns
 
 from ..eda_common import (
-    ROOT, DB_PATH, DEFAULT_OUT,
-    LANG_PALETTE, LANG_ORDER, STATUS_PALETTE,
-    setup_style, save_or_show, load_db, has_data, qdf, lang_display
+    ROOT,
+    DB_PATH,
+    DEFAULT_OUT,
+    LANG_PALETTE,
+    LANG_ORDER,
+    STATUS_PALETTE,
+    setup_style,
+    save_or_show,
+    load_db,
+    has_data,
+    qdf,
+    lang_display,
 )
 
 # -----------
@@ -61,14 +70,14 @@ def plot_fixture_overview(conn, out_dir, show):
 
     # Ridge plot: one density curve per language
     from scipy import stats
-    
+
     x_range = np.logspace(
         np.log10(per_repo["fixture_count"].min()),
         np.log10(per_repo["fixture_count"].max()),
-        200
+        200,
     )
     x_log = np.log10(x_range)
-    
+
     y_offset = 0
     for i, lang in enumerate(present):
         sub = per_repo[per_repo["language"] == lang]["log_count"].values
@@ -77,7 +86,7 @@ def plot_fixture_overview(conn, out_dir, show):
             density = kde(x_log)
             # Normalize density for stacking
             density = density / density.max() * 0.8
-            
+
             # Fill area under curve
             ax.fill_between(
                 x_range,
@@ -97,7 +106,7 @@ def plot_fixture_overview(conn, out_dir, show):
                 zorder=len(present) - i + 1,
             )
             y_offset += 1
-    
+
     ax.set_xscale("log")
     ax.xaxis.set_major_formatter(
         mticker.FuncFormatter(lambda v, _: str(int(v)) if v >= 1 else "")
@@ -122,24 +131,24 @@ def plot_fixture_overview(conn, out_dir, show):
         .fillna(0)
     )
     pivot_scope_pct = pivot_scope.div(pivot_scope.sum(axis=1), axis=0) * 100
-    
+
     # Order scopes from most to least common
     scope_order = ["per_test", "per_class", "per_module", "global"]
     scope_order = [s for s in scope_order if s in pivot_scope_pct.columns]
     pivot_scope_pct = pivot_scope_pct[scope_order]
-    
+
     # Color palette for scopes (semantic: light=frequent, dark=rare)
     scope_colors = {
-        "per_test": "#4ECDC4",      # Teal - most common, lightweight
-        "per_class": "#FFE66D",     # Yellow - moderate
-        "per_module": "#FF6B6B",    # Red - less common
-        "global": "#95B8D1",        # Blue - rare
+        "per_test": "#4ECDC4",  # Teal - most common, lightweight
+        "per_class": "#FFE66D",  # Yellow - moderate
+        "per_module": "#FF6B6B",  # Red - less common
+        "global": "#95B8D1",  # Blue - rare
     }
-    
+
     x_pos = np.arange(len(present))
     width = 0.55
     bottom = np.zeros(len(present))
-    
+
     for scope in scope_order:
         vals = pivot_scope_pct[scope].values
         color = scope_colors.get(scope, "#CCCCCC")
@@ -154,7 +163,7 @@ def plot_fixture_overview(conn, out_dir, show):
             edgecolor="white",
             linewidth=0.5,
         )
-        
+
         # Add percentage labels for segments > 5%
         for i, (bar, val) in enumerate(zip(bars, vals)):
             if val > 5:
@@ -169,7 +178,7 @@ def plot_fixture_overview(conn, out_dir, show):
                     color="white" if scope != "per_class" else "#333",
                 )
         bottom += vals
-    
+
     ax2.set_ylabel("Share of Fixtures (%)")
     ax2.set_xlabel("")
     ax2.set_title(
@@ -184,7 +193,6 @@ def plot_fixture_overview(conn, out_dir, show):
 
     plt.tight_layout()
     save_or_show(fig, "06_fixture_overview", out_dir, show)
-
 
 
 if __name__ == "__main__":
@@ -203,9 +211,9 @@ if __name__ == "__main__":
 
     conn = load_db(Path(args.db))
     setup_style()
-    
+
     print(f"\n[Fixture Overview]")
     plot_fixture_overview(conn, out_dir, args.show)
-    
+
     conn.close()
     print("Done\n")

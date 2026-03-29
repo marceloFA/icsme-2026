@@ -12,7 +12,12 @@ import logging
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from collection.config import LANGUAGE_CONFIGS, MIN_FIXTURES_FOUND, EXTRACT_WORKERS, FILE_EXTRACTION_TIMEOUT
+from collection.config import (
+    LANGUAGE_CONFIGS,
+    MIN_FIXTURES_FOUND,
+    EXTRACT_WORKERS,
+    FILE_EXTRACTION_TIMEOUT,
+)
 from collection.cloner import get_clone_path, delete_clone
 from collection.db import (
     db_session,
@@ -39,30 +44,37 @@ MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB
 # Timeout handler for long-running file extraction
 # ---------------------------------------------------------------------------
 
+
 class ExtractionTimeoutError(Exception):
     """Raised when file extraction exceeds the timeout."""
+
     pass
 
 
-def extract_fixtures_with_timeout(tf_path: Path, language: str, timeout: int = FILE_EXTRACTION_TIMEOUT):
+def extract_fixtures_with_timeout(
+    tf_path: Path, language: str, timeout: int = FILE_EXTRACTION_TIMEOUT
+):
     """
     Extract fixtures from a test file with a timeout.
-    
+
     Uses ThreadPoolExecutor to run extraction in a controlled way that allows
     timeout enforcement even when called from worker threads.
-    
+
     Args:
         tf_path: Path to the test file
         language: Programming language
         timeout: Maximum seconds to spend on this file
-    
+
     Returns:
         ExtractResult with fixtures and file-level metrics, or empty result if timeout exceeded
-    
+
     Raises:
         ExtractionTimeoutError: If extraction takes too long
     """
-    from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
+    from concurrent.futures import (
+        ThreadPoolExecutor,
+        TimeoutError as FuturesTimeoutError,
+    )
     from collection.detector import ExtractResult
 
     try:
@@ -169,7 +181,7 @@ def _find_test_files(repo_dir: Path, language: str) -> list[Path]:
         ".otf",
         ".xhtml",
         ".mp4",
-        ".bd.fast",  # Build dependency cache files 
+        ".bd.fast",  # Build dependency cache files
         ".bd.fasta",  # Build dependency cache files
         ".bd",  # Build dependency files
         ".db",  # Database files
@@ -300,9 +312,11 @@ def extract_repo(repo_id: int, full_name: str, language: str) -> dict:
             file_size = tf_path.stat().st_size
             total_test_size_bytes += file_size
             largest_file_mb = max(largest_file_mb, file_size / (1024 * 1024))
-        
+
         total_test_size_mb = total_test_size_bytes / (1024 * 1024)
-        logger.info(f"[extract] {full_name}: Total test file size = {total_test_size_mb:.2f} MB, Largest = {largest_file_mb:.2f} MB")
+        logger.info(
+            f"[extract] {full_name}: Total test file size = {total_test_size_mb:.2f} MB, Largest = {largest_file_mb:.2f} MB"
+        )
     except Exception as e:
         logger.debug(f"Could not calculate file sizes for {full_name}: {e}")
 
@@ -316,9 +330,11 @@ def extract_repo(repo_id: int, full_name: str, language: str) -> dict:
         try:
             file_size_bytes = tf_path.stat().st_size
             file_size_mb = file_size_bytes / (1024 * 1024)
-            #info(f"[extract] Processing test file: {relative} ({file_size_mb:.2f} MB)")
+            # info(f"[extract] Processing test file: {relative} ({file_size_mb:.2f} MB)")
             if file_size_mb > 10:
-                logger.warning(f"[extract] Large test file in {full_name}: {relative} is {file_size_mb:.2f} MB")
+                logger.warning(
+                    f"[extract] Large test file in {full_name}: {relative} is {file_size_mb:.2f} MB"
+                )
         except Exception as e:
             logger.debug(f"Could not get file size for {relative}: {e}")
 
@@ -335,7 +351,7 @@ def extract_repo(repo_id: int, full_name: str, language: str) -> dict:
                 f"extraction exceeded {FILE_EXTRACTION_TIMEOUT}s limit, skipping file"
             )
             extract_result = None
-        
+
         if extract_result is None:
             fixtures = []
             file_loc = 0
@@ -346,18 +362,20 @@ def extract_repo(repo_id: int, full_name: str, language: str) -> dict:
             file_loc = extract_result.file_loc
             num_test_functions = extract_result.num_test_functions
             total_fixture_loc = sum(f.loc for f in fixtures)
-        
+
         file_fixture_count = len(fixtures)
-        file_test_count = num_test_functions  # Use the extracted count instead of estimate
+        file_test_count = (
+            num_test_functions  # Use the extracted count instead of estimate
+        )
 
         with db_session() as conn:
             update_test_file_counts(
-                conn, 
-                file_id, 
-                file_test_count, 
+                conn,
+                file_id,
+                file_test_count,
                 file_fixture_count,
                 file_loc=file_loc,
-                total_fixture_loc=total_fixture_loc
+                total_fixture_loc=total_fixture_loc,
             )
 
             for fix in fixtures:
@@ -400,7 +418,9 @@ def extract_repo(repo_id: int, full_name: str, language: str) -> dict:
             f"only {total_fixtures} fixtures found (threshold: {MIN_FIXTURES_FOUND})"
         )
         with db_session() as conn:
-            set_repo_analysed(conn, repo_id, num_test_files, total_fixtures, total_mocks)
+            set_repo_analysed(
+                conn, repo_id, num_test_files, total_fixtures, total_mocks
+            )
             # Also update status to skipped
             set_repo_status(
                 conn, repo_id, "skipped", f"only {total_fixtures} fixtures found"
@@ -452,35 +472,35 @@ def _estimate_test_count(file_path: Path, language: str) -> int:
 # ---------------------------------------------------------------------------
 
 
-def extract_all_cloned(language: str | None = None, target_analyzed: int | None = None) -> dict:
+def extract_all_cloned(
+    language: str | None = None, target_analyzed: int | None = None
+) -> dict:
     """
     Extract fixtures from repos in 'cloned' status using parallel workers.
-    
+
     Extraction uses round-robin ordering across creation year buckets to maintain
     temporal balance during the extraction phase (independent of discovery strategy).
     If target_analyzed is set, stop early when target is reached.
-    
+
     Args:
         language: Filter to specific language (or None for all)
         target_analyzed: Optional target count; stop when reached
-    
+
     Returns:
         dict with extraction summary and 'early_stopped' flag
     """
     with db_session() as conn:
         # Fetch all cloned repos grouped by creation year (for stratified extraction)
-        cursor = conn.execute(
-            """
+        cursor = conn.execute("""
             SELECT 
                 r.id, r.full_name, r.language,
                 STRFTIME('%Y', r.created_at) as year
             FROM repositories r
             WHERE r.status = 'cloned'
             ORDER BY STRFTIME('%Y', r.created_at), r.id
-            """
-        )
+            """)
         rows = cursor.fetchall()
-        
+
         if language:
             rows = [r for r in rows if r["language"] == language]
 
@@ -495,7 +515,7 @@ def extract_all_cloned(language: str | None = None, target_analyzed: int | None 
         if year not in by_year:
             by_year[year] = []
         by_year[year].append(row)
-    
+
     # Build extraction queue in round-robin order across years (balance extraction across time)
     extraction_queue = []
     max_year_count = max(len(v) for v in by_year.values())
@@ -510,7 +530,7 @@ def extract_all_cloned(language: str | None = None, target_analyzed: int | None 
     )
     if target_analyzed:
         logger.info(f"Will stop early when {target_analyzed} analyzed repos reached")
-    
+
     totals: dict[str, int] = {"fixtures": 0, "mocks": 0}
     early_stopped = False
 
@@ -525,12 +545,12 @@ def extract_all_cloned(language: str | None = None, target_analyzed: int | None 
             ): row
             for row in extraction_queue
         }
-        
+
         for future in as_completed(futures):
             summary = future.result()
             for k, v in summary.items():
                 totals[k] = totals.get(k, 0) + v
-            
+
             # Check if we've reached target (early stop)
             if target_analyzed:
                 with db_session() as conn:
@@ -542,9 +562,11 @@ def extract_all_cloned(language: str | None = None, target_analyzed: int | None 
                             "WHERE r.status = 'analysed' AND EXISTS (SELECT 1 FROM fixtures WHERE repo_id = r.id)"
                         )
                         analyzed = cursor.fetchone()["n"]
-                
+
                 if analyzed >= target_analyzed:
-                    logger.info(f"Target reached ({analyzed} analyzed). Stopping extraction early.")
+                    logger.info(
+                        f"Target reached ({analyzed} analyzed). Stopping extraction early."
+                    )
                     executor.shutdown(wait=False, cancel_futures=True)
                     early_stopped = True
                     break
@@ -552,6 +574,8 @@ def extract_all_cloned(language: str | None = None, target_analyzed: int | None 
     with db_session() as conn:
         stats = get_corpus_stats(conn)
 
-    logger.info(f"Extraction complete (early_stopped={early_stopped}). Corpus stats: {stats}")
+    logger.info(
+        f"Extraction complete (early_stopped={early_stopped}). Corpus stats: {stats}"
+    )
     totals["early_stopped"] = early_stopped
     return totals

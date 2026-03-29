@@ -137,7 +137,7 @@ def db_session(db_path: Path = DB_PATH, max_retries: int = 20):
     """
     Context manager that commits on success, rolls back on exception.
     Retries on database lock with exponential backoff.
-    
+
     For overnight runs: up to 20 retries with base 0.5s, reaching ~260s max wait.
     """
     for attempt in range(max_retries):
@@ -157,8 +157,10 @@ def db_session(db_path: Path = DB_PATH, max_retries: int = 20):
             if "locked" in str(e).lower() and attempt < max_retries - 1:
                 # Database locked - retry with exponential backoff
                 # Base 0.5s + exponential: 0.5s, 1s, 2s, 4s, 8s, 16s, 32s, 64s, 128s, 256s...
-                wait_time = (2 ** attempt) * 0.5
-                logger.debug(f"Database locked, retrying in {wait_time:.1f}s (attempt {attempt + 1}/{max_retries})")
+                wait_time = (2**attempt) * 0.5
+                logger.debug(
+                    f"Database locked, retrying in {wait_time:.1f}s (attempt {attempt + 1}/{max_retries})"
+                )
                 time.sleep(wait_time)
             else:
                 # Not a lock error, or max retries reached - propagate
@@ -310,9 +312,9 @@ def upsert_test_file(
 
 
 def update_test_file_counts(
-    conn: sqlite3.Connection, 
-    file_id: int, 
-    num_test_funcs: int, 
+    conn: sqlite3.Connection,
+    file_id: int,
+    num_test_funcs: int,
     num_fixtures: int,
     file_loc: int = 0,
     total_fixture_loc: int = 0,
@@ -388,17 +390,17 @@ def insert_mock_usage(conn: sqlite3.Connection, mock: dict) -> None:
         # Better error context for foreign key failures
         fixture_id = mock.get("fixture_id")
         repo_id = mock.get("repo_id")
-        
+
         # Check if fixture exists
         fixture_exists = conn.execute(
             "SELECT id FROM fixtures WHERE id = ?", (fixture_id,)
         ).fetchone()
-        
+
         # Check if repo exists
         repo_exists = conn.execute(
             "SELECT id FROM repositories WHERE id = ?", (repo_id,)
         ).fetchone()
-        
+
         error_msg = (
             f"Foreign key constraint failed when inserting mock_usage: "
             f"fixture_id={fixture_id} (exists={fixture_exists is not None}), "
@@ -448,13 +450,14 @@ def get_analyzed_count_for_language(conn: sqlite3.Connection, language: str) -> 
     Get count of successfully analyzed repos for a specific language.
     Only counts repos with status='analysed' AND at least one extracted fixture.
     """
-    row = conn.execute("""
+    row = conn.execute(
+        """
         SELECT COUNT(DISTINCT r.id) as n
         FROM repositories r
         WHERE r.language = ? AND r.status = 'analysed'
         AND EXISTS (SELECT 1 FROM fixtures WHERE repo_id = r.id)
     """,
-        (language,)
+        (language,),
     ).fetchone()
     return row["n"]
 
@@ -466,7 +469,7 @@ def get_discovered_count_for_language(conn: sqlite3.Connection, language: str) -
     """
     row = conn.execute(
         "SELECT COUNT(*) as n FROM repositories WHERE language = ? AND status = 'discovered'",
-        (language,)
+        (language,),
     ).fetchone()
     return row["n"]
 
@@ -475,7 +478,7 @@ def get_survival_rate_for_language(conn: sqlite3.Connection, language: str) -> f
     """
     Calculate and return the empirical survival rate for a language.
     Survival = (analyzed repos with fixtures) / (discovered repos)
-    
+
     Returns 0.0 if no discovered repos yet (no data to calculate).
     """
     cursor = conn.execute(
@@ -488,13 +491,13 @@ def get_survival_rate_for_language(conn: sqlite3.Connection, language: str) -> f
         FROM repositories r
         WHERE r.language = ?
         """,
-        (language,)
+        (language,),
     )
     result = cursor.fetchone()
     discovered = result["discovered"]
     analyzed = result["analyzed"] or 0
-    
+
     if discovered == 0:
         return 0.0
-    
+
     return analyzed / discovered
