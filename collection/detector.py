@@ -11,7 +11,7 @@ For each of the 6 supported languages, we define:
    - Java: Methods with @Before/@BeforeClass, @Setup, or @Test annotations
    - JavaScript/TypeScript: Functions named beforeEach/beforeAll/describe/setUp
    - Go: Functions starting with Test/, functions using testing.T
-   
+
    Pattern matching uses tree-sitter AST node types that are
    language-agnostic (e.g., 'function_declaration', 'decorator', etc.)
 
@@ -52,7 +52,7 @@ ExtractResult contains:
   - num_test_functions: int — count of test functions in the file
 
 Each FixtureResult carries all the fields needed to populate the DB tables:
-  fixture_type, scope, start_line, end_line, loc, 
+  fixture_type, scope, start_line, end_line, loc,
   cyclomatic_complexity, cognitive_complexity,
   num_objects_instantiated, num_external_calls, num_parameters,
   framework (mock framework used, if any), raw_source text
@@ -136,7 +136,9 @@ class FixtureResult:
     num_objects_instantiated: int
     num_external_calls: int
     num_parameters: int
-    reuse_count: int = 0  # number of test functions using this fixture (calculated later)
+    reuse_count: int = (
+        0  # number of test functions using this fixture (calculated later)
+    )
     has_teardown_pair: int = 0  # 1 if teardown/cleanup logic exists, 0 otherwise
     raw_source: str = ""
     mocks: list[MockResult] = field(default_factory=list)
@@ -178,31 +180,41 @@ def _count_file_loc(src_bytes: bytes) -> int:
 def _compute_nesting_depth(node) -> int:
     """
     Compute maximum nesting depth of a function body using Tree-sitter AST.
-    
+
     Returns the maximum level of nested blocks (if, for, while, try, etc.)
     within the function. Level 1 = no nesting, Level 2+ = nested blocks.
-    
+
     This is used because Lizard's max_nesting_depth doesn't work properly
     for function-level analysis (returns 0).
     """
     max_depth = 1
-    
+
     def visit(node, current_depth=1):
         nonlocal max_depth
         # Identify block-creating nodes
         block_types = {
-            "if_statement", "while_statement", "for_statement", "try_statement",
-            "with_statement", "def", "class_definition", "block", "for_in_statement",
-            "foreach_statement", "do_statement", "catch_clause", "finally_clause"
+            "if_statement",
+            "while_statement",
+            "for_statement",
+            "try_statement",
+            "with_statement",
+            "def",
+            "class_definition",
+            "block",
+            "for_in_statement",
+            "foreach_statement",
+            "do_statement",
+            "catch_clause",
+            "finally_clause",
         }
-        
+
         if node.type in block_types:
             current_depth += 1
             max_depth = max(max_depth, current_depth)
-        
+
         for child in node.children:
             visit(child, current_depth)
-    
+
     visit(node)
     return max_depth
 
@@ -216,7 +228,7 @@ def _count_instantiations(node, src_bytes: bytes) -> int:
     """
     Count 'new X(...)' calls (Java/JS/TS/Go) or capitalised call expressions
     that look like constructors (Python).
-    
+
     Note: This remains a custom implementation as Lizard's external_call_count
     measures all function calls, not specifically constructors/object instantiation.
     """
@@ -231,10 +243,10 @@ def _count_instantiations(node, src_bytes: bytes) -> int:
 def _count_external_calls(node, src_bytes: bytes) -> int:
     """
     Count calls that look like external I/O or system operations.
-    
+
     This is a custom regex-based assessment since Lizard's fan_out metric
     measures inter-function calls within the same module, not external I/O.
-    
+
     Detects patterns like: database, network, file I/O, and subprocess calls.
     """
     text = _source(node, src_bytes).lower()
@@ -315,7 +327,9 @@ def _extract_mocks(node, src_bytes: bytes) -> list[MockResult]:
 # ---------------------------------------------------------------------------
 
 
-def _detect_python(tree, src_bytes: bytes, language: str = 'python') -> list[FixtureResult]:
+def _detect_python(
+    tree, src_bytes: bytes, language: str = "python"
+) -> list[FixtureResult]:
     results = []
     root = tree.root_node
 
@@ -473,7 +487,7 @@ JUNIT_FIXTURE_ANNOTATIONS = {
 }
 
 
-def _detect_java(tree, src_bytes: bytes, language: str = 'java') -> list[FixtureResult]:
+def _detect_java(tree, src_bytes: bytes, language: str = "java") -> list[FixtureResult]:
     results = []
 
     def visit(node):
@@ -607,7 +621,9 @@ AVA_FIXTURE_PATTERNS = {
 }
 
 
-def _detect_js(tree, src_bytes: bytes, language: str = 'javascript') -> list[FixtureResult]:
+def _detect_js(
+    tree, src_bytes: bytes, language: str = "javascript"
+) -> list[FixtureResult]:
     results = []
 
     def visit(node):
@@ -715,13 +731,12 @@ def _detect_js(tree, src_bytes: bytes, language: str = 'javascript') -> list[Fix
 # ---------------------------------------------------------------------------
 
 
-
 # ---------------------------------------------------------------------------
 # Go detector
 # ---------------------------------------------------------------------------
 
 
-def _detect_go(tree, src_bytes: bytes, language: str = 'go') -> list[FixtureResult]:
+def _detect_go(tree, src_bytes: bytes, language: str = "go") -> list[FixtureResult]:
     """
     Go has no formal fixture annotation. We detect:
       1. TestMain(m *testing.M) — package-level setup
@@ -864,7 +879,7 @@ def _build_result(
     fixture_type: str,
     scope: str,
     framework: str = None,
-    language: str = 'python',
+    language: str = "python",
 ) -> FixtureResult:
     src_text = _source(func_node, src_bytes)
     name_node = func_node.child_by_field_name("name")
@@ -877,7 +892,7 @@ def _build_result(
     # Get metrics from Lizard via complexity_provider
     # Includes: cyclomatic_complexity, cognitive_complexity, num_parameters
     metrics = analyze_function_complexity(src_text, language)
-    
+
     # Compute nesting depth from AST (Lizard's max_nesting_depth doesn't work for functions)
     nesting_depth = _compute_nesting_depth(func_node)
 
@@ -889,12 +904,12 @@ def _build_result(
         start_line=node.start_point[0] + 1,
         end_line=node.end_point[0] + 1,
         loc=_count_loc(src_text),  # Custom counting (non-blank lines)
-        cyclomatic_complexity=metrics.get('cyclomatic_complexity', 1),
-        cognitive_complexity=metrics.get('cognitive_complexity', 0),
+        cyclomatic_complexity=metrics.get("cyclomatic_complexity", 1),
+        cognitive_complexity=metrics.get("cognitive_complexity", 0),
         max_nesting_depth=nesting_depth,
         num_objects_instantiated=_count_instantiations(node, src_bytes),
         num_external_calls=_count_external_calls(node, src_bytes),  # Custom regex
-        num_parameters=metrics.get('num_parameters', 0),
+        num_parameters=metrics.get("num_parameters", 0),
         reuse_count=0,  # Calculated in post-processing
         has_teardown_pair=0,  # Calculated in post-processing
         raw_source=src_text,
@@ -1026,23 +1041,22 @@ def _calculate_reuse_counts(
 ) -> None:
     """
     Post-process fixtures to count reuse: how many test functions use each fixture.
-    
+
     For pytest fixtures, counts test functions that declare the fixture as a parameter.
     For JUnit/xUnit, counts test methods in the same class that share @BeforeEach.
     For other frameworks, counts test functions in the same scope.
-    
+
     Modifies fixtures in-place.
     """
     if language.lower() == "python":
         # For Python, scan for test functions and count which fixtures they declare
         fixture_usages = {f.name: 0 for f in fixtures}
-        
+
         def visit(node):
             # Find test functions (def test_...)
-            if (
-                node.type == "function_definition"
-                and _source(node.child_by_field_name("name"), src_bytes).startswith("test_")
-            ):
+            if node.type == "function_definition" and _source(
+                node.child_by_field_name("name"), src_bytes
+            ).startswith("test_"):
                 # Get parameters
                 params_node = node.child_by_field_name("parameters")
                 if params_node:
@@ -1056,16 +1070,16 @@ def _calculate_reuse_counts(
                         # Count usage
                         if param_name in fixture_usages:
                             fixture_usages[param_name] += 1
-            
+
             for child in node.children:
                 visit(child)
-        
+
         visit(tree.root_node)
-        
+
         # Apply counts to fixtures
         for fixture in fixtures:
             fixture.reuse_count = fixture_usages.get(fixture.name, 0)
-    
+
     else:
         # For other languages, use a simpler heuristic: count by scope
         # (same-scope fixtures are typically reused by multiple tests)
@@ -1075,7 +1089,7 @@ def _calculate_reuse_counts(
             if key not in scope_groups:
                 scope_groups[key] = []
             scope_groups[key].append(fixture)
-        
+
         # In same scope, assume fixtures are used by remaining test functions
         for group in scope_groups.values():
             # Simple heuristic: if scope is per_test, reuse_count is likely 1
@@ -1084,7 +1098,9 @@ def _calculate_reuse_counts(
                 if fixture.scope == "per_test":
                     fixture.reuse_count = 1
                 elif fixture.scope == "per_class":
-                    fixture.reuse_count = max(1, len(group))  # At least as many as fixtures
+                    fixture.reuse_count = max(
+                        1, len(group)
+                    )  # At least as many as fixtures
                 else:
                     fixture.reuse_count = 1
 
@@ -1092,7 +1108,7 @@ def _calculate_reuse_counts(
 def _calculate_teardown_pairs(fixtures: list[FixtureResult]) -> None:
     """
     Post-process fixtures to detect has_teardown_pair: whether a fixture has cleanup logic.
-    
+
     For Python pytest:
       - checks if fixture has 'yield' statement (fixture-style teardown)
     For Python unittest:
@@ -1101,7 +1117,7 @@ def _calculate_teardown_pairs(fixtures: list[FixtureResult]) -> None:
       - @BeforeEach is paired with @AfterEach
       - @Before is paired with @After
       - etc.
-    
+
     Modifies fixtures in-place.
     """
     # Group fixtures by type/scope to find pairs
@@ -1115,7 +1131,7 @@ def _calculate_teardown_pairs(fixtures: list[FixtureResult]) -> None:
         "xunit_fact",
         "xunit_theory",
     }
-    
+
     fixture_types_teardown = {
         "unittest_teardown",
         "junit5_after_each",
@@ -1123,25 +1139,24 @@ def _calculate_teardown_pairs(fixtures: list[FixtureResult]) -> None:
         "after_each",
         "nunit_teardown",
     }
-    
+
     for fixture in fixtures:
         has_teardown = False
-        
+
         # For pytest: check if source has 'yield' (fixture cleanup)
         if fixture.fixture_type == "pytest_decorator":
             has_teardown = "yield" in fixture.raw_source
-        
+
         # For unittest: check if there's a matching tearDown
         elif fixture.fixture_type in ("unittest_setup", "setup_method", "setup_class"):
             matching_name = fixture.name.replace("setUp", "tearDown")
             for other in fixtures:
-                if (
-                    other.name == matching_name
-                    and other.fixture_type.replace("setUp", "tearDown") == fixture.fixture_type.replace("setUp", "tearDown")
-                ):
+                if other.name == matching_name and other.fixture_type.replace(
+                    "setUp", "tearDown"
+                ) == fixture.fixture_type.replace("setUp", "tearDown"):
                     has_teardown = True
                     break
-        
+
         # For JUnit/xUnit: check for matching @After, @AfterEach, etc.
         elif fixture.fixture_type in fixture_types_setup:
             # Map setup types to teardown types
@@ -1160,10 +1175,8 @@ def _calculate_teardown_pairs(fixtures: list[FixtureResult]) -> None:
                     ):
                         has_teardown = True
                         break
-        
+
         fixture.has_teardown_pair = 1 if has_teardown else 0
-
-
 
 
 DETECTORS = {
@@ -1226,11 +1239,11 @@ def extract_fixtures(file_path: Path, language: str) -> ExtractResult:
 
     try:
         fixtures = DETECTORS[language](tree, src_bytes, language)
-        
+
         # Post-process fixtures to calculate metrics that depend on file-wide context
         _calculate_reuse_counts(fixtures, tree, src_bytes, language)
         _calculate_teardown_pairs(fixtures)
-        
+
         file_loc = _count_file_loc(src_bytes)
         num_test_functions = _count_test_functions(tree, src_bytes, language)
         return ExtractResult(

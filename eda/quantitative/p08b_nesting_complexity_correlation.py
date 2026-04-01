@@ -56,8 +56,12 @@ def plot_nesting_complexity_correlation(conn, out_dir, show):
     fixtures = fixtures[fixtures["language"].isin(present)]
 
     fig, axes = plt.subplots(2, 2, figsize=(14, 10), facecolor="#FAFAFA")
-    fig.suptitle("Nesting Depth vs Code Complexity Metrics", 
-                 fontsize=14, fontweight="bold", y=0.995)
+    fig.suptitle(
+        "Nesting Depth vs Code Complexity Metrics",
+        fontsize=14,
+        fontweight="bold",
+        y=0.995,
+    )
 
     # ── 8b1: Nesting vs Cyclomatic Complexity ──────────────────────────────────
     ax = axes[0, 0]
@@ -71,18 +75,22 @@ def plot_nesting_complexity_correlation(conn, out_dir, show):
             label=lang_display(lang),
             color=LANG_PALETTE[lang],
         )
-    
+
     # Add trend line
     z = np.polyfit(fixtures["max_nesting_depth"], fixtures["cyclomatic_complexity"], 1)
     p = np.poly1d(z)
-    x_line = np.linspace(fixtures["max_nesting_depth"].min(), fixtures["max_nesting_depth"].max(), 100)
+    x_line = np.linspace(
+        fixtures["max_nesting_depth"].min(), fixtures["max_nesting_depth"].max(), 100
+    )
     ax.plot(x_line, p(x_line), "r--", alpha=0.8, linewidth=2, label="Trend")
-    
+
     corr = fixtures["max_nesting_depth"].corr(fixtures["cyclomatic_complexity"])
     ax.set_xlabel("Max Nesting Depth")
     ax.set_ylabel("Cyclomatic Complexity")
-    ax.set_title(f"8b: Nesting vs Cyclomatic (r={corr:.2f})", fontsize=11, fontweight='bold')
-    ax.legend(fontsize=8, loc='upper left')
+    ax.set_title(
+        f"8b: Nesting vs Cyclomatic (r={corr:.2f})", fontsize=11, fontweight="bold"
+    )
+    ax.legend(fontsize=8, loc="upper left")
     ax.grid(alpha=0.3)
 
     # ── 8b2: Nesting vs Cognitive Complexity ────────────────────────────────────
@@ -97,18 +105,22 @@ def plot_nesting_complexity_correlation(conn, out_dir, show):
             label=lang_display(lang),
             color=LANG_PALETTE[lang],
         )
-    
+
     # Add trend line
     z = np.polyfit(fixtures["max_nesting_depth"], fixtures["cognitive_complexity"], 1)
     p = np.poly1d(z)
-    x_line = np.linspace(fixtures["max_nesting_depth"].min(), fixtures["max_nesting_depth"].max(), 100)
+    x_line = np.linspace(
+        fixtures["max_nesting_depth"].min(), fixtures["max_nesting_depth"].max(), 100
+    )
     ax.plot(x_line, p(x_line), "r--", alpha=0.8, linewidth=2, label="Trend")
-    
+
     corr = fixtures["max_nesting_depth"].corr(fixtures["cognitive_complexity"])
     ax.set_xlabel("Max Nesting Depth")
     ax.set_ylabel("Cognitive Complexity")
-    ax.set_title(f"8b: Nesting vs Cognitive (r={corr:.2f})", fontsize=11, fontweight='bold')
-    ax.legend(fontsize=8, loc='upper left')
+    ax.set_title(
+        f"8b: Nesting vs Cognitive (r={corr:.2f})", fontsize=11, fontweight="bold"
+    )
+    ax.legend(fontsize=8, loc="upper left")
     ax.grid(alpha=0.3)
 
     # ── 8b3: Nesting vs LOC ────────────────────────────────────────────────────
@@ -123,21 +135,20 @@ def plot_nesting_complexity_correlation(conn, out_dir, show):
             label=lang_display(lang),
             color=LANG_PALETTE[lang],
         )
-    
+
     corr = fixtures["max_nesting_depth"].corr(fixtures["loc"])
     ax.set_xlabel("Max Nesting Depth")
     ax.set_ylabel("Lines of Code")
-    ax.set_title(f"8b: Nesting vs LOC (r={corr:.2f})", fontsize=11, fontweight='bold')
-    ax.legend(fontsize=8, loc='upper left')
+    ax.set_title(f"8b: Nesting vs LOC (r={corr:.2f})", fontsize=11, fontweight="bold")
+    ax.legend(fontsize=8, loc="upper left")
     ax.grid(alpha=0.3)
 
     # ── 8b4: Correlation heatmap ───────────────────────────────────────────────
     ax = axes[1, 1]
-    corr_matrix = fixtures[[
-        "max_nesting_depth", "cyclomatic_complexity", 
-        "cognitive_complexity", "loc"
-    ]].corr()
-    
+    corr_matrix = fixtures[
+        ["max_nesting_depth", "cyclomatic_complexity", "cognitive_complexity", "loc"]
+    ].corr()
+
     sns.heatmap(
         corr_matrix,
         annot=True,
@@ -149,14 +160,16 @@ def plot_nesting_complexity_correlation(conn, out_dir, show):
         vmin=-1,
         vmax=1,
     )
-    ax.set_title("8b: Correlation Matrix", fontsize=11, fontweight='bold')
+    ax.set_title("8b: Correlation Matrix", fontsize=11, fontweight="bold")
 
     plt.tight_layout()
     save_or_show(fig, "08b_nesting_complexity_correlation", out_dir, show)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="FixtureDB Nesting-Complexity Correlation")
+    parser = argparse.ArgumentParser(
+        description="FixtureDB Nesting-Complexity Correlation"
+    )
     parser.add_argument("--db", default=str(DB_PATH))
     parser.add_argument("--out", default=str(DEFAULT_OUT), help="Base output directory")
     parser.add_argument("--show", action="store_true")

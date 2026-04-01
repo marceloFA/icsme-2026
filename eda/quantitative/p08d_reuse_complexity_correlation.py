@@ -55,8 +55,12 @@ def plot_reuse_complexity_correlation(conn, out_dir, show):
     fixtures = fixtures[fixtures["language"].isin(present)]
 
     fig, axes = plt.subplots(2, 2, figsize=(14, 10), facecolor="#FAFAFA")
-    fig.suptitle("Fixture Reuse vs Complexity (How Complex Are Reused Fixtures?)", 
-                 fontsize=14, fontweight="bold", y=0.995)
+    fig.suptitle(
+        "Fixture Reuse vs Complexity (How Complex Are Reused Fixtures?)",
+        fontsize=14,
+        fontweight="bold",
+        y=0.995,
+    )
 
     # ── 8e1: Reuse vs Cyclomatic Complexity ────────────────────────────────────
     ax = axes[0, 0]
@@ -70,12 +74,14 @@ def plot_reuse_complexity_correlation(conn, out_dir, show):
             label=lang_display(lang),
             color=LANG_PALETTE[lang],
         )
-    
+
     corr = fixtures["reuse_count"].corr(fixtures["cyclomatic_complexity"])
     ax.set_xlabel("Reuse Count (# tests using fixture)")
     ax.set_ylabel("Cyclomatic Complexity")
-    ax.set_title(f"8e: Reuse vs Cyclomatic (r={corr:.2f})", fontsize=11, fontweight='bold')
-    ax.legend(fontsize=8, loc='upper right')
+    ax.set_title(
+        f"8e: Reuse vs Cyclomatic (r={corr:.2f})", fontsize=11, fontweight="bold"
+    )
+    ax.legend(fontsize=8, loc="upper right")
     ax.grid(alpha=0.3)
 
     # ── 8e2: Reuse vs Cognitive Complexity ─────────────────────────────────────
@@ -90,12 +96,14 @@ def plot_reuse_complexity_correlation(conn, out_dir, show):
             label=lang_display(lang),
             color=LANG_PALETTE[lang],
         )
-    
+
     corr = fixtures["reuse_count"].corr(fixtures["cognitive_complexity"])
     ax.set_xlabel("Reuse Count")
     ax.set_ylabel("Cognitive Complexity")
-    ax.set_title(f"8e: Reuse vs Cognitive (r={corr:.2f})", fontsize=11, fontweight='bold')
-    ax.legend(fontsize=8, loc='upper right')
+    ax.set_title(
+        f"8e: Reuse vs Cognitive (r={corr:.2f})", fontsize=11, fontweight="bold"
+    )
+    ax.legend(fontsize=8, loc="upper right")
     ax.grid(alpha=0.3)
 
     # ── 8e3: Reuse vs LOC ──────────────────────────────────────────────────────
@@ -110,60 +118,90 @@ def plot_reuse_complexity_correlation(conn, out_dir, show):
             label=lang_display(lang),
             color=LANG_PALETTE[lang],
         )
-    
+
     corr = fixtures["reuse_count"].corr(fixtures["loc"])
     ax.set_xlabel("Reuse Count")
     ax.set_ylabel("Lines of Code")
-    ax.set_title(f"8e: Reuse vs LOC (r={corr:.2f})", fontsize=11, fontweight='bold')
-    ax.legend(fontsize=8, loc='upper right')
+    ax.set_title(f"8e: Reuse vs LOC (r={corr:.2f})", fontsize=11, fontweight="bold")
+    ax.legend(fontsize=8, loc="upper right")
     ax.grid(alpha=0.3)
 
     # ── 8e4: Mean complexity by reuse category ─────────────────────────────────
     ax = axes[1, 1]
-    
+
     # Create reuse categories
     fixtures["reuse_category"] = pd.cut(
         fixtures["reuse_count"],
         bins=[-0.5, 0.5, 1.5, 5.5, np.inf],
-        labels=["Unused\n(0)", "Single-Use\n(1)", "Moderate\n(2-5)", "High Reuse\n(>5)"],
+        labels=[
+            "Unused\n(0)",
+            "Single-Use\n(1)",
+            "Moderate\n(2-5)",
+            "High Reuse\n(>5)",
+        ],
     )
-    
+
     # Calculate mean complexity per category
-    category_complexity = fixtures.groupby("reuse_category", observed=True).agg({
-        "cyclomatic_complexity": "mean",
-        "cognitive_complexity": "mean",
-        "loc": "mean",
-    })
-    
+    category_complexity = fixtures.groupby("reuse_category", observed=True).agg(
+        {
+            "cyclomatic_complexity": "mean",
+            "cognitive_complexity": "mean",
+            "loc": "mean",
+        }
+    )
+
     x = np.arange(len(category_complexity))
     width = 0.35
-    
+
     ax2 = ax.twinx()
-    
-    bars1 = ax.bar(x - width/2, category_complexity["cyclomatic_complexity"],
-                   width, label="Cyclomatic", color="#3498db", alpha=0.8)
-    bars2 = ax.bar(x + width/2, category_complexity["cognitive_complexity"],
-                   width, label="Cognitive", color="#e74c3c", alpha=0.8)
-    line = ax2.plot(x, category_complexity["loc"], marker='o', color='#2ecc71',
-                    linewidth=2.5, markersize=8, label="LOC")
-    
+
+    bars1 = ax.bar(
+        x - width / 2,
+        category_complexity["cyclomatic_complexity"],
+        width,
+        label="Cyclomatic",
+        color="#3498db",
+        alpha=0.8,
+    )
+    bars2 = ax.bar(
+        x + width / 2,
+        category_complexity["cognitive_complexity"],
+        width,
+        label="Cognitive",
+        color="#e74c3c",
+        alpha=0.8,
+    )
+    line = ax2.plot(
+        x,
+        category_complexity["loc"],
+        marker="o",
+        color="#2ecc71",
+        linewidth=2.5,
+        markersize=8,
+        label="LOC",
+    )
+
     ax.set_xlabel("Fixture Reuse Category")
     ax.set_ylabel("Mean Complexity Score")
-    ax2.set_ylabel("Mean Lines of Code", color='#2ecc71')
-    ax2.tick_params(axis='y', labelcolor='#2ecc71')
-    ax.set_title("8e: Mean Complexity by Reuse Category", fontsize=11, fontweight='bold')
+    ax2.set_ylabel("Mean Lines of Code", color="#2ecc71")
+    ax2.tick_params(axis="y", labelcolor="#2ecc71")
+    ax.set_title(
+        "8e: Mean Complexity by Reuse Category", fontsize=11, fontweight="bold"
+    )
     ax.set_xticks(x)
     ax.set_xticklabels(category_complexity.index, fontsize=9)
-    ax.legend(loc='upper left', fontsize=9)
-    ax2.legend(loc='upper right', fontsize=9)
-    ax.grid(alpha=0.3, axis='y')
+    ax.legend(loc="upper left", fontsize=9)
+    ax2.legend(loc="upper right", fontsize=9)
+    ax.grid(alpha=0.3, axis="y")
 
     plt.tight_layout()
     save_or_show(fig, "08e_reuse_complexity_correlation", out_dir, show)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="FixtureDB Reuse-Complexity Correlation")
+    parser = argparse.ArgumentParser(
+        description="FixtureDB Reuse-Complexity Correlation"
+    )
     parser.add_argument("--db", default=str(DB_PATH))
     parser.add_argument("--out", default=str(DEFAULT_OUT), help="Base output directory")
     parser.add_argument("--show", action="store_true")

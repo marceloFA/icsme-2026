@@ -54,7 +54,7 @@ def plot_contributors_impact(conn, out_dir, show):
         GROUP BY r.id
     """,
     )
-    
+
     if repos.empty or repos["num_contributors"].isna().all():
         print("  [skip] No contributor data (run Phase 3 collection).")
         return
@@ -62,10 +62,12 @@ def plot_contributors_impact(conn, out_dir, show):
     # Filter to languages we have good data for
     present = [l for l in LANG_ORDER if l in repos["language"].values]
     repos = repos[repos["language"].isin(present)]
-    
+
     # Calculate teardown adoption rate per repo
-    repos["teardown_adoption"] = 100 * repos["count_with_teardown"] / repos["total_fixtures"]
-    
+    repos["teardown_adoption"] = (
+        100 * repos["count_with_teardown"] / repos["total_fixtures"]
+    )
+
     # Create team size categories
     repos["team_category"] = pd.cut(
         repos["num_contributors"],
@@ -74,8 +76,12 @@ def plot_contributors_impact(conn, out_dir, show):
     )
 
     fig, axes = plt.subplots(2, 2, figsize=(14, 10), facecolor="#FAFAFA")
-    fig.suptitle("Project Team Size vs Fixture Quality Metrics", 
-                 fontsize=14, fontweight="bold", y=0.995)
+    fig.suptitle(
+        "Project Team Size vs Fixture Quality Metrics",
+        fontsize=14,
+        fontweight="bold",
+        y=0.995,
+    )
 
     # ── 8g1: Team size vs Cyclomatic Complexity ────────────────────────────────
     ax = axes[0, 0]
@@ -89,14 +95,16 @@ def plot_contributors_impact(conn, out_dir, show):
             label=lang_display(lang),
             color=LANG_PALETTE[lang],
         )
-    
+
     corr = repos["num_contributors"].corr(repos["avg_cc"])
     ax.set_xlabel("Number of Contributors")
     ax.set_ylabel("Avg Cyclomatic Complexity")
-    ax.set_title(f"8g: Contributors vs Cyclomatic (r={corr:.2f})", fontsize=11, fontweight='bold')
-    ax.legend(fontsize=8, loc='best')
+    ax.set_title(
+        f"8g: Contributors vs Cyclomatic (r={corr:.2f})", fontsize=11, fontweight="bold"
+    )
+    ax.legend(fontsize=8, loc="best")
     ax.grid(alpha=0.3)
-    ax.set_xscale('log')
+    ax.set_xscale("log")
 
     # ── 8g2: Team size vs Nesting Depth ────────────────────────────────────────
     ax = axes[0, 1]
@@ -110,14 +118,16 @@ def plot_contributors_impact(conn, out_dir, show):
             label=lang_display(lang),
             color=LANG_PALETTE[lang],
         )
-    
+
     corr = repos["num_contributors"].corr(repos["avg_nesting"])
     ax.set_xlabel("Number of Contributors")
     ax.set_ylabel("Avg Max Nesting Depth")
-    ax.set_title(f"8g: Contributors vs Nesting (r={corr:.2f})", fontsize=11, fontweight='bold')
-    ax.legend(fontsize=8, loc='best')
+    ax.set_title(
+        f"8g: Contributors vs Nesting (r={corr:.2f})", fontsize=11, fontweight="bold"
+    )
+    ax.legend(fontsize=8, loc="best")
     ax.grid(alpha=0.3)
-    ax.set_xscale('log')
+    ax.set_xscale("log")
 
     # ── 8g3: Team size vs Fixture Reuse ────────────────────────────────────────
     ax = axes[1, 0]
@@ -131,51 +141,83 @@ def plot_contributors_impact(conn, out_dir, show):
             label=lang_display(lang),
             color=LANG_PALETTE[lang],
         )
-    
+
     corr = repos["num_contributors"].corr(repos["avg_reuse"])
     ax.set_xlabel("Number of Contributors")
     ax.set_ylabel("Avg Fixture Reuse Count")
-    ax.set_title(f"8g: Contributors vs Reuse (r={corr:.2f})", fontsize=11, fontweight='bold')
-    ax.legend(fontsize=8, loc='best')
+    ax.set_title(
+        f"8g: Contributors vs Reuse (r={corr:.2f})", fontsize=11, fontweight="bold"
+    )
+    ax.legend(fontsize=8, loc="best")
     ax.grid(alpha=0.3)
-    ax.set_xscale('log')
+    ax.set_xscale("log")
 
     # ── 8g4: Team category comparison ──────────────────────────────────────────
     ax = axes[1, 1]
-    
-    category_stats = repos.groupby("team_category", observed=True).agg({
-        "avg_cc": "mean",
-        "avg_nesting": "mean",
-        "avg_reuse": "mean",
-        "teardown_adoption": "mean",
-    })
-    
+
+    category_stats = repos.groupby("team_category", observed=True).agg(
+        {
+            "avg_cc": "mean",
+            "avg_nesting": "mean",
+            "avg_reuse": "mean",
+            "teardown_adoption": "mean",
+        }
+    )
+
     x = np.arange(len(category_stats))
     width = 0.2
-    
-    ax.bar(x - 1.5*width, category_stats["avg_cc"], width, label="Avg CC",
-           color="#3498db", alpha=0.8)
-    ax.bar(x - 0.5*width, category_stats["avg_nesting"], width, label="Avg Nesting",
-           color="#e74c3c", alpha=0.8)
-    ax.bar(x + 0.5*width, category_stats["avg_reuse"], width, label="Avg Reuse",
-           color="#2ecc71", alpha=0.8)
-    ax.bar(x + 1.5*width, category_stats["teardown_adoption"]/20, width, label="Teardown Rate/20",
-           color="#f39c12", alpha=0.8)
-    
+
+    ax.bar(
+        x - 1.5 * width,
+        category_stats["avg_cc"],
+        width,
+        label="Avg CC",
+        color="#3498db",
+        alpha=0.8,
+    )
+    ax.bar(
+        x - 0.5 * width,
+        category_stats["avg_nesting"],
+        width,
+        label="Avg Nesting",
+        color="#e74c3c",
+        alpha=0.8,
+    )
+    ax.bar(
+        x + 0.5 * width,
+        category_stats["avg_reuse"],
+        width,
+        label="Avg Reuse",
+        color="#2ecc71",
+        alpha=0.8,
+    )
+    ax.bar(
+        x + 1.5 * width,
+        category_stats["teardown_adoption"] / 20,
+        width,
+        label="Teardown Rate/20",
+        color="#f39c12",
+        alpha=0.8,
+    )
+
     ax.set_xlabel("Project Team Category")
     ax.set_ylabel("Mean Metric Value")
-    ax.set_title("8g: Quality Metrics by Team Size Category", fontsize=11, fontweight='bold')
+    ax.set_title(
+        "8g: Quality Metrics by Team Size Category", fontsize=11, fontweight="bold"
+    )
     ax.set_xticks(x)
     ax.set_xticklabels(category_stats.index, fontsize=9)
-    ax.legend(fontsize=8, loc='upper right')
-    ax.grid(alpha=0.3, axis='y')
+    ax.legend(fontsize=8, loc="upper right")
+    ax.grid(alpha=0.3, axis="y")
 
     plt.tight_layout()
     save_or_show(fig, "08g_contributors_impact", out_dir, show)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="FixtureDB Contributors Impact Analysis")
+    parser = argparse.ArgumentParser(
+        description="FixtureDB Contributors Impact Analysis"
+    )
     parser.add_argument("--db", default=str(DB_PATH))
     parser.add_argument("--out", default=str(DEFAULT_OUT), help="Base output directory")
     parser.add_argument("--show", action="store_true")

@@ -126,7 +126,7 @@ def assert_fixture_metrics(
     max_external_calls: int = None,
 ):
     """Assert fixture metrics.
-    
+
     Args:
         fixture: FixtureResult to validate
         min_complexity: Minimum cyclomatic complexity (inclusive)

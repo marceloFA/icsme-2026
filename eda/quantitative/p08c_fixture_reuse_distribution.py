@@ -54,27 +54,35 @@ def plot_fixture_reuse_distribution(conn, out_dir, show):
     fixtures = fixtures[fixtures["language"].isin(present)]
 
     fig, axes = plt.subplots(2, 2, figsize=(14, 10), facecolor="#FAFAFA")
-    fig.suptitle("Fixture Reuse Distribution (How Many Tests Share Each Fixture?)", 
-                 fontsize=14, fontweight="bold", y=0.995)
+    fig.suptitle(
+        "Fixture Reuse Distribution (How Many Tests Share Each Fixture?)",
+        fontsize=14,
+        fontweight="bold",
+        y=0.995,
+    )
 
     # ── 8d1: Violin plot per language ──────────────────────────────────────────
     ax = axes[0, 0]
     plot_data = []
     for lang in present:
         lang_data = fixtures[fixtures["language"] == lang]["reuse_count"]
-        plot_data.append({
-            "language": lang_display(lang),
-            "reuse_count": lang_data,
-            "color": LANG_PALETTE[lang]
-        })
-    
+        plot_data.append(
+            {
+                "language": lang_display(lang),
+                "reuse_count": lang_data,
+                "color": LANG_PALETTE[lang],
+            }
+        )
+
     # Create violin plot data
-    df_plot = pd.DataFrame([
-        {"Language": d["language"], "Reuse Count": val}
-        for d in plot_data
-        for val in d["reuse_count"]
-    ])
-    
+    df_plot = pd.DataFrame(
+        [
+            {"Language": d["language"], "Reuse Count": val}
+            for d in plot_data
+            for val in d["reuse_count"]
+        ]
+    )
+
     sns.violinplot(
         data=df_plot,
         x="Language",
@@ -84,8 +92,10 @@ def plot_fixture_reuse_distribution(conn, out_dir, show):
     )
     ax.set_xlabel("")
     ax.set_ylabel("Reuse Count (# tests using fixture)")
-    ax.set_title("8d: Reuse Count Distribution per Language", fontsize=11, fontweight='bold')
-    ax.grid(alpha=0.3, axis='y')
+    ax.set_title(
+        "8d: Reuse Count Distribution per Language", fontsize=11, fontweight="bold"
+    )
+    ax.grid(alpha=0.3, axis="y")
 
     # ── 8d2: Histogram of overall distribution ─────────────────────────────────
     ax = axes[0, 1]
@@ -112,9 +122,9 @@ def plot_fixture_reuse_distribution(conn, out_dir, show):
     )
     ax.set_xlabel("Reuse Count")
     ax.set_ylabel("Number of Fixtures")
-    ax.set_title("8d: Overall Reuse Count Distribution", fontsize=11, fontweight='bold')
+    ax.set_title("8d: Overall Reuse Count Distribution", fontsize=11, fontweight="bold")
     ax.legend()
-    ax.grid(alpha=0.3, axis='y')
+    ax.grid(alpha=0.3, axis="y")
 
     # ── 8d3: Box plots per language ────────────────────────────────────────────
     ax = axes[1, 0]
@@ -127,13 +137,15 @@ def plot_fixture_reuse_distribution(conn, out_dir, show):
     )
     ax.set_xlabel("")
     ax.set_ylabel("Reuse Count")
-    ax.set_title("8d: Reuse Count Box Plots by Language", fontsize=11, fontweight='bold')
-    ax.grid(alpha=0.3, axis='y')
+    ax.set_title(
+        "8d: Reuse Count Box Plots by Language", fontsize=11, fontweight="bold"
+    )
+    ax.grid(alpha=0.3, axis="y")
 
     # ── 8d4: Summary statistics ────────────────────────────────────────────────
     ax = axes[1, 1]
     ax.axis("off")
-    
+
     # Overall stats
     stat_text = "Overall Statistics:\n" + "─" * 35 + "\n"
     stat_text += f"Total Fixtures: {len(fixtures):,}\n"
@@ -143,25 +155,26 @@ def plot_fixture_reuse_distribution(conn, out_dir, show):
     stat_text += f"Min: {fixtures['reuse_count'].min():.0f}\n"
     stat_text += f"Max: {fixtures['reuse_count'].max():.0f}\n"
     stat_text += "\nReuse Categories:\n" + "─" * 35 + "\n"
-    
+
     # Categorization
     unused = (fixtures["reuse_count"] == 0).sum()
     single = (fixtures["reuse_count"] == 1).sum()
     moderate = ((fixtures["reuse_count"] > 1) & (fixtures["reuse_count"] <= 5)).sum()
     high = (fixtures["reuse_count"] > 5).sum()
-    
+
     stat_text += f"Unused (0 uses): {unused:,} ({100*unused/len(fixtures):.1f}%)\n"
     stat_text += f"Single-Use (1): {single:,} ({100*single/len(fixtures):.1f}%)\n"
     stat_text += f"Moderate (2-5): {moderate:,} ({100*moderate/len(fixtures):.1f}%)\n"
     stat_text += f"High Reuse (>5): {high:,} ({100*high/len(fixtures):.1f}%)\n"
-    
+
     stat_text += "\nPer-Language Mean Reuse:\n" + "─" * 35 + "\n"
     for lang in present:
         mean_reuse = fixtures[fixtures["language"] == lang]["reuse_count"].mean()
         stat_text += f"{lang_display(lang):12s}: {mean_reuse:6.2f}\n"
 
     ax.text(
-        0.05, 0.95,
+        0.05,
+        0.95,
         stat_text,
         transform=ax.transAxes,
         fontsize=9,

@@ -1,9 +1,9 @@
 """
 Fixture taxonomy classifier — categorizes fixtures into semantic usage patterns (RQ1 taxonomy).
 
-This module implements a multi-level classification approach to map test fixtures into 
-semantic categories that represent distinct, actionable testing concerns. The taxonomy 
-was developed to answer RQ1: What are the primary roles/purposes of test fixtures in 
+This module implements a multi-level classification approach to map test fixtures into
+semantic categories that represent distinct, actionable testing concerns. The taxonomy
+was developed to answer RQ1: What are the primary roles/purposes of test fixtures in
 real-world projects?
 
 CLASSIFICATION APPROACH
@@ -13,7 +13,7 @@ to determine fixture category membership:
 
     Layer 1: Keyword Pattern Matching
     --------------------------------
-    Regex patterns are applied to the fixture's raw source code to detect semantic 
+    Regex patterns are applied to the fixture's raw source code to detect semantic
     keywords indicative of each category. For example:
       - Keywords: 'mock', 'stub', 'spy', 'fake' → mock_setup likely
       - Keywords: 'file', 'database', 'temp', 'path' → environment likely

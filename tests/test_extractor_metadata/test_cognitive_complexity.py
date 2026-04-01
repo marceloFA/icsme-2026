@@ -40,11 +40,11 @@ def db_session():
         result = extract_fixtures(py_file, "python")
         assert len(result.fixtures) == 1
         fixture = result.fixtures[0]
-        
+
         # Both metrics should be present and numeric
         assert isinstance(fixture.cyclomatic_complexity, int)
         assert isinstance(fixture.cognitive_complexity, int)
-        
+
         # Simple fixtures should have reasonable complexity
         assert fixture.cyclomatic_complexity >= 1
         assert fixture.cognitive_complexity >= 0
@@ -81,7 +81,7 @@ def complex_setup():
         result = extract_fixtures(py_file, "python")
         assert len(result.fixtures) == 1
         fixture = result.fixtures[0]
-        
+
         # Complex fixtures should have detectable complexity
         assert fixture.cyclomatic_complexity >= 1
         # Cognitive complexity should be calculated
@@ -106,7 +106,7 @@ public class TestFixture {
         result = extract_fixtures(java_file, "java")
         assert len(result.fixtures) == 1
         fixture = result.fixtures[0]
-        
+
         # Metrics via lizard
         assert isinstance(fixture.cyclomatic_complexity, int)
         assert isinstance(fixture.cognitive_complexity, int)
@@ -216,7 +216,7 @@ def third():
 """)
         result = extract_fixtures(py_file, "python")
         assert len(result.fixtures) == 3
-        
+
         # Each fixture should have metrics
         for fixture in result.fixtures:
             assert isinstance(fixture.cyclomatic_complexity, int)
@@ -347,10 +347,10 @@ def test_fixture():
         result = extract_fixtures(py_file, "python")
         assert len(result.fixtures) == 1
         fixture = result.fixtures[0]
-        
+
         # Fields must exist for database export
-        assert hasattr(fixture, 'cyclomatic_complexity')
-        assert hasattr(fixture, 'cognitive_complexity')
+        assert hasattr(fixture, "cyclomatic_complexity")
+        assert hasattr(fixture, "cognitive_complexity")
         assert isinstance(fixture.cyclomatic_complexity, int)
         assert isinstance(fixture.cognitive_complexity, int)
 
@@ -372,13 +372,12 @@ def fixture2():
     return i
 """)
         result = extract_fixtures(py_file, "python")
-        
+
         for fixture in result.fixtures:
             # Both metrics must be integers
             assert isinstance(fixture.cyclomatic_complexity, int)
             assert isinstance(fixture.cognitive_complexity, int)
-            
+
             # Reasonable ranges (positive for cyclomatic, non-negative for cognitive)
             assert fixture.cyclomatic_complexity > 0
             assert fixture.cognitive_complexity >= 0
-

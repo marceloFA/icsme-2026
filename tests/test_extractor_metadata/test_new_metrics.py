@@ -20,7 +20,8 @@ def test_simple():
     return x + y
 """
         from tempfile import NamedTemporaryFile
-        with NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+
+        with NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
             f.flush()
             result = extract_fixtures(Path(f.name), "python")
@@ -39,7 +40,8 @@ def fixture_with_nesting():
     return x
 """
         from tempfile import NamedTemporaryFile
-        with NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+
+        with NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
             f.flush()
             result = extract_fixtures(Path(f.name), "python")
@@ -59,7 +61,8 @@ def fixture_with_loops():
     return x
 """
         from tempfile import NamedTemporaryFile
-        with NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+
+        with NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
             f.flush()
             result = extract_fixtures(Path(f.name), "python")
@@ -82,7 +85,8 @@ def test_uses_fixture(my_fixture):
     assert my_fixture == 42
 """
         from tempfile import NamedTemporaryFile
-        with NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+
+        with NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
             f.flush()
             result = extract_fixtures(Path(f.name), "python")
@@ -107,7 +111,8 @@ def test_third(my_fixture):
     assert my_fixture == 42
 """
         from tempfile import NamedTemporaryFile
-        with NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+
+        with NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
             f.flush()
             result = extract_fixtures(Path(f.name), "python")
@@ -127,7 +132,8 @@ def test_no_params():
     assert True
 """
         from tempfile import NamedTemporaryFile
-        with NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+
+        with NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
             f.flush()
             result = extract_fixtures(Path(f.name), "python")
@@ -150,7 +156,8 @@ def test_uses_both(fixture_a, fixture_b):
     assert fixture_a + fixture_b == 3
 """
         from tempfile import NamedTemporaryFile
-        with NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+
+        with NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
             f.flush()
             result = extract_fixtures(Path(f.name), "python")
@@ -174,7 +181,8 @@ def fixture_with_teardown():
     resource.cleanup()
 """
         from tempfile import NamedTemporaryFile
-        with NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+
+        with NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
             f.flush()
             result = extract_fixtures(Path(f.name), "python")
@@ -190,7 +198,8 @@ def simple_fixture():
     return 42
 """
         from tempfile import NamedTemporaryFile
-        with NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+
+        with NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
             f.flush()
             result = extract_fixtures(Path(f.name), "python")
@@ -212,7 +221,8 @@ class TestExample(unittest.TestCase):
         assert True
 """
         from tempfile import NamedTemporaryFile
-        with NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+
+        with NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
             f.flush()
             result = extract_fixtures(Path(f.name), "python")
@@ -231,7 +241,8 @@ class TestExample(unittest.TestCase):
         assert True
 """
         from tempfile import NamedTemporaryFile
-        with NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+
+        with NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
             f.flush()
             result = extract_fixtures(Path(f.name), "python")
@@ -252,21 +263,22 @@ def complete_fixture(dep):
     yield x
 """
         from tempfile import NamedTemporaryFile
-        with NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+
+        with NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
             f.flush()
             result = extract_fixtures(Path(f.name), "python")
-            
+
             if result.fixtures:
                 fixture = result.fixtures[0]
                 # Check all required fields exist
-                assert hasattr(fixture, 'max_nesting_depth')
-                assert hasattr(fixture, 'reuse_count')
-                assert hasattr(fixture, 'has_teardown_pair')
-                assert hasattr(fixture, 'cyclomatic_complexity')
-                assert hasattr(fixture, 'cognitive_complexity')
-                assert hasattr(fixture, 'num_parameters')
-                
+                assert hasattr(fixture, "max_nesting_depth")
+                assert hasattr(fixture, "reuse_count")
+                assert hasattr(fixture, "has_teardown_pair")
+                assert hasattr(fixture, "cyclomatic_complexity")
+                assert hasattr(fixture, "cognitive_complexity")
+                assert hasattr(fixture, "num_parameters")
+
                 # Verify they have sensible default values
                 assert fixture.max_nesting_depth >= 1
                 assert fixture.reuse_count >= 0
@@ -286,11 +298,12 @@ def baseline_fixture(a, b):
     return result
 """
         from tempfile import NamedTemporaryFile
-        with NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+
+        with NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
             f.flush()
             result = extract_fixtures(Path(f.name), "python")
-            
+
             if result.fixtures:
                 fixture = result.fixtures[0]
                 # Verify phase 1+2 metrics are still computed

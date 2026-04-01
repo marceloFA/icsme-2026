@@ -57,20 +57,20 @@ def extract_fixtures_with_timeout(
 
     TIMEOUT STRATEGY
     ================
-    
+
     Tree-sitter AST parsing can hang indefinitely on certain malformed or
     pathological code patterns. Two failure modes seen in practice:
-    
+
     1. **Parser bugs**: Some language grammars have infinite loops on
        corner cases (e.g., deeply nested parentheses, unusual token sequences)
     2. **Exotic/synthetic code**: Generated test data, decompiled code, or
        intentionally obfuscated code can trigger exponential backtracking
-    
+
     Timeout prevents:
     - A single pathological file from blocking the entire extraction phase
     - Memory exhaustion from pathological inputs
     - Worker threads hanging indefinitely (requires ThreadPoolExecutor)
-    
+
     Uses ThreadPoolExecutor to run extraction in a separate thread, allowing
     timeout enforcement even when called from existing worker threads. On
     timeout, returns empty ExtractResult to mark the file as skipped.
@@ -342,7 +342,6 @@ TEST_FUNC_PATTERNS = {
     "javascript": re.compile(r"\bit\s*\(|\btest\s*\("),
     "typescript": re.compile(r"\bit\s*\(|\btest\s*\("),
     "go": re.compile(r"^func\s+Test[A-Z]", re.MULTILINE),
-
 }
 
 

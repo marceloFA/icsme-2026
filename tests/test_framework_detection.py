@@ -186,6 +186,7 @@ public class TemporaryFolderTest {
         assert len(class_rule_fixtures) > 0, "@ClassRule fixture should be detected"
         assert class_rule_fixtures[0].framework == "junit"
 
+
 class TestGoFrameworkDetection:
     """Test Go framework detection (golang_testing and testify)"""
 

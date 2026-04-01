@@ -54,8 +54,12 @@ def plot_nesting_depth(conn, out_dir, show):
     fixtures = fixtures[fixtures["language"].isin(present)]
 
     fig, axes = plt.subplots(2, 2, figsize=(14, 10), facecolor="#FAFAFA")
-    fig.suptitle("Structural Code Complexity: Max Nesting Depth Analysis", 
-                 fontsize=14, fontweight="bold", y=0.995)
+    fig.suptitle(
+        "Structural Code Complexity: Max Nesting Depth Analysis",
+        fontsize=14,
+        fontweight="bold",
+        y=0.995,
+    )
 
     # ── 8a1: Distribution per language (violin) ───────────────────────────────
     ax = axes[0, 0]
@@ -70,16 +74,16 @@ def plot_nesting_depth(conn, out_dir, show):
         showmeans=True,
         showmedians=True,
     )
-    
-    for pc in parts['bodies']:
-        pc.set_facecolor('#888888')
+
+    for pc in parts["bodies"]:
+        pc.set_facecolor("#888888")
         pc.set_alpha(0.5)
-    
+
     ax.set_xticks(range(len(present)))
-    ax.set_xticklabels([lang_display(l) for l in present], rotation=45, ha='right')
+    ax.set_xticklabels([lang_display(l) for l in present], rotation=45, ha="right")
     ax.set_ylabel("Max Nesting Depth")
-    ax.set_title("8a: Distribution by Language", fontsize=11, fontweight='bold')
-    ax.grid(axis='y', alpha=0.3, zorder=0)
+    ax.set_title("8a: Distribution by Language", fontsize=11, fontweight="bold")
+    ax.grid(axis="y", alpha=0.3, zorder=0)
     ax.set_ylim(bottom=0)
 
     # ── 8a2: Histogram (all languages combined) ────────────────────────────────
@@ -87,15 +91,15 @@ def plot_nesting_depth(conn, out_dir, show):
     ax.hist(
         fixtures["max_nesting_depth"],
         bins=range(1, int(fixtures["max_nesting_depth"].max()) + 2),
-        edgecolor='black',
+        edgecolor="black",
         alpha=0.7,
-        color='steelblue',
+        color="steelblue",
         zorder=3,
     )
     ax.set_xlabel("Max Nesting Depth")
     ax.set_ylabel("Count of Fixtures")
-    ax.set_title("8a: Overall Distribution", fontsize=11, fontweight='bold')
-    ax.grid(axis='y', alpha=0.3, zorder=0)
+    ax.set_title("8a: Overall Distribution", fontsize=11, fontweight="bold")
+    ax.grid(axis="y", alpha=0.3, zorder=0)
 
     # ── 8a3: Box plot per language ─────────────────────────────────────────────
     ax = axes[1, 0]
@@ -109,35 +113,48 @@ def plot_nesting_depth(conn, out_dir, show):
         patch_artist=True,
         showmeans=True,
     )
-    
-    for patch, lang in zip(bp['boxes'], present):
+
+    for patch, lang in zip(bp["boxes"], present):
         patch.set_facecolor(LANG_PALETTE[lang])
         patch.set_alpha(0.6)
-    
+
     ax.set_ylabel("Max Nesting Depth")
-    ax.set_title("8a: Box Plot by Language", fontsize=11, fontweight='bold')
-    ax.tick_params(axis='x', rotation=45)
-    plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
-    ax.grid(axis='y', alpha=0.3, zorder=0)
+    ax.set_title("8a: Box Plot by Language", fontsize=11, fontweight="bold")
+    ax.tick_params(axis="x", rotation=45)
+    plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha="right")
+    ax.grid(axis="y", alpha=0.3, zorder=0)
 
     # ── 8a4: Summary statistics ────────────────────────────────────────────────
     ax = axes[1, 1]
-    ax.axis('off')
-    
-    stats_text = "Summary Statistics\n" + "="*30 + "\n\n"
+    ax.axis("off")
+
+    stats_text = "Summary Statistics\n" + "=" * 30 + "\n\n"
     stats_text += f"Total Fixtures: {len(fixtures)}\n"
     stats_text += f"Mean Nesting Depth: {fixtures['max_nesting_depth'].mean():.2f}\n"
-    stats_text += f"Median Nesting Depth: {fixtures['max_nesting_depth'].median():.1f}\n"
+    stats_text += (
+        f"Median Nesting Depth: {fixtures['max_nesting_depth'].median():.1f}\n"
+    )
     stats_text += f"Std Dev: {fixtures['max_nesting_depth'].std():.2f}\n"
     stats_text += f"Min: {fixtures['max_nesting_depth'].min():.0f}\n"
     stats_text += f"Max: {fixtures['max_nesting_depth'].max():.0f}\n"
-    stats_text += f"\nShallowly nested (depth=1): {(fixtures['max_nesting_depth'] == 1).sum()}\n"
+    stats_text += (
+        f"\nShallowly nested (depth=1): {(fixtures['max_nesting_depth'] == 1).sum()}\n"
+    )
     stats_text += f"Moderately nested (2-3): {((fixtures['max_nesting_depth'] >= 2) & (fixtures['max_nesting_depth'] <= 3)).sum()}\n"
-    stats_text += f"Deeply nested (depth≥4): {(fixtures['max_nesting_depth'] >= 4).sum()}\n"
-    
-    ax.text(0.1, 0.9, stats_text, transform=ax.transAxes, fontsize=10,
-            verticalalignment='top', family='monospace',
-            bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.3))
+    stats_text += (
+        f"Deeply nested (depth≥4): {(fixtures['max_nesting_depth'] >= 4).sum()}\n"
+    )
+
+    ax.text(
+        0.1,
+        0.9,
+        stats_text,
+        transform=ax.transAxes,
+        fontsize=10,
+        verticalalignment="top",
+        family="monospace",
+        bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.3),
+    )
 
     plt.tight_layout()
     save_or_show(fig, "08a_nesting_depth", out_dir, show)
