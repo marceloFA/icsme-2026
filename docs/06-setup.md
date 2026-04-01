@@ -26,7 +26,9 @@ python pipeline.py init
 | Package         | Purpose |
 |-----------------|---------|
 | `pydriller`     | Repository traversal and git metadata |
-| `tree-sitter` + language bindings | AST parsing for all five languages |
+| `tree-sitter` + language bindings | AST parsing for fixture detection (all 6 languages) |
+| `lizard`        | Cyclomatic complexity, cognitive complexity, and parameter count metrics |
+| `cognitive-complexity` | SonarQube-standard cognitive complexity for Python |
 | `requests`      | GitHub Search API client |
 | `python-dotenv` | `.env` file loading |
 | `pandas`        | CSV export and validation sample generation |

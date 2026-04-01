@@ -118,6 +118,46 @@ def _wait_for_rate_limit(resource: dict) -> None:
         time.sleep(sleep_secs)
 
 
+def _get_contributor_count(full_name: str) -> int:
+    """
+    Fetch the number of contributors to a repository from the GitHub API.
+    
+    Returns the contributor count, or 0 if the API call fails.
+    Note: GitHub API returns up to 30 contributors per page; the actual
+    count may be higher. This fetches the first page and returns the count.
+    """
+    try:
+        url = f"https://api.github.com/repos/{full_name}/contributors"
+        params = {"per_page": 1}  # Just need the Link header with total count
+        r = SESSION.get(url, params=params, timeout=10)
+        
+        if r.status_code == 204:
+            # 204 means no content found
+            return 0
+        
+        r.raise_for_status()
+        
+        # Try to get total from Link header
+        link_header = r.headers.get("Link", "")
+        if link_header and 'rel="last"' in link_header:
+            # Link header format: <...&page=N>; rel="last"
+            # Extract the last page number
+            import re
+            match = re.search(r'page=(\d+)>.*rel="last"', link_header)
+            if match:
+                return int(match.group(1))
+        
+        # Fallback: return the count from the current response
+        data = r.json()
+        if isinstance(data, list):
+            return len(data) if len(data) < 30 else 30  # At least approximate
+        
+        return 0
+    except Exception as e:
+        logger.debug(f"Failed to get contributor count for {full_name}: {e}")
+        return 0
+
+
 # ---------------------------------------------------------------------------
 # Repository filtering
 # ---------------------------------------------------------------------------
@@ -309,6 +349,10 @@ def _collect_repos_by_stars(
                     logger.debug(f"  skip {repo['full_name']}: {reason}")
                     continue
 
+                # Fetch contributor count from GitHub API
+                # This is optional and non-blocking — if it fails, we continue with 0
+                num_contributors = _get_contributor_count(repo["full_name"])
+                
                 record = {
                     "github_id": repo["id"],
                     "full_name": repo["full_name"],
@@ -321,6 +365,7 @@ def _collect_repos_by_stars(
                     "pushed_at": repo.get("pushed_at"),
                     "clone_url": repo.get("clone_url"),
                     "star_tier": star_tier(repo.get("stargazers_count") or 0),
+                    "num_contributors": num_contributors,
                 }
                 _, is_new = upsert_repository(conn, record)
                 if is_new:
@@ -418,6 +463,9 @@ def _collect_repos_stratified(
                         logger.debug(f"  skip {repo['full_name']}: {reason}")
                         continue
 
+                    # Fetch contributor count from GitHub API
+                    num_contributors = _get_contributor_count(repo["full_name"])
+                    
                     record = {
                         "github_id": repo["id"],
                         "full_name": repo["full_name"],
@@ -430,6 +478,7 @@ def _collect_repos_stratified(
                         "pushed_at": repo.get("pushed_at"),
                         "clone_url": repo.get("clone_url"),
                         "star_tier": star_tier(repo.get("stargazers_count") or 0),
+                        "num_contributors": num_contributors,
                     }
                     _, is_new = upsert_repository(conn, record)
                     if is_new:
@@ -517,6 +566,9 @@ def _collect_repos_chronological(
                         logger.debug(f"  skip {repo['full_name']}: {reason}")
                         continue
 
+                    # Fetch contributor count from GitHub API
+                    num_contributors = _get_contributor_count(repo["full_name"])
+                    
                     record = {
                         "github_id": repo["id"],
                         "full_name": repo["full_name"],
@@ -529,6 +581,7 @@ def _collect_repos_chronological(
                         "pushed_at": repo.get("pushed_at"),
                         "clone_url": repo.get("clone_url"),
                         "star_tier": star_tier(repo.get("stargazers_count") or 0),
+                        "num_contributors": num_contributors,
                     }
                     _, is_new = upsert_repository(conn, record)
                     if is_new:

@@ -112,23 +112,50 @@ For each detected fixture, the system computes:
 
 - **LOC** (Lines of Code): Non-blank lines excluding comments
 
-- **Cyclomatic Complexity**: Simple proxy counting branching keywords (if, for, while, try/catch, etc.)
+- **Cyclomatic Complexity**: McCabe complexity via **Lizard library** (https://github.com/terryyin/lizard)
+    - Calculated as: 1 + number of decision points (if, for, while, case, catch)
+    - Supported across all 6 languages (Python, Java, JavaScript, TypeScript, Go, C#)
+    - Industry-standard metric used by SonarQube and Codecov
 
-- **Cognitive Complexity**: A refinement of cyclomatic complexity that weights control structures by nesting depth and detects recursion. 
-    - Formula: Cognitive Complexity = Σ(nesting_depth) over all control structures + 5 × (number of recursive calls)
+- **Cognitive Complexity**: SonarQube-standard complexity metric
+    - **Python**: Calculated via **cognitive-complexity library** (https://github.com/sonarSource/cognitive-complexity)
+    - **Other languages**: Formula-based estimate using cyclomatic_complexity × max_nesting_depth
+    - Formula: Cognitive Complexity = Σ(nesting_depth) over all control structures
     - Example: three nested if-statements at depths 1, 2, 3 contribute 1+2+3 = 6 to cognitive complexity (vs. cyclomatic complexity of 3)
     - Rationale: Nested code is harder to understand than flat code; nesting depth better reflects human cognitive burden
-    - See `collection/detector.py` for implementation via tree-sitter AST traversal
+    - See [COMPLEXITY_METRICS_MIGRATION.md](COMPLEXITY_METRICS_MIGRATION.md) for implementation details
 
-- **Object Instantiations**: Count of `new Foo(...)` calls and constructor-like calls
+- **Object Instantiations**: Count of `new Foo(...)` calls and constructor-like calls (custom regex detection)
 
-- **External Calls**: Count of database, HTTP, file I/O, and environment access patterns
+- **External Calls**: Count of database, HTTP, file I/O, and environment access patterns (custom regex detection for I/O-specific operations)
 
-- **Parameters**: Number of parameters/injection points
+- **Parameters**: Number of parameters/injection points via **Lizard library** (Phase 2 migration)
+
+- **Max Nesting Depth**: Maximum level of nested block structures (if/for/while/try statements) computed from AST
+    - Computed from Tree-sitter AST (per-language)
+    - Ranges from 1 (no nesting) to N (deeply nested)
+    - Complementary to cognitive complexity: isolates structural nesting independent of control flow decisions
+    - Useful for identifying deeply-nested control logic that may indicate code smell
+
+- **Reuse Count**: Number of test functions that use this fixture as a parameter (fixture modularity metric)
+    - **Python/pytest**: Counted by scanning test functions for the fixture name in parameter lists
+    - **Java/JUnit**: Count of test methods in the same class that share @BeforeEach/@Before fixtures
+    - **Other languages**: Heuristic estimate based on scope (per_test = 1, per_class ≥ 1, etc.)
+    - Enables Hamster-style fixture modularity analysis: complex fixtures used by many tests have system-wide impact
+
+- **Has Teardown Pair**: Boolean indicating whether fixture has cleanup logic paired with setup
+    - **Python/pytest**: Detected by presence of `yield` statement (fixture-style cleanup)
+    - **Python/unittest**: `tearDown` method paired with `setUp`, `tearDownMethod` paired with `setupMethod`
+    - **Java/JUnit**: `@AfterEach`/`@After` or `@AfterAll`/`@AfterClass` in same class as `@BeforeEach`/`@Before`
+    - **C#/NUnit, xUnit**: `[TearDown]`/`[OneTimeTearDown]` paired with corresponding setup attributes
+    - **Go**: Cleanup registered via `t.Cleanup()` callbacks
+    - Indicator of resource cleanup discipline: fixtures without teardown are potential leak indicators
 
 - **Has Yield**: Boolean indicating generator/yield expressions (Python fixtures)
 
-These metrics support RQ1 fixture taxonomy classification and fixture quality analysis.
+These metrics support RQ1 fixture taxonomy classification, fixture quality analysis, and modularity studies.
+
+See [METRICS_AUDIT_AND_EXTERNAL_TOOLS.md](METRICS_AUDIT_AND_EXTERNAL_TOOLS.md) for comprehensive analysis of all quantitative metrics and tool choices.
 
 ## Limitations and Known Issues
 

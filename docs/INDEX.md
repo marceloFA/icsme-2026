@@ -19,7 +19,13 @@ This folder contains the complete documentation for FixtureDB, split into dedica
 13. **[License](13-license.md)** — MIT (code) and CC BY 4.0 (dataset)
 14. **[CSV Export Guide](14-csv-export-guide.md)** — Full column documentation for all exported CSV files
 15. **[Language-Specific Fixture CSV Export](15-language-specific-csv-export.md)** — Python/Java/JavaScript fixtures for Zenodo
-16. **[Testing Strategy & Execution](16-testing.md)** — Test suite overview, categories, and how to run
+16. **[Testing Strategy & Execution](14-testing.md)** — Test suite overview, categories, and how to run
+
+## Technical Methodology
+
+- **[Complexity Metrics Migration](COMPLEXITY_METRICS_MIGRATION.md)** — Phase 1 & 2 migration to Lizard and cognitive-complexity libraries
+- **[Metrics Audit & External Tools](METRICS_AUDIT_AND_EXTERNAL_TOOLS.md)** — Comprehensive analysis of all quantitative metrics and available external tools
+- **[Phase 3 Advanced Metrics](17-phase-3-advanced-metrics.md)** — max_nesting_depth, reuse_count, has_teardown_pair, num_contributors
 
 ## Getting started
 

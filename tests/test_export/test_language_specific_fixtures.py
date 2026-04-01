@@ -222,8 +222,10 @@ def test_fixture_csv_has_expected_columns():
     )
     conn.execute("INSERT INTO test_files VALUES (1, 1, 'test.py', 'python')")
     conn.execute(
-        """INSERT INTO fixtures VALUES 
-           (1, 1, 1, 'my_fixture', 'pytest_decorator', 'per_test', 5, 15, 10, 2, 1, 2, 3, 'setup', 'pytest')"""
+        """INSERT INTO fixtures (file_id, repo_id, name, fixture_type, scope, start_line, end_line, loc, 
+           cyclomatic_complexity, cognitive_complexity, num_objects_instantiated, num_external_calls, 
+           num_parameters, category, framework) 
+           VALUES (1, 1, 'my_fixture', 'pytest_decorator', 'per_test', 5, 15, 10, 2, 1, 2, 3, 4, 'setup', 'pytest')"""
     )
 
     conn.commit()

@@ -26,6 +26,10 @@ One row per GitHub repository discovered and processed.
 | `star_tier`       | TEXT    | `core` (≥ 500 stars, comparable to Hamster) \| `extended` (100–499 stars) |
 | `status`          | TEXT    | Pipeline lifecycle state: `discovered` → `cloned` → `analysed` (or `skipped` / `error`) |
 | `error_message`   | TEXT    | Populated when `status = 'error'` |
+| `num_test_files`  | INTEGER | Count of test files detected in this repository|
+| `num_fixtures`    | INTEGER | Total count of fixture definitions in this repository |
+| `num_mock_usages` | INTEGER | Total count of mock usages detected across all fixtures in this repository |
+| `num_contributors` | INTEGER | GitHub API: number of contributors to the repository |
 | `collected_at`    | TEXT    | ISO 8601 timestamp of DB insertion |
 
 ### Note on `star_tier`
@@ -45,8 +49,10 @@ One row per test file found inside each analysed repository.
 | `repo_id`       | INTEGER FK → `repositories.id` | |
 | `relative_path` | TEXT    | Path relative to the repository root |
 | `language`      | TEXT    | Same as the parent repository's language |
+| `file_loc`      | INTEGER | Non-blank lines of code in this test file |
 | `num_test_funcs` | INTEGER | Estimated number of test function definitions in this file |
 | `num_fixtures`  | INTEGER | Number of fixture definitions detected in this file |
+| `total_fixture_loc` | INTEGER | Sum of `loc` across all fixtures in this file |
 
 ## 3.3 `fixtures`
 
@@ -63,13 +69,17 @@ One row per fixture definition. This is the primary analysis table.
 | `start_line`                   | INTEGER | 1-indexed start line in the source file |
 | `end_line`                     | INTEGER | 1-indexed end line |
 | `loc`                          | INTEGER | Non-blank lines of code |
-| `cyclomatic_complexity`        | INTEGER | 1 + number of branching statements (proxy metric) |
-| `cognitive_complexity`         | INTEGER | Nesting-depth-weighted complexity (deeper nesting = higher cost) |
+| `cyclomatic_complexity`        | INTEGER | McCabe complexity (1 + branching statements), calculated via **Lizard library** |
+| `cognitive_complexity`         | INTEGER | SonarQube-standard cognitive complexity (nesting-depth-weighted), calculated via **cognitive-complexity library** for Python and formula-based estimate for other languages |
+| `max_nesting_depth`            | INTEGER | Maximum block nesting level (depth of nested if/for/while/try statements), computed from AST |
 | `num_objects_instantiated`     | INTEGER | Estimated constructor calls inside the fixture |
 | `num_external_calls`           | INTEGER | Estimated I/O / external API calls (DB, HTTP, filesystem, env) |
 | `num_parameters`               | INTEGER | Number of function parameters |
+| `reuse_count`                  | INTEGER | Number of test functions that use this fixture as a parameter (fixture modularity metric) |
+| `has_teardown_pair`            | INTEGER | 1 if fixture has cleanup logic (yield for pytest, paired @After/@AfterEach for Java/C#), 0 otherwise |
 | `raw_source`                   | TEXT    | Full source text of the fixture as extracted |
 | `category`                     | TEXT    | RQ1 taxonomy label — `NULL` until manually classified |
+| `framework`                    | TEXT    | Testing framework (pytest, unittest, junit, nunit, testify, jest, vitest, etc.) |
 
 ### `fixture_type` values
 

@@ -78,8 +78,11 @@ tests/
 - **Lines of code**: LOC counting (excluding blanks/comments)
 - **Fixture type**: Correct classification (setUp, fixture, etc.)
 - **Fixture scope**: per_test, per_class, per_module, per_session
-- **Complexity metrics**: Cyclomatic complexity, parameter counts
-- **Code metrics**: Objects instantiated, external calls
+- **Complexity metrics**: 
+  - Cyclomatic complexity (via Lizard library)
+  - Cognitive complexity (via cognitive-complexity library for Python, formula fallback for others)
+  - Parameter counts (via Lizard library)
+- **Code metrics**: Objects instantiated (regex), external I/O calls (regex)
 
 ### 3. Edge Cases — 50+ tests
 

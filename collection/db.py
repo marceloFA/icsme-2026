@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS repositories (
     num_test_files  INTEGER DEFAULT 0,      -- count of test files found
     num_fixtures    INTEGER DEFAULT 0,      -- count of fixture definitions
     num_mock_usages INTEGER DEFAULT 0,      -- count of mock usages detected
+    num_contributors INTEGER DEFAULT 0,     -- GitHub API: repository contributor count
     collected_at    TEXT DEFAULT (datetime('now'))
 );
 
@@ -80,9 +81,12 @@ CREATE TABLE IF NOT EXISTS fixtures (
     loc                     INTEGER,   -- lines of code (non-blank)
     cyclomatic_complexity   INTEGER,
     cognitive_complexity    INTEGER,
+    max_nesting_depth       INTEGER DEFAULT 0,      -- maximum block nesting level
     num_objects_instantiated INTEGER DEFAULT 0,
     num_external_calls      INTEGER DEFAULT 0,
     num_parameters          INTEGER DEFAULT 0,
+    reuse_count             INTEGER DEFAULT 0,      -- count of test functions using this fixture
+    has_teardown_pair       INTEGER DEFAULT 0,      -- 1 if teardown/cleanup logic exists, 0 otherwise
     raw_source              TEXT,              -- original source text
     category                TEXT,              -- RQ1 taxonomy label (filled by classifier)
     framework               TEXT,              -- testing framework (pytest, unittest, junit, nunit, testify, etc.)
@@ -267,6 +271,7 @@ def set_repo_analysed(
     num_test_files: int,
     num_fixtures: int,
     num_mock_usages: int,
+    num_contributors: int = 0,
 ) -> None:
     """Mark a repo as analysed and store the extraction counts."""
     conn.execute(
@@ -275,10 +280,11 @@ def set_repo_analysed(
         SET status = 'analysed',
             num_test_files = ?,
             num_fixtures = ?,
-            num_mock_usages = ?
+            num_mock_usages = ?,
+            num_contributors = ?
         WHERE id = ?
     """,
-        (num_test_files, num_fixtures, num_mock_usages, repo_id),
+        (num_test_files, num_fixtures, num_mock_usages, num_contributors, repo_id),
     )
 
 
@@ -341,13 +347,15 @@ def insert_fixture(conn: sqlite3.Connection, fixture: dict) -> int:
         INSERT INTO fixtures (
             file_id, repo_id, name, fixture_type, scope,
             start_line, end_line, loc, cyclomatic_complexity,
-            num_objects_instantiated, num_external_calls,
-            num_parameters, raw_source
+            cognitive_complexity, max_nesting_depth, num_objects_instantiated, 
+            num_external_calls, num_parameters, reuse_count, has_teardown_pair,
+            raw_source, framework
         ) VALUES (
             :file_id, :repo_id, :name, :fixture_type, :scope,
             :start_line, :end_line, :loc, :cyclomatic_complexity,
-            :num_objects_instantiated, :num_external_calls,
-            :num_parameters, :raw_source
+            :cognitive_complexity, :max_nesting_depth, :num_objects_instantiated, 
+            :num_external_calls, :num_parameters, :reuse_count, :has_teardown_pair,
+            :raw_source, :framework
         )
         ON CONFLICT(file_id, name, start_line) DO NOTHING
     """,

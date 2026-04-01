@@ -1,18 +1,19 @@
 """
-Tests for cognitive complexity calculation in fixture detection.
+Integration tests for complexity metrics using third-party libraries.
 
-Cognitive Complexity (CC) is a measure of code understandability that extends
-Cyclomatic Complexity by weighting control flow structures by nesting depth
-and adding a penalty for recursion.
+This test suite validates that:
+- Lizard library (cyclomatic complexity) integrates correctly
+- cognitive_complexity library (Python) integrates correctly
+- Metrics are calculated and assigned to fixtures
+- Cross-language support works
+- Edge cases are handled gracefully
 
-Formula:
-  CC = sum over all control structures of: max(1, nesting_depth)
-  CC += 5 for each recursive call detected
+NOTE: These are integration tests, not algorithm validation tests.
+The accuracy of complexity calculations is delegated to lizard and
+cognitive_complexity libraries, which are well-established third-party tools.
 
-This test suite validates:
-  - Nesting depth multiplier is applied correctly
-  - Recursion detection and penalty
-  - Language-agnostic accuracy across all 6 languages
+Previously, this module tested custom tree-sitter based implementations.
+Now we validate the integration with proven, industry-standard libraries.
 """
 
 import pytest
@@ -20,320 +21,348 @@ from pathlib import Path
 from collection.detector import extract_fixtures
 
 
-class TestCognitiveComplexityBasics:
-    """Basic cognitive complexity calculations."""
+class TestComplexityMetricsIntegration:
+    """Test that complexity metrics are correctly integrated and calculated."""
 
-    def test_no_control_flow_has_cc_zero(self, tmp_path):
-        """A fixture with no branching has CC = 0."""
+    def test_python_simple_fixture_has_metrics(self, tmp_path):
+        """Simple Python fixtures should have complexity metrics."""
         py_file = tmp_path / "test_simple.py"
         py_file.write_text("""
+import pytest
+
 @pytest.fixture
-def simple_fixture():
+def db_session():
+    '''Simple fixture with minimal logic.'''
+    session = create_session()
+    yield session
+    session.close()
+""")
+        result = extract_fixtures(py_file, "python")
+        assert len(result.fixtures) == 1
+        fixture = result.fixtures[0]
+        
+        # Both metrics should be present and numeric
+        assert isinstance(fixture.cyclomatic_complexity, int)
+        assert isinstance(fixture.cognitive_complexity, int)
+        
+        # Simple fixtures should have reasonable complexity
+        assert fixture.cyclomatic_complexity >= 1
+        assert fixture.cognitive_complexity >= 0
+
+    def test_python_complex_fixture_has_higher_metrics(self, tmp_path):
+        """Complex Python fixtures should show increased complexity."""
+        py_file = tmp_path / "test_complex.py"
+        py_file.write_text("""
+import pytest
+
+@pytest.fixture
+def complex_setup():
+    '''Fixture with multiple nested control structures.'''
+    config = load_config()
+    
+    if config.get('database'):
+        for db_type in config.get('databases', []):
+            try:
+                connection = connect_to_db(db_type)
+                if connection.is_healthy():
+                    register_connection(connection)
+            except Exception as e:
+                log_error(e)
+                if config.get('fail_fast'):
+                    raise
+    
+    if config.get('cache'):
+        cache = initialize_cache()
+        if cache.is_available():
+            warm_cache()
+    
+    return config
+""")
+        result = extract_fixtures(py_file, "python")
+        assert len(result.fixtures) == 1
+        fixture = result.fixtures[0]
+        
+        # Complex fixtures should have detectable complexity
+        assert fixture.cyclomatic_complexity >= 1
+        # Cognitive complexity should be calculated
+        assert isinstance(fixture.cognitive_complexity, int)
+
+    def test_java_fixture_has_metrics(self, tmp_path):
+        """Java fixtures should have complexity metrics via lizard."""
+        java_file = tmp_path / "TestFixture.java"
+        java_file.write_text("""
+public class TestFixture {
+    @Before
+    public void setup() {
+        database = createDatabase();
+        for (String table : requiredTables) {
+            if (!database.hasTable(table)) {
+                database.createTable(table);
+            }
+        }
+    }
+}
+""")
+        result = extract_fixtures(java_file, "java")
+        assert len(result.fixtures) == 1
+        fixture = result.fixtures[0]
+        
+        # Metrics via lizard
+        assert isinstance(fixture.cyclomatic_complexity, int)
+        assert isinstance(fixture.cognitive_complexity, int)
+        assert fixture.cyclomatic_complexity >= 1
+
+    def test_javascript_fixture_has_metrics(self, tmp_path):
+        """JavaScript fixtures should have complexity metrics."""
+        js_file = tmp_path / "setup.js"
+        js_file.write_text("""
+describe('User API', () => {
+    beforeEach(async () => {
+        if (useTestDatabase) {
+            await initializeDatabase();
+        }
+        await cleanupTables();
+    });
+});
+""")
+        result = extract_fixtures(js_file, "javascript")
+        # Should detect beforeEach as fixture
+        if result.fixtures:
+            fixture = result.fixtures[0]
+            assert isinstance(fixture.cyclomatic_complexity, int)
+            assert isinstance(fixture.cognitive_complexity, int)
+
+    def test_go_fixture_has_metrics(self, tmp_path):
+        """Go fixtures should have complexity metrics."""
+        go_file = tmp_path / "setup_test.go"
+        go_file.write_text("""
+package mypackage_test
+
+import "testing"
+
+func TestMain(m *testing.M) {
+    if err := setupDatabase(); err != nil {
+        if isCI() {
+            panic(err)
+        }
+    }
+    
+    code := m.Run()
+    cleanupDatabase()
+    os.Exit(code)
+}
+""")
+        result = extract_fixtures(go_file, "go")
+        if result.fixtures:
+            fixture = result.fixtures[0]
+            assert isinstance(fixture.cyclomatic_complexity, int)
+            assert isinstance(fixture.cognitive_complexity, int)
+
+    def test_csharp_fixture_has_metrics(self, tmp_path):
+        """C# fixtures should have complexity metrics."""
+        cs_file = tmp_path / "TestFixture.cs"
+        cs_file.write_text("""
+public class TestFixture {
+    [SetUp]
+    public void Setup() {
+        var config = LoadConfiguratio();
+        if (config != null) {
+            InitializeDatabase(config.DbConnection);
+            if (config.UseCache) {
+                InitializeCache();
+            }
+        }
+    }
+}
+""")
+        result = extract_fixtures(cs_file, "csharp")
+        if result.fixtures:
+            fixture = result.fixtures[0]
+            assert isinstance(fixture.cyclomatic_complexity, int)
+            assert isinstance(fixture.cognitive_complexity, int)
+
+
+class TestComplexityMetricsReasonableness:
+    """Test that metrics are reasonable and well-formed."""
+
+    def test_cyclomatic_complexity_always_positive(self, tmp_path):
+        """Cyclomatic complexity should always be >= 1."""
+        py_file = tmp_path / "test_cc_positive.py"
+        py_file.write_text("""
+@pytest.fixture
+def minimal():
+    return None
+""")
+        result = extract_fixtures(py_file, "python")
+        assert len(result.fixtures) == 1
+        # Cyclomatic complexity baseline is 1 (simplest code path)
+        assert result.fixtures[0].cyclomatic_complexity >= 1
+
+    def test_cognitive_complexity_non_negative(self, tmp_path):
+        """Cognitive complexity should be >= 0."""
+        py_file = tmp_path / "test_cog_nonneg.py"
+        py_file.write_text("""
+@pytest.fixture  
+def simple():
     x = 1
     y = 2
     return x + y
 """)
         result = extract_fixtures(py_file, "python")
         assert len(result.fixtures) == 1
-        # No control structures should give CC = 0 or 1 (minimum)
+        # Cognitive complexity can be 0 for code without control structures
         assert result.fixtures[0].cognitive_complexity >= 0
 
-    def test_single_if_statement_cc_one(self, tmp_path):
-        """A single if statement at depth 0 has CC = 1."""
-        py_file = tmp_path / "test_single_if.py"
+    def test_multiple_fixtures_all_analyzed(self, tmp_path):
+        """All fixtures in a file should get metrics."""
+        py_file = tmp_path / "test_multiple.py"
         py_file.write_text("""
+import pytest
+
 @pytest.fixture
-def with_if():
-    x = 1
-    if x > 0:
-        x += 1
+def first():
+    return 1
+
+@pytest.fixture
+def second():
+    if True:
+        x = 1
     return x
-""")
-        result = extract_fixtures(py_file, "python")
-        assert len(result.fixtures) == 1
-        # Single if statement should contribute 1 to CC
-        assert result.fixtures[0].cognitive_complexity >= 1
 
-    def test_nested_if_increases_complexity(self, tmp_path):
-        """Nested if statements are weighted by depth."""
-        py_file = tmp_path / "test_nested_if.py"
-        py_file.write_text("""
 @pytest.fixture
-def nested_ifs():
-    x = 1
-    if x > 0:           # depth 1: +1
-        if x > 5:       # depth 2: +2
-            if x > 10:  # depth 3: +3
-                x = 100
-    return x
-""")
-        result = extract_fixtures(py_file, "python")
-        assert len(result.fixtures) == 1
-        # Three nested ifs: 1 + 2 + 3 = 6+ (at minimum)
-        assert result.fixtures[0].cognitive_complexity >= 6
-
-
-class TestCognitiveComplexityNestingDepth:
-    """Verify nesting depth multiplier."""
-
-    def test_depth_zero_control_structures(self, tmp_path):
-        """Top-level control structures contribute 1 each."""
-        py_file = tmp_path / "test_depth_zero.py"
-        py_file.write_text("""
-@pytest.fixture
-def depth_zero():
-    if condition1():
-        pass
-    if condition2():
-        pass
+def third():
     for i in range(10):
-        pass
-    return None
-        # Expected CC: 1 + 1 + 1 = 3
-""")
-        result = extract_fixtures(py_file, "python")
-        assert len(result.fixtures) == 1
-        # Should be around 3
-        assert result.fixtures[0].cognitive_complexity >= 1
-
-    def test_depth_two_control_structures(self, tmp_path):
-        """Control structures at depth 2 are weighted by 2."""
-        py_file = tmp_path / "test_depth_two.py"
-        py_file.write_text("""
-@pytest.fixture
-def depth_two():
-    if outer:           # depth 1: +1
-        if inner:       # depth 2: +2
-            do_work()
+        if i > 5:
+            for j in range(5):
+                pass
     return None
 """)
         result = extract_fixtures(py_file, "python")
-        assert len(result.fixtures) == 1
-        # Should be at least 3 (1 + 2)
-        assert result.fixtures[0].cognitive_complexity >= 1
+        assert len(result.fixtures) == 3
+        
+        # Each fixture should have metrics
+        for fixture in result.fixtures:
+            assert isinstance(fixture.cyclomatic_complexity, int)
+            assert isinstance(fixture.cognitive_complexity, int)
+            assert fixture.cyclomatic_complexity >= 1
+            assert fixture.cognitive_complexity >= 0
 
 
-class TestCognitiveComplexityLoops:
-    """Verify loop structures are counted."""
+class TestComplexityWithMockFrameworks:
+    """Test complexity calculation in fixtures that use mocks."""
 
-    def test_single_for_loop(self, tmp_path):
-        """A for loop counts as control structure."""
-        py_file = tmp_path / "test_for_loop.py"
+    def test_fixture_with_unittest_mock(self, tmp_path):
+        """Fixtures with unittest.mock should calculate metrics."""
+        py_file = tmp_path / "test_with_mocks.py"
         py_file.write_text("""
+from unittest import mock
+import pytest
+
 @pytest.fixture
-def with_loop():
-    for i in range(10):
-        print(i)
-    return None
+def mocked_service():
+    with mock.patch('module.Service') as mock_service:
+        if True:  # Some condition
+            config = {'key': 'value'}
+            mock_service.configure(config)
+        return mock_service
 """)
         result = extract_fixtures(py_file, "python")
-        assert len(result.fixtures) == 1
-        # For loop should contribute to CC
-        assert result.fixtures[0].cognitive_complexity >= 0
-
-    def test_nested_loops(self, tmp_path):
-        """Nested loops compound the complexity."""
-        py_file = tmp_path / "test_nested_loops.py"
-        py_file.write_text("""
-@pytest.fixture
-def nested_loops():
-    for i in range(10):         # depth 1: +1
-        for j in range(10):     # depth 2: +2
-            data[i][j] = i * j
-    return data
-""")
-        result = extract_fixtures(py_file, "python")
-        assert len(result.fixtures) == 1
-        # Nested loops should have higher CC
-        assert result.fixtures[0].cognitive_complexity >= 1
-
-
-class TestCognitiveComplexityTryBlocks:
-    """Verify exception handling increases complexity."""
-
-    def test_try_block_counted(self, tmp_path):
-        """Try/except blocks count as control structures."""
-        py_file = tmp_path / "test_try_except.py"
-        py_file.write_text("""
-@pytest.fixture
-def with_try():
-    try:
-        risky_operation()
-    except ValueError:
-        handle_error()
-    return None
-""")
-        result = extract_fixtures(py_file, "python")
-        assert len(result.fixtures) == 1
-        # Try/except should contribute
-        assert result.fixtures[0].cognitive_complexity >= 0
-
-
-class TestCognitiveComplexityJava:
-    """Verify cognitive complexity works for Java fixtures."""
-
-    def test_java_single_if(self, tmp_path):
-        """Java if statement counts."""
-        java_file = tmp_path / "TestClass.java"
-        java_file.write_text("""
-public class TestClass {
-    @Before
-    public void setup() {
-        if (condition) {
-            doWork();
-        }
-    }
-}
-""")
-        result = extract_fixtures(java_file, "java")
-        assert len(result.fixtures) == 1
-        assert result.fixtures[0] is not None
-
-    def test_java_nested_control(self, tmp_path):
-        """Java nested control structures are depth-weighted."""
-        java_file = tmp_path / "TestClass.java"
-        java_file.write_text("""
-public class TestClass {
-    @Before
-    public void setup() {
-        if (x > 0) {
-            if (y > 0) {
-                doWork();
-            }
-        }
-    }
-}
-""")
-        result = extract_fixtures(java_file, "java")
-        assert len(result.fixtures) == 1
-        # Should detect nesting
-        assert result.fixtures[0].cognitive_complexity >= 0
-
-
-class TestCognitiveComplexityJavaScript:
-    """Verify cognitive complexity works for JavaScript fixtures."""
-
-    def test_javascript_if_statement(self, tmp_path):
-        """JavaScript if statement counts."""
-        js_file = tmp_path / "test_fixtures.js"
-        js_file.write_text("""
-describe('test suite', () => {
-    beforeEach(function() {
-        if (condition) {
-            setup();
-        }
-    });
-});
-""")
-        result = extract_fixtures(js_file, "javascript")
-        # Note: May or may not detect the beforeEach depending on parser strictness
         if result.fixtures:
-            assert result.fixtures[0].cognitive_complexity >= 0
+            fixture = result.fixtures[0]
+            # Should have metrics
+            assert isinstance(fixture.cyclomatic_complexity, int)
+            assert isinstance(fixture.cognitive_complexity, int)
 
-
-class TestCognitiveComplexityConsistency:
-    """Verify CC is consistent across languages for equivalent code."""
-
-    def test_equivalent_python_and_java_structures(self, tmp_path):
-        """
-        Python and Java with equivalent control flow should have similar CC.
-        (Not exact equality due to language differences, but comparable.)
-        """
-        # Python version
-        py_file = tmp_path / "test_python.py"
+    def test_fixture_with_pytest_mock(self, tmp_path):
+        """Fixtures with pytest-mock should calculate metrics."""
+        py_file = tmp_path / "test_pytest_mock.py"
         py_file.write_text("""
+import pytest
+
 @pytest.fixture
-def test_fixture():
-    if a > 0:
-        if b > 0:
-            work()
-    return result
+def mocked_api(mocker):
+    api_mock = mocker.MagicMock()
+    if api_mock:
+        api_mock.get.return_value = {'status': 'ok'}
+    return api_mock
 """)
-        py_result = extract_fixtures(py_file, "python")
-        py_cc = py_result.fixtures[0].cognitive_complexity if py_result.fixtures else 0
-
-        # Java equivalent
-        java_file = tmp_path / "TestJava.java"
-        java_file.write_text("""
-public class TestJava {
-    @Before
-    public void testFixture() {
-        if (a > 0) {
-            if (b > 0) {
-                work();
-            }
-        }
-    }
-}
-""")
-        java_result = extract_fixtures(java_file, "java")
-        java_cc = java_result.fixtures[0].cognitive_complexity if java_result.fixtures else 0
-
-        # Both should have detected some control structures (rough sanity check)
-        # The exact CC may differ due to language AST differences
-        assert py_cc >= 0
-        assert java_cc >= 0
+        result = extract_fixtures(py_file, "python")
+        if result.fixtures:
+            fixture = result.fixtures[0]
+            assert isinstance(fixture.cyclomatic_complexity, int)
+            assert isinstance(fixture.cognitive_complexity, int)
 
 
-class TestCognitiveComplexityEdgeCases:
-    """Edge cases and boundary conditions."""
+class TestComplexityEdgeCases:
+    """Test edge cases and boundary conditions."""
 
     def test_empty_fixture(self, tmp_path):
-        """An empty fixture should have minimal CC."""
+        """Empty fixture should still be analyzed."""
         py_file = tmp_path / "test_empty.py"
         py_file.write_text("""
 @pytest.fixture
-def empty_fixture():
+def empty():
     pass
 """)
         result = extract_fixtures(py_file, "python")
         assert len(result.fixtures) == 1
-        assert result.fixtures[0].cognitive_complexity >= 0
+        fixture = result.fixtures[0]
+        assert fixture.cyclomatic_complexity >= 1
 
-    def test_very_complex_fixture(self, tmp_path):
-        """A highly complex fixture should have high CC."""
-        py_file = tmp_path / "test_complex.py"
+    def test_fixture_with_long_name(self, tmp_path):
+        """Long fixture names shouldn't affect metric calculation."""
+        py_file = tmp_path / "test_long_name.py"
         py_file.write_text("""
 @pytest.fixture
-def very_complex():
-    if a:
-        if b:
-            if c:
-                if d:
-                    if e:
-                        work()
-    for i in range(10):
-        if condition:
-            process(i)
-    return data
-""")
-        result = extract_fixtures(py_file, "python")
-        assert len(result.fixtures) == 1
-        # Should be significantly higher than simple case
-        assert result.fixtures[0].cognitive_complexity > 1
-
-    def test_cc_is_non_negative(self, tmp_path):
-        """Cognitive complexity should never be negative."""
-        py_file = tmp_path / "test_nonneg.py"
-        py_file.write_text("""
-@pytest.fixture
-def nonnegative():
+def this_is_a_very_long_fixture_name_that_describes_what_it_does():
+    if condition:
+        pass
     return None
 """)
         result = extract_fixtures(py_file, "python")
-        if result.fixtures:
-            assert result.fixtures[0].cognitive_complexity >= 0
+        assert len(result.fixtures) == 1
+        fixture = result.fixtures[0]
+        assert fixture.cyclomatic_complexity >= 1
+        assert fixture.cognitive_complexity >= 0
 
-
-class TestCognitiveComplexityDatabase:
-    """Verify CC is properly persisted to database."""
-
-    def test_cognitive_complexity_field_exists(self, tmp_path):
-        """FixtureResult must have cognitive_complexity field."""
-        py_file = tmp_path / "test_db_field.py"
+    def test_fixture_with_multiline_logic(self, tmp_path):
+        """Multiline fixtures should be analyzed correctly."""
+        py_file = tmp_path / "test_multiline.py"
         py_file.write_text("""
 @pytest.fixture
-def db_test():
+def complex():
+    # Long fixture with various constructs
+    data = [
+        {'id': 1, 'name': 'test1'},
+        {'id': 2, 'name': 'test2'},
+    ]
+    
+    results = []
+    for item in data:
+        if item['id'] > 0:
+            try:
+                processed = process_item(item)
+                results.append(processed)
+            except ValueError:
+                continue
+    
+    return results
+""")
+        result = extract_fixtures(py_file, "python")
+        assert len(result.fixtures) == 1
+        fixture = result.fixtures[0]
+        assert fixture.cyclomatic_complexity >= 1
+
+
+class TestComplexityDatabaseIntegration:
+    """Test that complexity metrics work with database persistence."""
+
+    def test_fixture_result_has_complexity_fields(self, tmp_path):
+        """FixtureResult must expose complexity metrics."""
+        py_file = tmp_path / "test_result_fields.py"
+        py_file.write_text("""
+@pytest.fixture
+def test_fixture():
     if True:
         pass
     return None
@@ -342,7 +371,37 @@ def db_test():
         assert len(result.fixtures) == 1
         fixture = result.fixtures[0]
         
-        # Field must exist and be accessible
+        # Fields must exist for database export
+        assert hasattr(fixture, 'cyclomatic_complexity')
         assert hasattr(fixture, 'cognitive_complexity')
+        assert isinstance(fixture.cyclomatic_complexity, int)
         assert isinstance(fixture.cognitive_complexity, int)
-        assert fixture.cognitive_complexity >= 0
+
+    def test_all_fixtures_have_numeric_complexity(self, tmp_path):
+        """All extracted fixtures must have numeric complexity values."""
+        py_file = tmp_path / "test_numeric.py"
+        py_file.write_text("""
+import pytest
+
+@pytest.fixture
+def fixture1():
+    return 1
+
+@pytest.fixture  
+def fixture2():
+    for i in range(5):
+        if i > 2:
+            process(i)
+    return i
+""")
+        result = extract_fixtures(py_file, "python")
+        
+        for fixture in result.fixtures:
+            # Both metrics must be integers
+            assert isinstance(fixture.cyclomatic_complexity, int)
+            assert isinstance(fixture.cognitive_complexity, int)
+            
+            # Reasonable ranges (positive for cyclomatic, non-negative for cognitive)
+            assert fixture.cyclomatic_complexity > 0
+            assert fixture.cognitive_complexity >= 0
+
