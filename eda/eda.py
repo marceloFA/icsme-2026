@@ -47,9 +47,8 @@ LANG_PALETTE = {
     "java": "#E8834C",
     "javascript": "#E8C94C",
     "go": "#A04CE8",
-    "csharp": "#2ECC71",
 }
-LANG_ORDER = ["python", "java", "javascript", "go", "csharp"]
+LANG_ORDER = ["python", "java", "javascript", "go"]
 
 STATUS_PALETTE = {
     "discovered": "#B0BEC5",
