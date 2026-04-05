@@ -1,5 +1,8 @@
 # FixtureDB — Corpus Collection Pipeline
 
+[![Tests & Coverage](https://github.com/joao-almeida/icsme-nier-2026/actions/workflows/coverage.yml/badge.svg)](https://github.com/joao-almeida/icsme-nier-2026/actions/workflows/coverage.yml)
+![Coverage](./coverage.svg)
+
 Replication package for the paper:
 
 > **FixtureDB: A Multi-Language Dataset of Test Fixture Definitions from Open-Source Software**  
