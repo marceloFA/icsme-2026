@@ -19,20 +19,29 @@ from pathlib import Path
 
 import pandas as pd
 
-from .eda_common import load_db, setup_style
+# Ensure project root is on sys.path for relative imports to work
+_project_root = Path(__file__).parent.parent
+if str(_project_root) not in sys.path:
+    sys.path.insert(0, str(_project_root))
+
+from eda.eda_common import load_db, setup_style
 
 # Import plot functions from quantitative submodule
-from .quantitative.p01a_corpus_by_tier import plot_corpus_by_tier
-from .quantitative.p01b_pipeline_status import plot_pipeline_status
-from .quantitative.p02_star_distribution import plot_star_distribution
-from .quantitative.p03a_creation_timeline import plot_creation_timeline
-from .quantitative.p03b_activity_recency import plot_activity_recency
-from .quantitative.p05_stars_vs_forks import plot_fork_star_ratio
-from .quantitative.p06a_fixtures_per_repo import plot_fixtures_per_repo
-from .quantitative.p06b_fixture_scope import plot_fixture_scope
-from .quantitative.p07a_mock_adoption import plot_mock_adoption
-from .quantitative.p07b_framework_diversity import plot_framework_diversity
-from .quantitative.p07c_mock_styles import plot_mock_styles
+from eda.quantitative.p01a_corpus_by_tier import plot_corpus_by_tier
+from eda.quantitative.p01b_pipeline_status import plot_pipeline_status
+from eda.quantitative.p02a_creation_timeline import plot_creation_timeline
+from eda.quantitative.p02b_activity_recency import plot_activity_recency
+from eda.quantitative.p03a_fixtures_per_repo import plot_fixtures_per_repo
+from eda.quantitative.p03b_fixture_scope import plot_fixture_scope
+from eda.quantitative.p04a_mock_adoption import plot_mock_adoption
+from eda.quantitative.p04b_framework_diversity import plot_framework_diversity
+from eda.quantitative.p04c_mock_styles import plot_mock_styles
+from eda.quantitative.p05a_nesting_depth import plot_nesting_depth
+from eda.quantitative.p05b_nesting_complexity_correlation import plot_nesting_complexity_correlation
+from eda.quantitative.p05c_fixture_reuse_distribution import plot_fixture_reuse_distribution
+from eda.quantitative.p05d_reuse_complexity_correlation import plot_reuse_complexity_correlation
+from eda.quantitative.p05e_teardown_adoption import plot_teardown_adoption
+from eda.quantitative.p05f_contributors_impact import plot_contributors_impact
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -84,15 +93,19 @@ def main():
     plots = [
         ("Corpus by Tier", plot_corpus_by_tier),
         ("Pipeline Status", plot_pipeline_status),
-        ("Star Distribution", plot_star_distribution),
         ("Creation Timeline", plot_creation_timeline),
         ("Activity Recency", plot_activity_recency),
-        ("Stars vs Forks", plot_fork_star_ratio),
         ("Fixtures per Repo", plot_fixtures_per_repo),
         ("Fixture Scope", plot_fixture_scope),
         ("Mock Adoption", plot_mock_adoption),
         ("Framework Diversity", plot_framework_diversity),
         ("Mock Styles", plot_mock_styles),
+        ("Nesting Depth Distribution", plot_nesting_depth),
+        ("Nesting Depth vs Complexity", plot_nesting_complexity_correlation),
+        ("Fixture Reuse Distribution", plot_fixture_reuse_distribution),
+        ("Reuse vs Complexity", plot_reuse_complexity_correlation),
+        ("Teardown Adoption", plot_teardown_adoption),
+        ("Contributors Impact", plot_contributors_impact),
     ]
 
     for name, fn in plots:

@@ -99,7 +99,7 @@ def plot_creation_timeline(conn, out_dir, show):
         bottom += heights
 
     plt.tight_layout()
-    save_or_show(fig, "03a_creation_timeline", out_dir, show)
+    save_or_show(fig, "02a_creation_timeline", out_dir, show)
 
 
 if __name__ == "__main__":

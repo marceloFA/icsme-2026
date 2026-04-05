@@ -114,11 +114,11 @@ def plot_fixture_scope(conn, out_dir, show):
     ax.set_xticks(x_pos)
     ax.set_xticklabels([lang_display(l) for l in present])
     ax.set_ylim(0, 105)
-    ax.legend(loc="upper right", fontsize=9, ncol=2)
+    ax.legend(loc="upper left", fontsize=9, ncol=2, bbox_to_anchor=(1, 1))
     ax.axhline(50, color="#ddd", linewidth=0.5, linestyle=":", alpha=0.5)
 
     plt.tight_layout()
-    save_or_show(fig, "06b_fixture_scope", out_dir, show)
+    save_or_show(fig, "03b_fixture_scope", out_dir, show)
 
 
 if __name__ == "__main__":

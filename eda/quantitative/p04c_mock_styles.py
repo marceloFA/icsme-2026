@@ -105,7 +105,7 @@ def plot_mock_styles(conn, out_dir, show):
     )
 
     plt.tight_layout()
-    save_or_show(fig, "07c_mock_styles", out_dir, show)
+    save_or_show(fig, "04c_mock_styles", out_dir, show)
 
 
 if __name__ == "__main__":

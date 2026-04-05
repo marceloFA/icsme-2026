@@ -9,7 +9,6 @@ from datetime import datetime
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import matplotlib.ticker as mticker
 import pandas as pd
 
 from ..eda_common import (
@@ -31,45 +30,51 @@ def plot_pipeline_status(conn, out_dir, show):
         print("  [skip] No repositories in DB yet.")
         return
 
-    fig, ax = plt.subplots(figsize=(10, 5), facecolor="#FAFAFA")
+    fig, ax = plt.subplots(figsize=(12, 6), facecolor="#FAFAFA")
 
     status_order = ["analysed", "skipped", "error", "cloned", "discovered"]
     status_counts = repos["status"].value_counts().reindex(status_order, fill_value=0)
     colours = [STATUS_PALETTE[s] for s in status_order]
     raw = [int(status_counts[s]) for s in status_order]
+    total = sum(raw)
+    
+    # Filter out zero-count statuses for cleaner pie chart
+    nonzero_statuses = []
+    nonzero_counts = []
+    nonzero_colours = []
+    for status, count, color in zip(status_order, raw, colours):
+        if count > 0:
+            nonzero_statuses.append(status)
+            nonzero_counts.append(count)
+            nonzero_colours.append(color)
 
-    bars = ax.barh(status_order, raw, color=colours, zorder=3, height=0.55)
+    # Create pie chart with counts in legend
+    wedges, texts, autotexts = ax.pie(
+        nonzero_counts,
+        labels=None,
+        colors=nonzero_colours,
+        autopct='%1.1f%%',
+        startangle=90,
+        textprops={'fontsize': 10, 'fontweight': 'bold'}
+    )
+    
+    # Make percentage text white and readable
+    for autotext in autotexts:
+        autotext.set_color('white')
+        autotext.set_fontsize(10)
+        autotext.set_fontweight('bold')
 
-    x_max = max(raw) if max(raw) > 0 else 1
-    for bar, v in zip(bars, raw):
-        label = f"{v:,}" if v > 0 else "—"
-        if v > x_max * 0.08:
-            ax.text(
-                bar.get_width() * 0.97,
-                bar.get_y() + bar.get_height() / 2,
-                label,
-                va="center",
-                ha="right",
-                fontsize=9,
-                fontweight="bold",
-                color="white",
-            )
-        else:
-            ax.text(
-                x_max * 0.02,
-                bar.get_y() + bar.get_height() / 2,
-                label,
-                va="center",
-                ha="left",
-                fontsize=9,
-                fontweight="bold",
-                color="#555",
-            )
-
-    ax.set_xlim(0, x_max * 1.05)
-    ax.set_xlabel("Repositories")
-    ax.set_title("Pipeline Status Breakdown", fontsize=14, fontweight="bold")
-    ax.xaxis.set_major_formatter(mticker.FuncFormatter(lambda v, _: f"{int(v):,}"))
+    # Create legend with status names and counts, plus total
+    legend_labels = [f"{status.capitalize()}\n(n={count:,})" 
+                    for status, count in zip(nonzero_statuses, nonzero_counts)]
+    
+    # Add legend with wedges
+    legend = ax.legend(wedges, legend_labels, fontsize=11, loc="center left", bbox_to_anchor=(1, 0.5))
+    
+    # Add total text below legend
+    fig.text(0.72, 0.08, f"Total: {total:,} repos", fontsize=11, fontweight='bold')
+    
+    ax.set_title("Pipeline Status Breakdown", fontsize=14, fontweight="bold", pad=20)
 
     plt.tight_layout()
     save_or_show(fig, "01b_pipeline_status", out_dir, show)

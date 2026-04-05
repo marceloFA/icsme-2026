@@ -107,7 +107,7 @@ def plot_fixtures_per_repo(conn, out_dir, show):
     ax.legend(fontsize=9, loc="upper right")
 
     plt.tight_layout()
-    save_or_show(fig, "06a_fixtures_per_repo", out_dir, show)
+    save_or_show(fig, "03a_fixtures_per_repo", out_dir, show)
 
 
 if __name__ == "__main__":

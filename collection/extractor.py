@@ -280,9 +280,12 @@ def extract_repo(repo_id: int, full_name: str, language: str) -> dict:
                     "loc": fix.loc,
                     "cyclomatic_complexity": fix.cyclomatic_complexity,
                     "cognitive_complexity": fix.cognitive_complexity,
+                    "max_nesting_depth": fix.max_nesting_depth,
                     "num_objects_instantiated": fix.num_objects_instantiated,
                     "num_external_calls": fix.num_external_calls,
                     "num_parameters": fix.num_parameters,
+                    "reuse_count": fix.reuse_count,
+                    "has_teardown_pair": fix.has_teardown_pair,
                     "raw_source": fix.raw_source,
                 }
                 fixture_id = insert_fixture(conn, fixture_record)

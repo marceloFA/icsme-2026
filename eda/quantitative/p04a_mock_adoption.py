@@ -86,7 +86,7 @@ def plot_mock_adoption(conn, out_dir, show):
     ax.axvline(0, color="#ccc", linewidth=0.5)
 
     plt.tight_layout()
-    save_or_show(fig, "07a_mock_adoption", out_dir, show)
+    save_or_show(fig, "04a_mock_adoption", out_dir, show)
 
 
 if __name__ == "__main__":

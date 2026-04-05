@@ -370,4 +370,4 @@ EXTRACT_WORKERS = 3
 # Maximum time to spend extracting fixtures from a single test file (seconds)
 # Files that exceed this timeout are skipped to prevent pathological cases
 # (e.g., minified code, massive auto-generated test files, etc.)
-FILE_EXTRACTION_TIMEOUT = 300  # 5 minutes
+FILE_EXTRACTION_TIMEOUT = 180  # 3 minutes

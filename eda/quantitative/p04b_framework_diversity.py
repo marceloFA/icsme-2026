@@ -107,7 +107,7 @@ def plot_framework_diversity(conn, out_dir, show):
     )
 
     plt.tight_layout()
-    save_or_show(fig, "07b_framework_diversity", out_dir, show)
+    save_or_show(fig, "04b_framework_diversity", out_dir, show)
 
 
 if __name__ == "__main__":
