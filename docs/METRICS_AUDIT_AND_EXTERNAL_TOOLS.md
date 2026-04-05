@@ -436,6 +436,5 @@ The `mock_usages` table collects mock-specific metrics:
   - Used for repository metadata collection
 
 ### Related Documents
-- [COMPLEXITY_METRICS_MIGRATION.md](COMPLEXITY_METRICS_MIGRATION.md) — Migration methodology and results
 - [03-database-schema.md](03-database-schema.md) — Complete schema documentation
 - [11-detection.md](11-detection.md) — Fixture detection methodology

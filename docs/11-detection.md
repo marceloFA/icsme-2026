@@ -96,7 +96,6 @@ For each detected fixture, the system computes:
     - Formula: Cognitive Complexity = Σ(nesting_depth) over all control structures
     - Example: three nested if-statements at depths 1, 2, 3 contribute 1+2+3 = 6 to cognitive complexity (vs. cyclomatic complexity of 3)
     - Rationale: Nested code is harder to understand than flat code; nesting depth better reflects human cognitive burden
-    - See [COMPLEXITY_METRICS_MIGRATION.md](COMPLEXITY_METRICS_MIGRATION.md) for implementation details
 
 - **Object Instantiations**: Count of `new Foo(...)` calls and constructor-like calls (custom regex detection)
 

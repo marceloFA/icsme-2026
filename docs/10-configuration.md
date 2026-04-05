@@ -10,8 +10,6 @@ All collection parameters live in `collection/config.py`.
 | Java           | 100         | 1,000          | Direct comparability with Hamster |
 | JavaScript     | 100         | 800            | Frontend repos often yield few fixtures |
 | TypeScript     | 100         | 600            | Younger ecosystem |
-| Go             | 100         | 600            | Smaller ecosystem |
-| C#             | 100         | 800            | .NET ecosystem with diverse test frameworks |
 
 ## Star tiers
 
@@ -24,19 +22,17 @@ All collection parameters live in `collection/config.py`.
 
 **Survival rate** = (discovered repos with ≥1 analyzed fixture) / (repos fetched from GitHub API)
 
-Used for discovery forecasting: if we need 500 analyzed fixtures in Python, and Python's survival rate is 0.076, we must discover ~6,579 repos.
+Used for discovery forecasting during collection runs. Empirical rates will be populated as each language collection completes.
 
-| Language       | Survival Rate | Notes |
-|----------------|---------------|-------|
-| Python         | 7.6%          | Empirically observed from completed collection |
-| Java           | 15%           | Estimate; Java typically has higher fixture density |
-| C#             | 10%           | Estimate; .NET ecosystem well-established |
-| Go             | 9%            | Estimate; growing ecosystem |
-| JavaScript     | 8%            | Estimate; frontend-heavy selection, fewer server-side fixtures |
-| TypeScript     | 8%            | Estimate; similar pattern to JavaScript |
-| **Default**    | 9%            | Fallback if language not listed above |
+| Language       | Survival Rate | Status |
+|----------------|---------------|--------|
+| Python         | *Pending* | Collection in progress |
+| Java           | *Pending* | Collection in progress |
+| JavaScript     | *Pending* | Collection in progress |
+| TypeScript     | *Pending* | Collection in progress |
+| **Default**    | 0.09 (9%)    | Fallback estimate used during collection planning |
 
-Survival rates are periodically updated as collection completes for each language.
+Survival rates are empirically determined as collection completes for each language.
 Lower rates = harder to find qualifying repos; higher rates = abundant fixture usage.
 
 ## Quality filters (post-clone)

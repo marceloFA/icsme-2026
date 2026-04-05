@@ -57,4 +57,4 @@ pytest tests/ --collect-only -q
 - **Test files**: 24 language-specific files
 - **Framework**: pytest
 
-For full details, see [Testing Strategy & Execution](14-testing.md)
+For full details, see [Testing Strategy & Execution](17-testing.md)

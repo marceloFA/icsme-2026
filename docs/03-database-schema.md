@@ -313,5 +313,5 @@ One row per test file analyzed. Use this to study test file characteristics and 
 
 For detailed descriptions of what each metric means and how it's calculated, see:
 - **[Metrics Audit & External Tools](METRICS_AUDIT_AND_EXTERNAL_TOOLS.md)** — How each metric is computed
-- **[Phase 3 Advanced Metrics](17-phase-3-advanced-metrics.md)** — Detailed definitions of `max_nesting_depth`, `reuse_count`, `has_teardown_pair`
+- **[Phase 3 Advanced Metrics](PHASE-3-ADVANCED-METRICS.md)** — Detailed definitions of `max_nesting_depth`, `reuse_count`, `has_teardown_pair`
 - **[CSV Export Guide](14-csv-export-guide.md)** — Column-by-column definitions (consolidated reference)

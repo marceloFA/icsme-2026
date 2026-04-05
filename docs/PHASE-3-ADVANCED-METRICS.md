@@ -283,7 +283,6 @@ GROUP BY project_type;
 
 ## References
 
-- Phase 1 & 2: [COMPLEXITY_METRICS_MIGRATION.md](COMPLEXITY_METRICS_MIGRATION.md)
 - Fixture types & detection: [11-detection.md](11-detection.md)
 - Database schema: [03-database-schema.md](03-database-schema.md)
 - All metrics audit: [METRICS_AUDIT_AND_EXTERNAL_TOOLS.md](METRICS_AUDIT_AND_EXTERNAL_TOOLS.md)

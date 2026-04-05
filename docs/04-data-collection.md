@@ -136,12 +136,18 @@ against its name, description, and GitHub topics. Labels: `web`, `data`,
 
 ## Phase 5 — Export (`export`)
 
-Produces a versioned zip file ready for Zenodo deposit containing:
-- `fixturedb.sqlite` — the full database
-- `repositories.csv`, `test_files.csv`, `fixtures.csv`, `mock_usages.csv`
-- `README.txt` — schema documentation
-- `stats.txt` — per-language counts for Table 1 of the paper
+Produces a versioned zip file ready for Zenodo deposit. **This phase creates two complementary formats optimized for different use cases**:
 
-The `raw_source` column is excluded from `fixtures.csv` by default
-(it is large text already present in the SQLite file). Pass `--include-source`
-to include it.
+**SQLite Database** (`fixturedb.sqlite`) — For reproducibility verification and raw source inspection:
+- `fixturedb.sqlite` — the full database with all fields, internal classifications, and raw source code
+- See [Database Schema — SQLite Section](03-database-schema.md#sqlite-database-schema)
+
+**CSV Exports** (`.csv` files) — For spreadsheet and statistical analysis:
+- `repositories.csv`, `test_files.csv`, `fixtures.csv`, `mock_usages.csv` — core tables
+- `fixtures_python.csv`, `fixtures_java.csv`, `fixtures_javascript.csv`, `fixtures_typescript.csv` — language-specific
+- `stats.txt` — high-level statistics (per-language counts for paper tables)
+- `README.txt` — schema documentation
+
+**Key Difference**: The `raw_source` column (full fixture source code) is excluded from CSVs by default because it is large and already available in the SQLite file. Pass `--include-source` to include raw source in `fixtures.csv` if needed.
+
+See [Database Schema — CSV Export Schema](03-database-schema.md#csv-export-schema) for detailed column documentation and [Using the Dataset for Research](09-usage.md) for guidance on which format to use.

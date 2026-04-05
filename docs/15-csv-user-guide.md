@@ -2,6 +2,11 @@
 
 **For researchers who want to analyze FixtureDB without using SQL or SQLite**
 
+> **Quick Links:**  
+> - Need SQLite instead? See [Using the Dataset for Research — SQLite Pathway](09-usage.md#use-case-1-querying-the-sqlite-database)  
+> - Need column definitions? See [Database Schema — CSV Section](03-database-schema.md#csv-export-schema)  
+> - Questions about data format? See [Using the Dataset for Research — Comparison](09-usage.md#key-differences-sqlite-vs-csv)
+
 ---
 
 ## Overview
@@ -103,7 +108,7 @@ head(df)
 - How deeply nested are the control structures?
 - 1 = no nesting (just sequential code)
 - 3+ = significant nesting
-- Correlates strongly with cyclomatic (see RQ5 in docs/18-example-analyses.md)
+- Correlates strongly with cyclomatic (see RQ5 in [EXAMPLE-ANALYSES.md](EXAMPLE-ANALYSES.md))
 
 ### Fixture Types
 
@@ -116,21 +121,8 @@ head(df)
 | `junit4_before` | Java | `@Before` | JUnit 4: per-test setup |
 | `before_each` | JS/TS | `beforeEach(...)` | Modern test framework |
 | `before_all` | JS/TS | `beforeAll(...)` | Modern test framework |
-| `test_main` | Go | `func TestMain(...)` | Go's test initialization |
-| `go_helper` | Go | Heuristic | Non-test function called by ≥2 tests |
 
 (See [docs/11-detection.md](11-detection.md) for complete list and detection methodology)
-
-#### ⚠️ Important Note on Go Helper Detection
-The `go_helper` fixture type is detected using a heuristic pattern (non-test functions called by ≥2 test functions) because Go lacks explicit fixture syntax. **This detection has not yet been formally validated for precision/recall.** 
-
-When filtering on `fixture_type = 'go_helper'`:
-- Precision/recall are unknown (validation in progress)
-- Results may include false positives (regular helper functions mistaken for fixtures)
-- Results may include false negatives (actual fixtures missed)
-- For precise Go fixture analysis, consider additional manual review or contact authors for validation results
-
-**Recommendation**: Do not use Go fixtures alone for quantitative comparisons without understanding this limitation. Include validation status caveats in any publications using `go_helper` fixtures.
 
 ### Scope Values Explained
 
@@ -148,14 +140,6 @@ When filtering on `fixture_type = 'go_helper'`:
   - Safe to exclude or set to 0 for aggregates
 - **`0`** in count columns: Legitimate (fixture doesn't instantiate objects, call external APIs, etc.)
   - Use `IS NULL` to find errors, not `= 0`
-
-### Row Count by Language
-
-From FixtureDB (40,672 total after excluding Go):
-- Python: 4,915
-- Java: 11,287
-- JavaScript: 5,521
-- TypeScript: 18,949
 
 ---
 
@@ -178,7 +162,7 @@ From FixtureDB (40,672 total after excluding Go):
 - Join to `fixtures.csv` on `fixture_id`
 - Multiple rows per fixture if fixture uses multiple mocks
 - `target_identifier` is a string; may need parsing for analysis
-- `framework` values: see RQ4 in [docs/18-example-analyses.md](18-example-analyses.md)
+- `framework` values: see RQ4 in [EXAMPLE-ANALYSES.md](EXAMPLE-ANALYSES.md)
 
 ### Common Analyses
 
@@ -237,225 +221,168 @@ ORDER BY count DESC
 ## Language-Specific CSVs
 
 For convenience, language-specific CSVs are provided:
-- `fixtures_python.csv` (4,915 rows)
-- `fixtures_java.csv` (11,287 rows)
-- `fixtures_javascript.csv` (5,521 rows)
-- `fixtures_typescript.csv` (18,949 rows)
+- `fixtures_python.csv`
+- `fixtures_java.csv`
+- `fixtures_javascript.csv`
+- `fixtures_typescript.csv`
 
-Only contains fixtures for that language; all columns identical to `fixtures.csv`.
-
----
-
-## How to Use CSVs in Excel
-
-### Task 1: Find the most complex fixtures
-
-1. Open `fixtures.csv` in Excel
-2. Click any cell in the data
-3. Data → Sort & Filter → Sort
-4. Sort by `cyclomatic_complexity` (Descending)
-5. Top 20 rows show most complex fixtures
-
-### Task 2: Analysis by language
-
-1. Data → Pivot Table
-2. Rows: `language`
-3. Values: `cyclomatic_complexity` (Average), `loc` (Average), `reuse_count` (Sum)
-4. See complexity & patterns by language
-
-### Task 3: Fixtures using mocking
-
-1. Use `mock_usages.csv`
-2. Count unique `fixture_id` values
-3. Compare to total fixtures in `fixtures.csv`
-4. Calculate adoption rate = mocking fixtures / total fixtures
-
----
-
-## How to Use CSVs in Python (pandas)
-
-### Basic Import
-```python
-import pandas as pd
-
-# Load fixtures
-fixtures = pd.read_csv('fixtures.csv')
-mocks = pd.read_csv('mock_usages.csv')
-repos = pd.read_csv('repositories.csv')
-
-# Quick overview
-print(fixtures.info())
-print(fixtures.describe())
-```
-
-### Complexity Analysis by Language
-```python
-# Average complexity by language
-complexity_by_lang = fixtures.groupby('language').agg({
-    'cyclomatic_complexity': 'mean',
-    'loc': 'mean',
-    'num_parameters': 'mean'
-}).round(2)
-
-print(complexity_by_lang)
-```
-
-### Mock Adoption
-```python
-# Count fixtures with mocks
-mock_fixture_ids = set(mocks['fixture_id'].unique())
-total_fixtures = len(fixtures)
-fixtures_with_mocks = len(mock_fixture_ids)
-
-adoption_rate = fixtures_with_mocks / total_fixtures
-print(f"Mock adoption: {adoption_rate:.1%}")
-
-# By language
-for lang in fixtures['language'].unique():
-    lang_fixtures = fixtures[fixtures['language'] == lang]
-    lang_mock_ids = mock_fixture_ids & set(lang_fixtures['id'])
-    rate = len(lang_mock_ids) / len(lang_fixtures)
-    print(f"{lang:12} {rate:.1%}")
-```
-
-### Correlation Analysis
-```python
-# Is nesting depth a good predictor of cyclomatic complexity?
-correlation = fixtures['max_nesting_depth'].corr(fixtures['cyclomatic_complexity'])
-print(f"Correlation(nesting, CC): {correlation:.3f}")
-
-# Fixtures with unusually high nesting
-outliers = fixtures[fixtures['max_nesting_depth'] > 5]
-print(f"Fixtures with nesting > 5: {len(outliers)}")
-print(outliers[['name', 'language', 'max_nesting_depth', 'cyclomatic_complexity']])
-```
-
-### Find Top Reused Fixtures
-```python
-# Most frequently reused fixtures
-top_reused = fixtures.nlargest(10, 'reuse_count')[
-    ['name', 'language', 'reuse_count', 'loc', 'cyclomatic_complexity']
-]
-print(top_reused)
-```
-
-### Linking Tables
-```python
-# Get complexity stats by repository
-repo_stats = fixtures.merge(
-    repos[['id', 'full_name', 'stars', 'domain']], 
-    left_on='repo_id', 
-    right_on='id'
-).groupby('full_name').agg({
-    'cyclomatic_complexity': 'mean',
-    'loc': 'sum',
-    'stars': 'first'
-}).sort_values('cyclomatic_complexity', ascending=False)
-
-print(repo_stats.head(10))
-```
-
----
-
-## How to Use CSVs in R
-
-### Basic Import
-```r
-library(tidyverse)
-
-fixtures <- read_csv('fixtures.csv')
-mocks <- read_csv('mock_usages.csv')
-repos <- read_csv('repositories.csv')
-
-# Overview
-head(fixtures)
-summary(fixtures)
-```
-
-### Complexity by Language
-```r
-fixtures %>%
-  group_by(language) %>%
-  summarize(
-    mean_cc = mean(cyclomatic_complexity, na.rm = TRUE),
-    mean_loc = mean(loc, na.rm = TRUE),
-    mean_params = mean(num_parameters, na.rm = TRUE)
-  ) %>%
-  arrange(desc(mean_cc))
-```
-
-### Mock Adoption
-```r
-mock_fixture_ids <- unique(mocks$fixture_id)
-total_fixtures <- nrow(fixtures)
-adoption_rate <- length(mock_fixture_ids) / total_fixtures
-
-cat(sprintf("Mock adoption: %.1f%%\n", adoption_rate * 100))
-
-# By language
-fixtures %>%
-  mutate(has_mock = id %in% mock_fixture_ids) %>%
-  group_by(language) %>%
-  summarize(
-    adoption_rate = mean(has_mock),
-    .groups = 'drop'
-  ) %>%
-  arrange(desc(adoption_rate))
-```
-
-### Visualization
-```r
-# Complexity distribution by language
-ggplot(fixtures, aes(x = language, y = cyclomatic_complexity)) +
-  geom_boxplot() +
-  labs(title = "Fixture Complexity by Language",
-       x = "Language",
-       y = "Cyclomatic Complexity") +
-  theme_minimal()
-
-# Scatter: LOC vs Complexity
-ggplot(fixtures, aes(x = loc, y = cyclomatic_complexity, color = language)) +
-  geom_point(alpha = 0.3) +
-  geom_smooth(method = 'lm', se = FALSE) +
-  labs(title = "LOC vs Complexity by Language") +
-  theme_minimal()
-```
+Each contains only fixtures for that language; all columns identical to `fixtures.csv`.
 
 ---
 
 ## Common Analyses
 
+Each example below shows how to answer a research question. Choose your approach based on the tool you're using: **Excel** for quick exploration, **SQL** (SQLite) for reproducible queries from the original database, **pandas** for exploratory data analysis in Python, or **R** for statistical analysis.
+
 ### Q1: What's the distribution of fixture complexity?
-```excel: Data → Pivot Table → Values: cyclomatic_complexity (Count, Binned by ranges)
-pandas: pd.cut(fixtures['cyclomatic_complexity'], bins=[0,2,5,10,50]).value_counts()
-R: cut(fixtures$cyclomatic_complexity, breaks = c(0, 2, 5, 10, 50)) %>% table()
+
+**Excel**: 
+1. Open `fixtures.csv`
+2. Create a new column with binned complexity ranges using formulas (0–2, 3–5, 6–10, 10+)
+3. Create a pivot table with `language` in rows and count of bins in values
+
+**SQL (SQLite)**:
+```sql
+SELECT 
+  CASE 
+    WHEN cyclomatic_complexity <= 2 THEN '1-2 (Simple)'
+    WHEN cyclomatic_complexity <= 5 THEN '3-5 (Moderate)'
+    WHEN cyclomatic_complexity <= 10 THEN '6-10 (Complex)'
+    ELSE '11+ (Very Complex)'
+  END as complexity_band,
+  COUNT(*) as count
+FROM fixtures
+GROUP BY complexity_band
+ORDER BY complexity_band;
 ```
+
+**pandas**:
+```python
+pd.cut(fixtures['cyclomatic_complexity'], 
+       bins=[0, 2, 5, 10, 100], 
+       labels=['Simple', 'Moderate', 'Complex', 'Very Complex']
+      ).value_counts().sort_index()
+```
+
+---
 
 ### Q2: Do more complex fixtures get reused more?
-```excel: Create scatter plot: X=cyclomatic_complexity, Y=reuse_count
-pandas: pd.scatter(fixtures, x='cyclomatic_complexity', y='reuse_count')
-R: plot(fixtures$cyclomatic_complexity, fixtures$reuse_count)
+
+**Excel**: 
+- Create scatter plot with X=`cyclomatic_complexity`, Y=`reuse_count`
+- Visually inspect for correlation
+
+**SQL (SQLite)**:
+```sql
+SELECT 
+  ROUND(cyclomatic_complexity / 5.0) * 5 as cc_band,
+  COUNT(*) as fixture_count,
+  ROUND(AVG(reuse_count), 2) as avg_reuse
+FROM fixtures
+GROUP BY cc_band
+ORDER BY cc_band;
 ```
+
+**pandas**:
+```python
+correlation = fixtures['cyclomatic_complexity'].corr(fixtures['reuse_count'])
+print(f"Pearson correlation: {correlation:.3f}")
+
+# Grouped analysis
+fixtures.groupby(pd.cut(fixtures['cyclomatic_complexity'], bins=5))['reuse_count'].agg(['mean', 'median', 'count'])
+```
+
+---
 
 ### Q3: Which repositories have the most complex fixtures on average?
-```pandas: 
-fixtures.merge(repos[['id', 'full_name']], left_on='repo_id', right_on='id') \
-  .groupby('full_name')['cyclomatic_complexity'].mean() \
-  .sort_values(ascending=False) \
-  .head(10)
+
+**SQL (SQLite)**:
+```sql
+SELECT 
+  r.full_name,
+  r.language,
+  ROUND(AVG(f.cyclomatic_complexity), 2) as avg_cc,
+  COUNT(f.id) as fixture_count,
+  SUM(f.loc) as total_loc
+FROM fixtures f
+JOIN repositories r ON f.repo_id = r.id
+GROUP BY r.full_name
+ORDER BY avg_cc DESC
+LIMIT 10;
 ```
+
+**pandas**:
+```python
+complexity_by_repo = (fixtures
+  .merge(repos[['id', 'full_name', 'language']], left_on='repo_id', right_on='id')
+  .groupby('full_name')
+  .agg({
+    'cyclomatic_complexity': 'mean',
+    'id': 'count',
+    'loc': 'sum'
+  })
+  .rename(columns={'id': 'fixture_count'})
+  .sort_values('cyclomatic_complexity', ascending=False)
+  .head(10)
+)
+```
+
+---
 
 ### Q4: What's the relationship between nesting depth and cognitive complexity?
-```pandas: 
-correlation = fixtures['max_nesting_depth'].corr(fixtures['cognitive_complexity'])
-print(f"Correlation: {correlation:.3f}")
+
+**SQL (SQLite)**:
+```sql
+SELECT 
+  language,
+  ROUND(AVG(max_nesting_depth), 2) as avg_nesting,
+  ROUND(AVG(cognitive_complexity), 2) as avg_cognitive,
+  COUNT(*) as fixture_count
+FROM fixtures
+WHERE max_nesting_depth IS NOT NULL 
+  AND cognitive_complexity IS NOT NULL
+GROUP BY language
+ORDER BY avg_nesting DESC;
 ```
 
+**pandas**:
+```python
+# Overall correlation
+corr = fixtures['max_nesting_depth'].corr(fixtures['cognitive_complexity'])
+print(f"Correlation: {corr:.3f}")
+
+# By language
+fixtures.groupby('language').apply(
+  lambda x: x['max_nesting_depth'].corr(x['cognitive_complexity'])
+).round(3)
+```
+
+---
+
 ### Q5: How many fixtures perform I/O (external calls)?
-```pandas:
-fixtures[fixtures['num_external_calls'] > 0].shape[0]
-# And by language:
-fixtures.groupby('language')['num_external_calls'].apply(lambda x: (x > 0).sum())
+
+**SQL (SQLite)**:
+```sql
+SELECT 
+  language,
+  COUNT(*) as total_fixtures,
+  SUM(CASE WHEN num_external_calls > 0 THEN 1 ELSE 0 END) as with_io,
+  ROUND(100.0 * SUM(CASE WHEN num_external_calls > 0 THEN 1 ELSE 0 END) / COUNT(*), 1) as pct_with_io
+FROM fixtures
+GROUP BY language
+ORDER BY pct_with_io DESC;
+```
+
+**pandas**:
+```python
+# Overall
+with_io = (fixtures['num_external_calls'] > 0).sum()
+print(f"Total with I/O: {with_io} / {len(fixtures)} ({100*with_io/len(fixtures):.1f}%)")
+
+# By language
+fixtures.groupby('language').apply(
+  lambda x: (x['num_external_calls'] > 0).sum() / len(x)
+).mul(100).round(1)
 ```
 
 ---
@@ -486,7 +413,7 @@ fixtures.groupby('language')['num_external_calls'].apply(lambda x: (x > 0).sum()
 
 - **Database access needed?** Use SQLite viewer or SQL commands (see [docs/09-usage.md](09-usage.md))
 - **Want raw source code?** Available in SQLite database (`fixtures.raw_source`)
-- **Specific research question?** See [docs/18-example-analyses.md](18-example-analyses.md) for 5 exemplar analyses
+- **Specific research question?** See [EXAMPLE-ANALYSES.md](EXAMPLE-ANALYSES.md) for 5 exemplar analyses
 - **Schema details?** See [docs/03-database-schema.md](03-database-schema.md)
 
 ---

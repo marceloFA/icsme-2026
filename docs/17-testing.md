@@ -4,11 +4,11 @@ This document describes the comprehensive test suite for FixtureDB, including te
 
 ## Test Overview
 
-The test suite validates the **fixture extraction module** (`collection/detector.py`), which uses Tree-sitter ASTs to detect test fixtures across 6 programming languages. The suite has 204+ test cases organized into 6 categories.
+The test suite validates the **fixture extraction module** (`collection/detector.py`), which uses Tree-sitter ASTs to detect test fixtures. The suite is organized into multiple test categories.
 
-**Key metrics:**
-- **204+ test methods** across all categories
-- **6 languages covered**: Python, Java, JavaScript, TypeScript, Go, C#
+**Coverage:**
+- Comprehensive test coverage across all categories
+- **Languages covered**: Python, Java, JavaScript, TypeScript (with additional test patterns for other languages)
 - **Language-specific test files** for clarity in academic papers
 - **Test framework**: pytest with custom assertion helpers
 
@@ -22,36 +22,36 @@ tests/
 ├── TEST_PLAN.md                     # Comprehensive test strategy document
 ├── fixtures/                        # Test data files (future use)
 ├── test_extractor_unit/             # Category 1: Unit tests
-│   ├── test_python_fixtures.py      (22 tests)
-│   ├── test_java_fixtures.py        (13 tests)
-│   ├── test_javascript_fixtures.py  (10 tests)
-│   ├── test_typescript_fixtures.py  (8 tests)
-│   ├── test_go_fixtures.py          (5 tests)
-│   └── test_csharp_fixtures.py      (10 tests)
+│   ├── test_python_fixtures.py
+│   ├── test_java_fixtures.py
+│   ├── test_javascript_fixtures.py
+│   ├── test_typescript_fixtures.py
+│   ├── test_go_fixtures.py
+│   └── test_csharp_fixtures.py
 ├── test_extractor_metadata/         # Category 2: Metadata accuracy
-│   ├── test_line_numbers.py         (30+ tests)
-│   └── test_fixture_types_and_scopes.py (25+ tests)
+│   ├── test_line_numbers.py
+│   └── test_fixture_types_and_scopes.py
 ├── test_extractor_edge_cases/       # Category 3: Edge case robustness
-│   └── test_edge_cases.py           (50+ tests)
+│   └── test_edge_cases.py
 ├── test_mock_detection/             # Category 5: Mock patterns
-│   ├── test_python_mock_patterns.py (10 tests)
-│   ├── test_java_mock_patterns.py   (6 tests)
-│   ├── test_javascript_mock_patterns.py (4 tests)
-│   ├── test_typescript_mock_patterns.py (4 tests)
-│   ├── test_go_mock_patterns.py     (3 tests)
-│   └── test_csharp_mock_patterns.py (3 tests)
+│   ├── test_python_mock_patterns.py
+│   ├── test_java_mock_patterns.py
+│   ├── test_javascript_mock_patterns.py
+│   ├── test_typescript_mock_patterns.py
+│   ├── test_go_mock_patterns.py
+│   └── test_csharp_mock_patterns.py
 └── test_integration/                # Category 6: Realistic fixtures
-    ├── test_python_realistic_fixtures.py (8 tests)
-    ├── test_java_realistic_fixtures.py (3 tests)
-    ├── test_javascript_realistic_fixtures.py (3 tests)
-    ├── test_typescript_realistic_fixtures.py (2 tests)
-    ├── test_go_realistic_fixtures.py (2 tests)
-    └── test_csharp_realistic_fixtures.py (3 tests)
+    ├── test_python_realistic_fixtures.py
+    ├── test_java_realistic_fixtures.py
+    ├── test_javascript_realistic_fixtures.py
+    ├── test_typescript_realistic_fixtures.py
+    ├── test_go_realistic_fixtures.py
+    └── test_csharp_realistic_fixtures.py
 ```
 
 ## Test Categories
 
-### 1. Unit Tests (Per-Language) — 68 tests
+### 1. Unit Tests (Per-Language)
 
 **Scope:** Small code snippets (1-10 lines)
 
@@ -69,7 +69,7 @@ tests/
 - **Go**: Setup functions, table-driven patterns
 - **C#**: `[SetUp]`, `[TearDown]`, `[OneTimeSetUp]`, async patterns
 
-### 2. Metadata Tests — 55+ tests
+### 2. Metadata Tests
 
 **Scope:** Validation of extracted fixture metadata
 
@@ -84,7 +84,7 @@ tests/
   - Parameter counts (via Lizard library)
 - **Code metrics**: Objects instantiated (regex), external I/O calls (regex)
 
-### 3. Edge Cases — 50+ tests
+### 3. Edge Cases
 
 **Scope:** Unusual but valid code patterns
 
@@ -112,7 +112,7 @@ tests/
 - Inheritance-based fixtures
 - Parameterized/data-driven fixtures
 
-### 5. Mock Detection — 30 tests
+### 5. Mock Detection
 
 **Scope:** Mock framework identification (across languages)
 
@@ -124,7 +124,7 @@ tests/
 - **Go**: GoMock patterns
 - **C#**: Moq, NSubstitute
 
-### 6. Integration Tests — 21 tests
+### 6. Integration Tests
 
 **Scope:** Realistic, multi-language test code
 

@@ -310,5 +310,5 @@ Phase 3: Export (READY)
 
 ## See Also
 
-- [docs/14-criteria-tracking.md](14-criteria-tracking.md) — Repository count columns and SQL query examples
-- [docs/15-language-specific-csv-export.md](15-language-specific-csv-export.md) — CSV format documentation and pandas examples
+- [CRITERIA-TRACKING.md](CRITERIA-TRACKING.md) — Repository skip reasons and filtering analysis
+- [docs/16-language-specific-csv-export.md](16-language-specific-csv-export.md) — CSV format documentation and pandas examples

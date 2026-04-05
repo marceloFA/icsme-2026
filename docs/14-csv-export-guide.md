@@ -1,5 +1,7 @@
 # CSV Export Guide
 
+**For CSV users and spreadsheet analysis** — If you need to query the full database or access raw source code, see [Database Schema (SQLite)](03-database-schema.md) or [Using the Dataset for Research (SQLite pathways)](09-usage.md#use-case-1-querying-the-sqlite-database).
+
 This document describes all CSV files exported when running `python pipeline.py export`.
 
 ## Excluded Columns (Database-Only)
@@ -256,5 +258,5 @@ head -5 export/fixturedb_v1.0_<date>/fixtures_python.csv | cut -d',' -f7 | tail 
 ## See Also
 
 - [Database Schema](03-database-schema.md) — Complete schema including excluded fields
-- [Language-Specific Fixture CSV Export](15-language-specific-csv-export.md) — Detailed guide for language-specific fixtures
+- [Language-Specific Fixture CSV Export](16-language-specific-csv-export.md) — Detailed guide for language-specific fixtures
 - [Collection & Extraction](04-data-collection.md) — How metrics and detections are computed
