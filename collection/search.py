@@ -209,29 +209,46 @@ def _has_test_indicators(repo: dict, config: LanguageConfig) -> bool:
 
 
 def _search_page(query: str, page: int, per_page: int = 100) -> dict:
-    """Fetch a single page of search results."""
-    params = {
-        "q": query,
-        "sort": "stars",
-        "order": "desc",
-        "per_page": per_page,
-        "page": page,
-    }
-    r = SESSION.get(GITHUB_SEARCH_URL, params=params, timeout=30)
+    """Fetch a single page of search results with automatic retry on rate limit."""
+    max_retries = 3
+    retry_count = 0
+    
+    while retry_count < max_retries:
+        params = {
+            "q": query,
+            "sort": "stars",
+            "order": "desc",
+            "per_page": per_page,
+            "page": page,
+        }
+        r = SESSION.get(GITHUB_SEARCH_URL, params=params, timeout=30)
 
-    if r.status_code == 403:
-        # Secondary rate limit — back off generously
-        retry_after = int(r.headers.get("Retry-After", 60))
-        logger.warning(f"Secondary rate limit hit. Sleeping {retry_after}s.")
-        time.sleep(retry_after)
-        return _search_page(query, page, per_page)
+        if r.status_code == 403:
+            # Secondary rate limit — back off generously and retry
+            retry_after = int(r.headers.get("Retry-After", 60))
+            logger.warning(
+                f"Secondary rate limit hit (attempt {retry_count + 1}/{max_retries}). "
+                f"Sleeping {retry_after}s."
+            )
+            time.sleep(retry_after)
+            retry_count += 1
+            continue
 
-    if r.status_code == 422:
-        logger.error(f"GitHub rejected query: {query!r} → {r.json()}")
-        return {"items": [], "total_count": 0}
+        if r.status_code == 422:
+            logger.error(f"GitHub rejected query: {query!r} → {r.json()}")
+            return {"items": [], "total_count": 0}
 
-    r.raise_for_status()
-    return r.json()
+        r.raise_for_status()
+        return r.json()
+    
+    # Max retries exceeded
+    logger.error(
+        f"rate limit retry exhausted after {max_retries} attempts for query: {query!r}"
+    )
+    raise RuntimeError(
+        f"GitHub rate limit retry exhausted (max {max_retries} attempts). "
+        f"Please try again later."
+    )
 
 
 def _build_query(config: LanguageConfig, min_stars: int | None = None) -> str:
@@ -320,6 +337,10 @@ def _collect_repos_by_stars(
         f"Target: {max_repos} repos. "
         f"Collecting in order of popularity (most stars first) to maximize core-tier repos."
     )
+
+    # Proactive rate limit check before starting collection
+    rl = _check_rate_limit()
+    _wait_for_rate_limit(rl)
 
     total_written = 0
     base_query = _build_query(config, min_stars=min_stars)
@@ -430,6 +451,10 @@ def _collect_repos_stratified(
         f"This ensures balanced temporal representation."
     )
 
+    # Proactive rate limit check before starting collection
+    rl = _check_rate_limit()
+    _wait_for_rate_limit(rl)
+
     for idx, (bucket_start, bucket_end) in enumerate(bucket_starts):
         # Allocate more repos to later years to use remainder
         target_for_year = repos_per_year + (
@@ -535,6 +560,10 @@ def _collect_repos_chronological(
         f"Target: {max_repos} NEW repos. Buckets: {len(bucket_starts)}. "
         f"⚠ WARNING: This may bias toward older repos. Consider stratified=True."
     )
+
+    # Proactive rate limit check before starting collection
+    rl = _check_rate_limit()
+    _wait_for_rate_limit(rl)
 
     new_written = 0
 

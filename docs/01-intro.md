@@ -27,3 +27,15 @@ Prior empirical work on fixtures (TestHound, TestEvoHound) and on mocking
 Java-based. FixtureDB is the first cross-language resource that treats the
 fixture as its primary unit of analysis, enabling research that was previously
 impossible.
+
+## Dataset Composition
+
+FixtureDB comprises:
+
+- **Public CSV exports** (`fixtures.csv`, `mock_usages.csv`, language-specific CSVs)  
+  Contains **quantitative metrics only**: structure (LOC, complexity, scope, type), mock framework detection
+- **Full SQLite database** (`fixturedb.sqlite`)  
+  Includes the complete dataset plus internal infrastructure for reproducibility and future research
+- **Repository metadata**: GitHub stars, forks, contributor count, creation date, domain classification
+
+The **public CSV exports are the primary analysis format** for this paper. They contain all quantitative fixture characteristics needed for cross-language empirical studies. The SQLite database is provided for transparency and reproducibility, allowing researchers to query the complete dataset and verify extraction decisions.

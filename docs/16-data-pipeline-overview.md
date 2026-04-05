@@ -183,7 +183,7 @@ python pipeline.py export --version 1.0
        f.id, f.name, f.fixture_type, f.scope,
        f.start_line, f.end_line, f.loc, f.cyclomatic_complexity,
        f.num_objects_instantiated, f.num_external_calls,
-       f.num_parameters, f.category,
+       f.num_parameters,
        COUNT(DISTINCT m.id) as num_mocks,
        COUNT(DISTINCT m.framework) as num_mock_frameworks
     FROM fixtures f

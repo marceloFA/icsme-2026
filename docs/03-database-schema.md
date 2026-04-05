@@ -78,7 +78,7 @@ One row per fixture definition. This is the primary analysis table.
 | `reuse_count`                  | INTEGER | Number of test functions that use this fixture as a parameter (fixture modularity metric) |
 
 | `raw_source`                   | TEXT    | Full source text of the fixture as extracted |
-| `category`                     | TEXT    | RQ1 taxonomy label — `NULL` until manually classified |
+| `category`                     | TEXT    | Fixture classification for internal analysis — **excluded from CSV exports** |
 | `framework`                    | TEXT    | Testing framework (pytest, unittest, junit, nunit, testify, jest, vitest, etc.) |
 
 ### `fixture_type` values
@@ -114,9 +114,9 @@ One row per mock call detected inside a fixture.
 | `fixture_id`                | INTEGER FK → `fixtures.id`     |                                    |
 | `repo_id`                   | INTEGER FK → `repositories.id` | Denormalised for query convenience |
 | `framework`                 | TEXT                           | Detection pattern — see values below |
-| `mock_style`                | TEXT                           | `stub` \| `mock` \| `spy` \| `fake` — database only (excluded from CSV export; subjective) |
+| `mock_style`                | TEXT                           | `stub` \| `mock` \| `spy` \| `fake` — **excluded from CSV exports** |
 | `target_identifier`         | TEXT                           | String passed to the mock call (e.g. `"mymodule.HttpClient"`) |
-| `target_layer`              | TEXT                           | `boundary` \| `infrastructure` \| `internal` \| `framework` — database only (excluded from CSV export; subjective) |
+| `target_layer`              | TEXT                           | `boundary` \| `infrastructure` \| `internal` \| `framework` — **excluded from CSV exports** |
 | `num_interactions_configured` | INTEGER                      | Count of `return_value` / `thenReturn` / `side_effect` style calls found near the mock |
 | `raw_snippet`               | TEXT                           | Short source snippet (excluded from CSV export; GitHub URL provides direct code access) |
 

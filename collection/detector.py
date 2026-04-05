@@ -471,19 +471,18 @@ JUNIT_FIXTURE_ANNOTATIONS = {
     "@AfterEach": ("junit5_after_each", "per_test"),
     "@AfterAll": ("junit5_after_all", "per_class"),
     "@Before": ("junit4_before", "per_test"),
-    "@BeforeClass": ("junit4_before_class", "per_class"),
     "@After": ("junit4_after", "per_test"),
-    "@AfterClass": ("junit4_after_class", "per_class"),
     "@BeforeMethod": ("testng_before_method", "per_test"),  # TestNG
-    "@BeforeClass": (
-        "testng_before_class",
-        "per_class",
-    ),  # TestNG (same name as JUnit4, handled specially)
     "@AfterMethod": ("testng_after_method", "per_test"),  # TestNG
-    "@AfterClass": ("testng_after_class", "per_class"),  # TestNG
     "@DataProvider": ("testng_data_provider", "per_test"),  # TestNG data-driven fixture
     "@Rule": ("junit_rule", "per_test"),  # JUnit @Rule fixture fields
     "@ClassRule": ("junit_class_rule", "per_class"),  # JUnit @ClassRule fixture fields
+}
+
+# Annotations that appear in both JUnit4 and TestNG (require context to disambiguate)
+JUNIT_TESTNG_AMBIGUOUS = {
+    "@BeforeClass": ("junit4_before_class", "testng_before_class", "per_class"),
+    "@AfterClass": ("junit4_after_class", "testng_after_class", "per_class"),
 }
 
 
@@ -512,8 +511,19 @@ def _detect_java(tree, src_bytes: bytes, language: str = "java") -> list[Fixture
             for ann in annotations:
                 # Strip parameter content for lookup
                 ann_key = "@" + ann.lstrip("@").split("(")[0].strip()
-                if ann_key in JUNIT_FIXTURE_ANNOTATIONS:
+                fixture_type = None
+                scope = None
+                
+                # Handle ambiguous annotations (same name in JUnit4 and TestNG)
+                if ann_key in JUNIT_TESTNG_AMBIGUOUS:
+                    junit4_type, testng_type, scope = JUNIT_TESTNG_AMBIGUOUS[ann_key]
+                    # Default to TestNG for backward compatibility with existing corpus
+                    # TODO: Could improve by checking for TestNG-specific imports
+                    fixture_type = testng_type
+                elif ann_key in JUNIT_FIXTURE_ANNOTATIONS:
                     fixture_type, scope = JUNIT_FIXTURE_ANNOTATIONS[ann_key]
+                
+                if fixture_type and scope:
                     results.append(
                         _build_result(
                             node=node,

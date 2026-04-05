@@ -22,11 +22,14 @@ See docs/COMPLEXITY_METRICS_MIGRATION.md for complete methodology and justificat
 """
 
 import ast
+import logging
 from pathlib import Path
 from typing import Optional
 
 from lizard import analyze_file as lizard_analyze_file
 from cognitive_complexity.api import get_cognitive_complexity
+
+logger = logging.getLogger(__name__)
 
 
 def get_cyclomatic_complexity(file_path: Path, language: str) -> Optional[int]:
@@ -52,8 +55,8 @@ def get_cyclomatic_complexity(file_path: Path, language: str) -> Optional[int]:
         if result.function_list:
             # Return first function found; caller typically analyzes single functions
             return result.function_list[0].cyclomatic_complexity
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug(f"Failed to get cyclomatic complexity for {file_path}: {type(e).__name__}: {e}")
     return None
 
 
@@ -82,8 +85,8 @@ def get_cognitive_complexity_python(file_path: Path) -> Optional[int]:
             for node in tree.body:
                 if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                     return get_cognitive_complexity(node)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug(f"Failed to get cognitive complexity for {file_path}: {type(e).__name__}: {e}")
     return None
 
 
@@ -158,6 +161,7 @@ def analyze_function_complexity(
         "num_external_calls": 0,
     }
 
+    temp_file = None
     try:
         # Write to temp file for lizard analysis
         temp_file = (
@@ -194,9 +198,10 @@ def analyze_function_complexity(
                             if cc is not None:
                                 metrics["cognitive_complexity"] = cc
                                 break
-                except Exception:
+                except Exception as e:
                     # Fall back to formula if cognitive_complexity library fails
                     # Use cyclomatic complexity as proxy (nesting depth not available from Lizard)
+                    logger.debug(f"Failed to analyze Python cognitive complexity: {type(e).__name__}: {e}")
                     metrics["cognitive_complexity"] = get_cognitive_complexity_fallback(
                         metrics["cyclomatic_complexity"], 1
                     )
@@ -206,12 +211,16 @@ def analyze_function_complexity(
                     metrics["cyclomatic_complexity"], 1
                 )
 
-        # Cleanup
-        temp_file.unlink(missing_ok=True)
-
-    except Exception:
+    except Exception as e:
         # Return defaults (including loc=0) on any error
-        pass
+        logger.debug(f"Complexity analysis failed for source snippet: {type(e).__name__}: {e}")
+    finally:
+        # Ensure cleanup even if exception occurs
+        if temp_file is not None:
+            try:
+                temp_file.unlink(missing_ok=True)
+            except Exception as e:
+                logger.debug(f"Failed to clean up temp file {temp_file}: {type(e).__name__}: {e}")
 
     return metrics
 

@@ -9,9 +9,9 @@ The following columns exist in the SQLite database but are intentionally exclude
 | Table | Column | Type | Reason |
 |-------|--------|------|--------|
 | `fixtures` | `raw_source` | TEXT | Full source text; too large for CSV (available in SQLite) |
-| `fixtures` | `category` | TEXT | RQ1 taxonomy classification; subjective, for internal analysis |
-| `mock_usages` | `mock_style` | TEXT | Subjective classification (stub, mock, spy, fake) |
-| `mock_usages` | `target_layer` | TEXT | Subjective classification (boundary, infrastructure, internal, framework) |
+| `fixtures` | `category` | TEXT | Internal fixture classification; excluded from public CSV exports |
+| `mock_usages` | `mock_style` | TEXT | Internal classification (stub, mock, spy, fake); excluded from CSV |
+| `mock_usages` | `target_layer` | TEXT | Internal classification (boundary, infrastructure, internal, framework); excluded from CSV |
 | `mock_usages` | `raw_snippet` | TEXT | Source code snippet; redundant with GitHub URL in language-specific CSVs |
 
 Column names and rationale documented here to clarify schema discrepancies between SQLite and CSV exports.
@@ -210,23 +210,26 @@ print(mock_usage.groupby('framework')['num_interactions_configured'].mean())
 
 ## Design Rationale
 
-### Why are some fields excluded?
+### CSV Export Strategy
 
-**Database-only (subjective classifications):**
-- `category` (fixture) — RQ1 taxonomy labels are researcher-subjective and not part of the objective dataset
-- `mock_style` (mock usage) — Classifications of stub/mock/spy/fake are judgement calls
-- `target_layer` (mock usage) — Classifications of infrastructure layers are context-dependent
+The public CSV exports contain **quantitative metrics only** for this dataset. The full SQLite database includes additional infrastructure columns for reproducibility and future research, but these are intentionally excluded from CSV exports:
 
-**Database-only (source code):**
-- `raw_source` (fixture) — Full source text is bulky and redundant (available in SQLite); language-specific CSVs have github_url for direct access
+**Internal-only fields (excluded from CSV):**
+- `category` (fixture) — Internal fixture classification infrastructure; enables future taxonomy work
+- `mock_style` (mock usage) — Internal classification (stub/mock/spy/fake) for future analysis
+- `target_layer` (mock usage) — Internal classification (infrastructure layers) for future analysis
+
+**Source code (excluded from CSV):**
+- `raw_source` (fixture) — Full source text is bulky; available in SQLite for researchers who need it
 - `raw_snippet` (mock usage) — Code snippet redundant with github_url pointing to exact location
 
 ### Design principles
 
-1. **Objective only:** CSVs contain measurable facts (LOC, counts, metrics), not subjective labels
-2. **Traceable:** github_url enables verification of any finding directly in source code
-3. **Self-contained:** Language-specific CSVs need no database access for analysis
-4. **Archivable:** Zenodo deposit includes both SQLite (for future research) and CSV (for immediate use)
+1. **Quantitative focus:** CSV exports contain only measurable, objective facts (LOC, counts, metrics)
+2. **Publication-ready:** No internal research infrastructure in the public dataset
+3. **Reproducible:** Full SQLite database available for verification of extraction decisions
+4. **Traceable:** github_url enables verification of any finding directly in source code
+5. **Archivable:** Zenodo deposit includes both SQLite (for transparency and future research) and CSV (for paper analysis)
 
 ## File Sizes
 

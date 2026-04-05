@@ -138,7 +138,7 @@ For each detected fixture, the system computes:
 
 - **Has Yield**: Boolean indicating generator/yield expressions (Python fixtures)
 
-These metrics support RQ1 fixture taxonomy classification, fixture quality analysis, and modularity studies.
+These metrics support fixture quality analysis, modularity studies, and cross-language fixture characterization.
 
 See [METRICS_AUDIT_AND_EXTERNAL_TOOLS.md](METRICS_AUDIT_AND_EXTERNAL_TOOLS.md) for comprehensive analysis of all quantitative metrics and tool choices.
 

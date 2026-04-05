@@ -70,17 +70,18 @@ See [docs/01-intro.md](docs/01-intro.md) for the full overview.
 
 ### Data Quality & Testing
 
-FixtureDB focuses exclusively on **quantitative, objective aspects** of test fixtures:
+FixtureDB focuses exclusively on **quantitative, objective aspects** of test fixtures in its public dataset:
 
 - **Framework Detection**: Syntactically unambiguous markers only (decorators, annotations, attributes)
   - Python: `@pytest.fixture`, `setUp()`/`tearDown()` methods
   - Java: `@Before`/`@After` annotations
-
   - Go: `TestMain()` function, `SetupSuite()`/`SetupTest()` methods (testify)
   - JavaScript/TypeScript: AVA's unique `test.before()`/`test.after()` pattern
 
 - **Structural Metrics**: Lines of code, cyclomatic complexity, parameter counts, fixture type/scope
 - **Mock Framework Usage**: Detection of mock object patterns within fixture code
+
+**Public CSV exports** contain quantitative metrics only. The SQLite database includes additional internal infrastructure for reproducibility and future research, but these fields are excluded from the Zenodo CSV export.
 
 All fixture detectors include **comprehensive unit tests** ([tests/test_framework_detection.py](tests/test_framework_detection.py)) verifying:
 - Correct framework identification across 6 languages

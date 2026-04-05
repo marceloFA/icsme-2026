@@ -150,8 +150,10 @@ def _classify_repo(full_name: str, description: str, topics_json: str) -> str:
     topics: list[str] = []
     try:
         topics = json.loads(topics_json or "[]")
-    except (json.JSONDecodeError, TypeError):
-        pass
+    except (json.JSONDecodeError, TypeError) as e:
+        logger.debug(
+            f"Failed to parse topics JSON for repo {full_name}: {type(e).__name__}: {e}"
+        )
 
     # Build a single text blob: name + description + topics
     name_parts = re.split(r"[/_\-]", full_name.split("/")[-1])

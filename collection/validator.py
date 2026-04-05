@@ -25,6 +25,7 @@ from pathlib import Path
 import pandas as pd
 
 from collection.config import DB_PATH, ROOT_DIR
+from collection.db import db_session
 
 logger = logging.getLogger(__name__)
 
@@ -42,59 +43,61 @@ def generate_sample(n_per_language: int = 50) -> Path:
     Draw a stratified random sample of n_per_language fixtures per language.
     Exports to a CSV with an empty `is_true_fixture` column for manual review.
     Returns the CSV path.
+    
+    Raises:
+        ValueError: If no analysed repositories are found in the database.
     """
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
+    with db_session() as conn:
+        languages = [
+            r[0]
+            for r in conn.execute(
+                "SELECT DISTINCT language FROM repositories WHERE status='analysed'"
+            ).fetchall()
+        ]
 
-    languages = [
-        r[0]
-        for r in conn.execute(
-            "SELECT DISTINCT language FROM repositories WHERE status='analysed'"
-        ).fetchall()
-    ]
+        if not languages:
+            raise ValueError(
+                "No analysed repositories found in database. Run extraction phase first: "
+                "python pipeline.py search && python pipeline.py clone && python pipeline.py extract"
+            )
 
-    if not languages:
-        logger.error("No analysed repositories found. Run extraction first.")
-        conn.close()
-        return None
+        frames = []
+        for lang in languages:
+            rows = conn.execute(
+                """
+                SELECT
+                    f.id            AS fixture_id,
+                    r.language,
+                    r.full_name     AS repo,
+                    tf.relative_path AS file_path,
+                    f.fixture_type,
+                    f.name          AS fixture_name,
+                    f.start_line,
+                    f.loc,
+                    f.raw_source
+                FROM fixtures f
+                JOIN test_files tf   ON f.file_id  = tf.id
+                JOIN repositories r  ON f.repo_id  = r.id
+                WHERE r.language = ? AND r.status = 'analysed'
+                ORDER BY RANDOM()
+                LIMIT ?
+            """,
+                (lang, n_per_language),
+            ).fetchall()
 
-    frames = []
-    for lang in languages:
-        rows = conn.execute(
-            """
-            SELECT
-                f.id            AS fixture_id,
-                r.language,
-                r.full_name     AS repo,
-                tf.relative_path AS file_path,
-                f.fixture_type,
-                f.name          AS fixture_name,
-                f.start_line,
-                f.loc,
-                f.raw_source
-            FROM fixtures f
-            JOIN test_files tf   ON f.file_id  = tf.id
-            JOIN repositories r  ON f.repo_id  = r.id
-            WHERE r.language = ? AND r.status = 'analysed'
-            ORDER BY RANDOM()
-            LIMIT ?
-        """,
-            (lang, n_per_language),
-        ).fetchall()
+            if not rows:
+                logger.warning(f"No fixtures found for language: {lang}")
+                continue
 
-        if not rows:
-            logger.warning(f"No fixtures found for language: {lang}")
-            continue
-
-        df = pd.DataFrame([dict(r) for r in rows])
-        frames.append(df)
-        logger.info(f"  {lang}: sampled {len(df)} fixtures")
-
-    conn.close()
+            df = pd.DataFrame([dict(r) for r in rows])
+            frames.append(df)
+            logger.info(f"  {lang}: sampled {len(df)} fixtures")
 
     if not frames:
-        logger.error("No fixtures to sample.")
-        return None
+        raise ValueError(
+            "No fixtures available to sample. Ensure corpus has been extracted: "
+            "python pipeline.py search && python pipeline.py clone && python pipeline.py extract"
+        )
 
     sample = pd.concat(frames, ignore_index=True)
 
