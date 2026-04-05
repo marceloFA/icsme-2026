@@ -21,6 +21,7 @@ from ..eda_common import (
     LANG_PALETTE,
     LANG_ORDER,
     STATUS_PALETTE,
+    MOCK_STYLE_PALETTE,
     setup_style,
     save_or_show,
     load_db,
@@ -199,20 +200,12 @@ def plot_mock_prevalence(conn, out_dir, show):
         style_pct = style_pivot.div(style_pivot.sum(axis=1), axis=0) * 100
         styles = list(style_pct.columns)
 
-        # Shade palette for mock styles
-        style_colors = {
-            "mock": "#FF6B6B",
-            "stub": "#4ECDC4",
-            "spy": "#FFE66D",
-            "fake": "#95E1D3",
-        }
-
         y_pos3 = range(len(present))
         for i, lang in enumerate(present):
             left = 0.0
             for style in styles:
                 w = style_pct.loc[lang, style]
-                color = style_colors.get(style, "#CCCCCC")
+                color = MOCK_STYLE_PALETTE.get(style, "#CCCCCC")
                 if w > 0:
                     ax3.barh(i, w, left=left, color=color, height=0.55, zorder=3)
                     if w > 5:

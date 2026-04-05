@@ -18,8 +18,9 @@ This folder contains the complete documentation for FixtureDB, split into dedica
 12. **[Limitations and Threats to Validity](12-limitations.md)** — Known constraints and validation status
 13. **[License](13-license.md)** — MIT (code) and CC BY 4.0 (dataset)
 14. **[CSV Export Guide](14-csv-export-guide.md)** — Full column documentation for all exported CSV files
-15. **[Language-Specific Fixture CSV Export](15-language-specific-csv-export.md)** — Python/Java/JavaScript fixtures for Zenodo
-16. **[Testing Strategy & Execution](14-testing.md)** — Test suite overview, categories, and how to run
+15. **[CSV User Guide for Data Analysis](15-csv-user-guide.md)** — How to import and analyze CSVs in Excel, Python (pandas), and R
+16. **[Language-Specific Fixture CSV Export](15-language-specific-csv-export.md)** — Python/Java/JavaScript fixtures for Zenodo
+17. **[Testing Strategy & Execution](14-testing.md)** — Test suite overview, categories, and how to run
 
 ## Technical Methodology
 

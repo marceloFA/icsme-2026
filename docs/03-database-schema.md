@@ -13,7 +13,7 @@ One row per GitHub repository discovered and processed.
 | `id`              | INTEGER PK | Internal identifier |
 | `github_id`       | INTEGER UNIQUE | GitHub's numeric repository ID |
 | `full_name`       | TEXT    | `"owner/repo"` slug (e.g. `"pytest-dev/pytest"`) |
-| `language`        | TEXT    | `python` \| `java` \| `javascript` \| `typescript` \| `go` |
+| `language`        | TEXT    | `python` \| `java` \| `javascript` \| `typescript` |
 | `stars`           | INTEGER | GitHub star count at collection time |
 | `forks`           | INTEGER | GitHub fork count at collection time |
 | `description`     | TEXT    | GitHub repository description |
@@ -101,8 +101,6 @@ One row per fixture definition. This is the primary analysis table.
 | `after_each` | JS/TS | `afterEach(...)` call |
 | `after_all` | JS/TS | `afterAll(...)` call |
 | `mocha_after` | JS/TS | `after(...)` call |
-| `test_main` | Go | `func TestMain(m *testing.M)` |
-| `go_helper` | Go | Non-test helper called from ≥ 2 `TestXxx` functions (heuristic — see §12) |
 
 ## 3.4 `mock_usages`
 
@@ -127,8 +125,6 @@ One row per mock call detected inside a fixture.
 **Java:** `mockito`, `easymock`, `mockk`
 
 **JavaScript/TypeScript:** `jest`, `sinon`, `vitest`
-
-**Go:** `gomock`, `testify_mock`
 
 **C#:** `moq`, `nsubstitute`, `fakeiteasy`, `rhino_mocks`
 

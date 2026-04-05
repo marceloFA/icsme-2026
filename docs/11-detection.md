@@ -1,5 +1,9 @@
 # Fixture Detection Logic
 
+**Important Note on Go**: While the collection codebase (`detector.py`, `config.py`) contains Go extraction logic, **Go repositories are NOT included in the published FixtureDB dataset** by design. See [Limitations — Go language exclusion](12-limitations.md#go-language-exclusion) for details. The CSV exports and database contain zero Go data. The detection documentation below covers the implementation of supported languages; Go sections are included for reference only.
+
+---
+
 Detection is implemented in `collection/detector.py` using
 [Tree-sitter](https://tree-sitter.github.io/tree-sitter/) grammars.
 Each language has a dedicated detector function that walks the AST
@@ -52,21 +56,6 @@ JavaScript and TypeScript fixtures are detected via testing framework hook calls
   - `beforeAll`, `afterAll` → `per_class`
   - `before`, `after` → `per_test` (ambiguous without full context)
 
-### Go
-
-Go has no formal fixture annotation system. The detector uses a hybrid approach:
-
-1. **Explicit TestMain**: Any `TestMain(m *testing.M)` function is classified as a fixture with `global` scope
-2. **Helper heuristic**: Non-test functions (not prefixed `Test`, `Benchmark`, or `Example`) that are:
-   - Called from ≥ 3 test functions in the same file (lowered threshold from 2 for precision)
-   - AND have names containing setup/teardown/fixture-like keywords (e.g., `setUp`, `initialize`, `prepare`, `teardown`, `cleanup`)
-   
-   These are classified as `go_helper` fixtures with `per_test` scope.
-
-3. **t.Cleanup() callbacks**: Inline teardown functions registered via `t.Cleanup(func() {...})` are noted but not extracted as top-level fixtures
-
-The semantic filtering (keyword checking) significantly reduces false positives from catching generic helper functions.
-
 ## Scope Semantics
 
 Fixture scope is standardized across all languages:
@@ -74,7 +63,7 @@ Fixture scope is standardized across all languages:
 - **per_test**: Fixture runs before/after every individual test (most common)
 - **per_class**: Fixture runs once per test class/suite (setup for class, teardown after all tests in class)
 - **per_module**: Fixture runs once per module/file (Python-specific)
-- **global**: Fixture runs once for entire test suite (Go TestMain, pytest session scope)
+- **global**: Fixture runs once for entire test suite (pytest session scope)
 
 ## Mock Detection
 
@@ -83,7 +72,6 @@ Mock usage is detected as a separate pass after fixture extraction using 23+ reg
 - **Python**: `unittest.mock`, `pytest-mock`, `MagicMock`, `AsyncMock`
 - **Java**: Mockito, EasyMock, MockK (Kotlin)
 - **JavaScript/TypeScript**: Jest, Sinon, Vitest
-- **Go**: GoMock, Testify/mock
 
 For each mock framework detected, the fixture records:
 - Framework name

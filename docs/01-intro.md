@@ -1,8 +1,8 @@
 # What is FixtureDB?
 
 FixtureDB is a structured dataset of **test fixture definitions** extracted
-from open-source software repositories on GitHub across six language variants:
-Python, Java, JavaScript, TypeScript, Go.
+from open-source software repositories on GitHub across four languages:
+Python, Java, JavaScript, and TypeScript.
 
 A *test fixture* is any code that prepares or tears down state before or after
 a test runs. Each ecosystem has its own idiom:
@@ -13,7 +13,7 @@ a test runs. Each ecosystem has its own idiom:
 | Java           | `@Before`, `@BeforeClass` (JUnit 4), `@BeforeEach`, `@BeforeAll` (JUnit 5), and `After` counterparts |
 | JavaScript     | `beforeEach`, `beforeAll`, `before`, `afterEach`, `afterAll` (Jest, Mocha, Jasmine, Vitest) |
 | TypeScript     | Same as JavaScript |
-| Go             | `TestMain`, helper functions called from ≥ 2 `TestXxx` functions in the same file |
+
 
 
 For each fixture definition the dataset records structural metadata (size,

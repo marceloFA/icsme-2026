@@ -16,7 +16,7 @@ Phase 3 adds 4 new quantitative metrics for research questions on fixture modula
 
 **Metric**: Integer ≥ 1  
 **Computed from**: Tree-sitter AST per function  
-**Languages**: All 5 supported languages (Python, Java, JavaScript, TypeScript, Go)
+**Languages**: All 4 supported languages (Python, Java, JavaScript, TypeScript) — Go not included
 
 **Definition**: Maximum nesting level of block-creating statements within the fixture.
 - Level 1: No nesting (linear code)
@@ -109,7 +109,7 @@ For [SetUp]/@BeforeEach:
 
 **Metric**: Integer (0 or 1) — boolean flag  
 **Computed from**: AST + pattern matching  
-**Languages**: All 5 languages
+**Languages**: All 4 supported languages
 
 **Definition**: Whether fixture has cleanup/teardown logic paired with setup.
 

@@ -19,6 +19,7 @@ from ..eda_common import (
     DEFAULT_OUT,
     LANG_PALETTE,
     LANG_ORDER,
+    SEQUENTIAL_BLUE,
     setup_style,
     save_or_show,
     load_db,
@@ -72,7 +73,6 @@ def plot_nesting_depth(conn, out_dir, show):
     
     # Calculate percentages per language
     depth_order = ["Flat (1)", "Shallow (2)", "Medium (3)", "Deep (4)", "Very Deep (5+)"]
-    depth_colors = ["#2ecc71", "#f39c12", "#e74c3c", "#9b59b6", "#34495e"]  # green → orange → red → purple → dark
     
     lang_labels = [lang_display(l) for l in present]
     x = np.arange(len(present))
@@ -87,7 +87,7 @@ def plot_nesting_depth(conn, out_dir, show):
             percentages.append(pct)
         
         ax.bar(x, percentages, width, label=depth_cat, bottom=bottom,
-               color=depth_colors[i], edgecolor="white", linewidth=1.5)
+               color=SEQUENTIAL_BLUE[i], edgecolor="white", linewidth=1.5)
         
         # Add percentage labels in the middle of each segment if large enough
         for j, pct in enumerate(percentages):

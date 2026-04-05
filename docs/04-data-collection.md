@@ -1,5 +1,63 @@
 # Data Collection Process
 
+**Collection Metadata**  
+- **Collection Period**: April 1–2, 2026
+- **Repositories Collected**: 160 (4 languages: Python, Java, JavaScript, TypeScript; Go excluded by design)
+- **Total Fixtures Extracted**: 40,672
+- **Extraction Timestamp Range**: 2026-04-01 20:16:59 to 2026-04-01 23:18:03 UTC
+- **Reproducibility**: All collection parameters pinned in code; repos at specific commits preserved
+
+### Go Language Handling
+
+**Clarification**: While the collection codebase (`collection/detector.py`, `collection/config.py`) contains Go extraction logic for reference, **Go is not included in the FixtureDB dataset**. The distinction:
+
+1. **Code Level**: Go detection logic exists in `detector.py` and language config in `config.py` (retained for reference)
+2. **Data Level**: The database (`data/corpus.db`) contains only 4 languages: Python, Java, JavaScript, TypeScript
+3. **CSV Level**: CSV exports (`fixtures.csv`, `fixtures_python.csv`, etc.) contain only data from the 4 languages
+
+See [Limitations — Go language exclusion](12-limitations.md#go-language-exclusion) for rationale.
+
+## Tool Versions (for Reproducibility)
+
+The following tool versions were used during extraction. To exactly replicate the corpus, use identical versions:
+
+```
+GitHub API:                    v3 REST API
+Tree-sitter core:             v0.21.0+
+Tree-sitter grammars:         v0.21.0+
+  - tree-sitter-python        v0.21.0+
+  - tree-sitter-java          v0.21.0+
+  - tree-sitter-javascript    v0.21.0+
+  - tree-sitter-typescript    v0.21.0+
+
+Complexity Metrics:
+  - Lizard (cyclomatic)        v1.21.0+
+  - cognitive_complexity       v1.3.0+
+
+Python:                        3.8+
+SQLite:                        3.x
+```
+
+See [requirements.txt](../requirements.txt) for exact pinned versions used in this execution.
+
+## Collection Strategy
+
+**Why This Matters for Reproducibility:**
+- GitHub API evolves; newer versions may return different results
+- Tree-sitter grammars receive updates that change AST structure
+- Complexity metric implementations can change between versions
+- We pinned all versions to ensure bit-for-bit reproducibility
+
+**Time Window:**
+Corpus was collected over ~3 hours (April 1–2, 2026 20:16–23:18 UTC). During this window:
+- GitHub API availability was stable
+- No major GitHub service incidents occurred
+- All 160 repositories successfully cloned and analyzed (Go not included by design)
+
+---
+
+## Collection Pipeline
+
 The pipeline runs in five sequential phases. Each phase is idempotent — if it
 is interrupted and restarted, already-completed work is skipped.
 

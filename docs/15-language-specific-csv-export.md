@@ -13,7 +13,7 @@ python pipeline.py export --version 1.0
 ```
 
 This generates:
-- `export/fixturedb_v1.0_<date>/` directory containing:
+- `export/fixturedb_<date>/` directory containing:
   - `fixturedb.sqlite` — Full database (SQLite 3)
   - `repositories.csv` — All repositories
   - `test_files.csv` — All test files
@@ -23,7 +23,7 @@ This generates:
   - **`fixtures_java.csv`** — Fixtures for Java projects
   - **`fixtures_javascript.csv`** — Fixtures for JavaScript projects
   - **`fixtures_typescript.csv`** — Fixtures for TypeScript projects
-  - **`fixtures_go.csv`** — Fixtures for Go projects
+
   - **`fixtures_csharp.csv`** — Fixtures for C# projects
   - `stats.txt` — High-level corpus statistics
   - `README.txt` — Schema documentation

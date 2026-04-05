@@ -11,6 +11,19 @@ This repository contains the extraction pipeline that builds FixtureDB.
 The dataset itself (SQLite database + CSV exports) is archived separately
 on Zenodo at **TODO: Zenodo DOI**.
 
+## Dataset Collection Details
+
+| Property | Value |
+|----------|-------|
+| **Collection Period** | April 1–2, 2026 |
+| **GitHub API Version** | v3 REST API |
+| **Tree-sitter Grammar** | v0.21.0+ (Python, Java, JavaScript, TypeScript) |
+| **Complexity Tool** | Lizard v1.21.0+ |
+| **Cognitive Complexity** | cognitive_complexity v1.3.0+ |
+| **Python Version** | 3.8+ (see requirements.txt) |
+
+For exact tool versions and reproducibility details, see [docs/04-data-collection.md](docs/04-data-collection.md).
+
 ---
 
 ## Documentation
@@ -33,6 +46,9 @@ Complete documentation has been organized into dedicated files in the [docs/](do
 | [docs/11-detection.md](docs/11-detection.md) | Tree-sitter AST and mock detection |
 | [docs/12-limitations.md](docs/12-limitations.md) | Known constraints and validation status |
 | [docs/13-license.md](docs/13-license.md) | MIT (code) and CC BY 4.0 (dataset) |
+| [docs/14-criteria-tracking.md](docs/14-criteria-tracking.md) | Research question tracking |
+| [docs/15-csv-user-guide.md](docs/15-csv-user-guide.md) | CSV exports for non-SQL users |
+| [docs/18-example-analyses.md](docs/18-example-analyses.md) | 5 research questions with findings |
 
 ## Quick start
 
@@ -57,7 +73,7 @@ For detailed setup, see [docs/06-setup.md](docs/06-setup.md).
 
 FixtureDB is a structured dataset of **test fixture definitions** extracted from
 open-source software repositories on GitHub across **Python, Java, JavaScript,
-TypeScript, and Go**.
+and TypeScript**.
 
 A *test fixture* is any code that prepares or tears down state before or after a test runs.
 For each fixture, the dataset records structural metadata (size, complexity, scope, type)
@@ -70,21 +86,20 @@ See [docs/01-intro.md](docs/01-intro.md) for the full overview.
 
 ### Data Quality & Testing
 
-FixtureDB focuses exclusively on **quantitative, objective aspects** of test fixtures in its public dataset:
+FixtureDB focuses exclusively on **quantitative, objective aspects** of test fixtures:
 
 - **Framework Detection**: Syntactically unambiguous markers only (decorators, annotations, attributes)
   - Python: `@pytest.fixture`, `setUp()`/`tearDown()` methods
   - Java: `@Before`/`@After` annotations
-  - Go: `TestMain()` function, `SetupSuite()`/`SetupTest()` methods (testify)
-  - JavaScript/TypeScript: AVA's unique `test.before()`/`test.after()` pattern
+  - JavaScript/TypeScript: Mocha/Jest `beforeEach()`/`afterEach()` and related patterns
 
 - **Structural Metrics**: Lines of code, cyclomatic complexity, parameter counts, fixture type/scope
 - **Mock Framework Usage**: Detection of mock object patterns within fixture code
 
-**Public CSV exports** contain quantitative metrics only. The SQLite database includes additional internal infrastructure for reproducibility and future research, but these fields are excluded from the Zenodo CSV export.
+**CSV exports** contain quantitative metrics. The SQLite database includes additional internal infrastructure for reproducibility and future research.
 
 All fixture detectors include **comprehensive unit tests** ([tests/test_framework_detection.py](tests/test_framework_detection.py)) verifying:
-- Correct framework identification across 6 languages
+- Correct framework identification across supported languages
 - AST-based detection accuracy
 - Cross-language consistency
 

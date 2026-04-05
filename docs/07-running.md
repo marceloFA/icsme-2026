@@ -78,5 +78,5 @@ python pipeline.py validate --compute validation/sample_<timestamp>.csv
 
 ```bash
 python pipeline.py export --version 1.0
-# Produces: export/fixturedb_v1.0_<date>.zip
+# Produces: export/fixturedb_<date>.zip
 ```

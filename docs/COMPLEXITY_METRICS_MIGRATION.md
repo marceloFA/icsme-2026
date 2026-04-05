@@ -16,7 +16,7 @@ This document describes the migration from custom tree-sitter-based code complex
 - **Library**: [https://github.com/terryyin/lizard](https://github.com/terryyin/lizard)
 - **Version**: >= 1.21.0
 - **Purpose**: Calculate cyclomatic complexity (McCabe complexity)
-- **Languages Supported**: All 5 languages (Python, Java, JavaScript, TypeScript, Go)
+- **Languages Supported**: All 4 supported languages (Python, Java, JavaScript, TypeScript)
 - **Integration**: [collection/complexity_provider.py](../collection/complexity_provider.py)
 
 **What is Cyclomatic Complexity?**

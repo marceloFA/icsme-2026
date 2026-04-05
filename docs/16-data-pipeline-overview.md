@@ -173,7 +173,7 @@ python pipeline.py export --version 1.0
    - mock_usages.csv
 
 3. NEW: Export language-specific fixtures
-   For each language (python, java, javascript, typescript, go, csharp):
+   For each supported language (python, java, javascript, typescript):
    → fixtures_{language}.csv
    
    Query structure:
@@ -202,18 +202,16 @@ python pipeline.py export --version 1.0
 
 ```
 export/
-└── fixturedb_v1.0_2026-03-24/
+└── fixturedb_v2_2026-04-05/
     ├── fixturedb.sqlite           (full queryable database)
-    ├── repositories.csv            (all repos)
+    ├── repositories.csv            (160 repos)
     ├── test_files.csv             (all test files)
-    ├── fixtures.csv               (all fixtures)
+    ├── fixtures.csv               (40,672 fixtures across 4 languages)
     ├── mock_usages.csv            (all mocks)
-    ├── fixtures_python.csv        (≈50,000 rows for Python)
-    ├── fixtures_java.csv          (≈45,000 rows for Java)
-    ├── fixtures_javascript.csv    (≈30,000 rows for JavaScript)
-    ├── fixtures_typescript.csv    (≈25,000 rows for TypeScript)
-    ├── fixtures_go.csv            (≈15,000 rows for Go)
-    ├── fixtures_csharp.csv        (≈20,000 rows for C#)
+    ├── fixtures_python.csv        (4,915 rows)
+    ├── fixtures_java.csv          (11,287 rows)
+    ├── fixtures_javascript.csv    (5,521 rows)
+    ├── fixtures_typescript.csv    (18,949 rows)
     ├── stats.txt                  (corpus statistics table)
     └── README.txt                 (schema documentation)
     

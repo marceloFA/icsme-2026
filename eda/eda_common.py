@@ -33,17 +33,32 @@ LANG_PALETTE = {
     "python": "#4C9BE8",
     "java": "#E8834C",
     "javascript": "#E8C94C",
-    "go": "#A04CE8",
-    "csharp": "#2ECC71",
+    "typescript": "#C94C98",
 }
-LANG_ORDER = ["python", "java", "javascript", "go"]
+LANG_ORDER = ["python", "java", "javascript", "typescript"]
 
 STATUS_PALETTE = {
-    "discovered": "#B0BEC5",
-    "cloned": "#64B5F6",
-    "analysed": "#81C784",
-    "skipped": "#FFB74D",
-    "error": "#E57373",
+    "discovered": "#9E9E9E",   # solid gray
+    "cloned": "#2196F3",        # solid blue
+    "analysed": "#4CAF50",      # solid green
+    "skipped": "#FF9800",       # solid orange
+    "error": "#F44336",         # solid red
+}
+
+# Sequential/ordinal palette for non-language categories (e.g., star tiers)
+# Uses subtle grayscale progression for clarity and minimal visual clutter
+SEQUENTIAL_PALETTE = ["#D0D0D0", "#A0A0A0", "#707070", "#404040", "#1A1A1A"]  # light to dark gray
+
+# Sequential/ordinal palette for nesting depth (monochromatic blue, all solid)
+# Single-hue progression for ordinal data with consistent saturation
+SEQUENTIAL_BLUE = ["#5B9BD5", "#4472C4", "#2B5BA6", "#1A3D7A", "#0D2855"]  # light to dark blue (all solid)
+
+# Semantic palette for mock styles (categorical, not ordinal)
+MOCK_STYLE_PALETTE = {
+    "mock": "#E74C3C",   # Red for actual mocks
+    "stub": "#3498DB",   # Blue for stubs
+    "spy": "#F39C12",    # Orange for spies
+    "fake": "#2ECC71",   # Green for fakes
 }
 
 # ---------------------------------------------------------------------------

@@ -49,13 +49,11 @@ pytest tests/ --collect-only -q
 | Java | `pytest tests/ -v -k "java"` |
 | JavaScript | `pytest tests/ -v -k "javascript" or "jest" or "mocha"` |
 | TypeScript | `pytest tests/ -v -k "typescript"` |
-| Go | `pytest tests/ -v -k "go"` |
-| C# | `pytest tests/ -v -k "csharp"` |
 
 ## Test Statistics
 
 - **Total tests**: 204+
-- **Languages**: 6 (Python, Java, JavaScript, TypeScript, Go, C#)
+- **Languages**: 4 (Python, Java, JavaScript, TypeScript)
 - **Test files**: 24 language-specific files
 - **Framework**: pytest
 

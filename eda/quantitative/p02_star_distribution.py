@@ -21,6 +21,7 @@ from ..eda_common import (
     LANG_PALETTE,
     LANG_ORDER,
     STATUS_PALETTE,
+    SEQUENTIAL_PALETTE,
     setup_style,
     save_or_show,
     load_db,
@@ -64,7 +65,6 @@ def plot_star_distribution(conn, out_dir, show):
 
     # Get tier counts per language
     tier_order = ["0–100 ★", "100–500 ★", "500–1k ★", "1k–5k ★", "5k+ ★"]
-    tier_colors = ["#2ecc71", "#f39c12", "#e74c3c", "#9b59b6", "#34495e"]  # green→orange→red→purple→dark
     
     data = []
     for lang in present:
@@ -82,7 +82,7 @@ def plot_star_distribution(conn, out_dir, show):
     for i, tier in enumerate(tier_order):
         counts = [data[j].get(tier, 0) for j in range(len(present))]
         ax.bar(x, counts, width, label=tier, bottom=bottom, 
-               color=tier_colors[i], edgecolor="white", linewidth=1.5)
+               color=SEQUENTIAL_PALETTE[i], edgecolor="white", linewidth=1.5)
         bottom += counts
 
     ax.set_ylabel("# Repositories", fontsize=11, fontweight="bold")
