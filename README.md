@@ -95,44 +95,48 @@ See [docs/11-detection.md](docs/11-detection.md) for technical details on detect
 
 The following visualizations provide an overview of the FixtureDB corpus:
 
-### Corpus Overview
+### Corpus Composition
 
 **Repository Distribution and Pipeline Status**
 
-![Repositories by Tier](docs/plots/01a_repos_by_tier.png)
+![Repositories by Tier](docs/plots/01a_corpus_by_tier.png)
 
 ![Pipeline Status](docs/plots/01b_pipeline_status.png)
 
-**Star Distribution (Log Scale)**
+### Repository Timeline & Activity
 
-![Star Distribution Ridge Plot](docs/plots/02_star_distribution.png)
+**Creation Timeline and Activity Patterns**
 
-**Repository Timeline and Activity**
+![Repository Creation Timeline](docs/plots/02a_creation_timeline.png)
 
-![Repository Creation Timeline](docs/plots/03a_repos_creation_timeline.png)
+![Repository Recent Activity](docs/plots/02b_activity_recency.png)
 
-![Repository Recent Activity](docs/plots/03b_repos_activity.png)
+### Fixture Overview
 
-**Domain Distribution and Popularity**
+**Fixture Distribution and Scope Patterns**
 
-![Domain Distribution](docs/plots/04_domain_distribution.png)
+![Fixture Distribution per Repository](docs/plots/03a_fixtures_per_repo.png)
 
-![Stars vs Forks Correlation](docs/plots/05_stars_vs_forks.png)
+![Fixture Scope Distribution](docs/plots/03b_fixture_scope.png)
 
-### Fixture Analysis
+### Mocking Practices
 
-**Fixture Distribution and Types**
+**Mock Usage and Framework Diversity**
 
-![Fixture Distribution per Repository](docs/plots/06a_fixture_distribution.png)
+![Mock Adoption Rate](docs/plots/04a_mock_adoption.png)
 
-![Fixture Type Breakdown](docs/plots/06b_fixture_types.png)
+![Mocking Framework Usage](docs/plots/04b_framework_diversity.png)
 
-**Mocking Practices**
+### Fixture Complexity Analysis
 
-![Mock Usage Prevalence](docs/plots/07a_mock_prevalence.png)
+**Nesting, Reuse, and Complexity Patterns**
 
-![Mocking Framework Usage](docs/plots/07b_framework_usage.png)
+![Fixture Nesting Depth Distribution](docs/plots/05a_nesting_depth.png)
 
-**Fixture Categories**
+![Nesting vs Complexity Correlation](docs/plots/05b_nesting_complexity_correlation.png)
 
-![Fixture Categories](docs/plots/08_fixture_categories.png)
+![Fixture Reuse Patterns](docs/plots/05c_fixture_reuse_distribution.png)
+
+![Reuse vs Complexity Correlation](docs/plots/05d_reuse_complexity_correlation.png)
+
+![Teardown Adoption Rate](docs/plots/05e_teardown_adoption.png)
