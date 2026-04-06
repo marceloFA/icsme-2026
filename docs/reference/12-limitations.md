@@ -1,0 +1,67 @@
+# Limitations and Threats to Validity
+
+## Sampling bias
+
+The corpus is drawn from repositories with ≥ 100 GitHub stars. Popular,
+actively maintained projects may exhibit higher test discipline than typical
+open-source software. This is a known limitation in empirical software
+engineering studies (Hamster study by Pan et al., 2025) which also used
+star-based sampling to ensure sufficient test coverage. To mitigate this bias
+and improve generalizability, the dataset records `star_tier` (`core` for ≥500
+stars, `extended` for 100–499) and we recommend stratifying all analyses by tier.
+This allows researchers to study both popular and emerging projects separately.
+
+## Go language exclusion
+
+Go repositories are excluded from the FixtureDB dataset due to unvalidated heuristic-based detection. The Go helper detector relies on pattern matching (non-test functions called from ≥2 test functions) without formal validation. Rather than publish unvalidated data, Go is not included (this exclusion avoids ~2.5% of data). All included languages (Python, Java, JavaScript, TypeScript) use syntax-based detection with high confidence (~95%+).
+
+## Snapshot corpus
+
+Each repository is captured at a single commit. The dataset does not support
+longitudinal analyses of fixture evolution.
+
+## Language coverage
+
+This dataset covers four languages (Python, Java, JavaScript, TypeScript) with syntax-based detection across all. Ruby (RSpec), Kotlin, Scala, Rust, and Go are not included.
+
+## Mock detection completeness
+
+Mock detection uses regular expressions over source text. Framework versions
+or unusual coding styles may produce false negatives. The `raw_source`
+column is included in the SQLite file specifically so that researchers can
+re-run or improve detection against the original fixture text.
+
+---
+
+## Phase 3 Advanced Metrics Limitations (April 2026)
+
+### `reuse_count` — Under-estimation in Dynamic Tests
+
+- **Limitation**: Does not count parameterized test functions individually
+- **Reason**: Parameterized tests (pytest `@pytest.mark.parametrize`, JUnit `@ParameterizedTest`) are counted as single test functions; each parameter set is not tracked separately
+- **Impact**: A fixture used by a parameterized test with 10 parameter sets is counted as 1 reuse, not 10
+- **Mitigation**: Query `test_files` table to identify parameterized patterns; cross-reference with fixture usage analysis
+
+### `has_teardown_pair` — Heuristic Detection Limits
+
+- **Python**: Highly accurate (yield detection, setUp/tearDown pairing)
+- **Java**: Accurate for annotation-based (@After, @AfterEach)
+- **JavaScript/TypeScript**: Best-effort scope inference; ambiguous cases may misclassify
+- **Go**: Incomplete detection without formal validation
+- **Limitation**: Implicit cleanup (e.g., connection pooling in frameworks, automatic resource management) is not detected
+- **Mitigation**: `raw_source` field available in SQLite for manual verification on important fixtures
+
+### `num_contributors` — GitHub API Pagination Limits
+
+- **Limitation**: GitHub API returns up to ~30 contributors per page; total count capped at API page limit in some scenarios
+- **Workaround**: Implemented Link header pagination to retrieve actual page count
+- **Impact**: Repositories with >100 contributors may be slightly under-counted
+- **Mitigation**: For precise contributor counts on specific repositories, use GitHub's direct API or web interface
+
+### `max_nesting_depth` — Lambda/Closure Detection
+
+- **Limitation**: Nested function definitions increase nesting depth (Python closures, JavaScript arrow functions)
+- **Impact**: May over-estimate nesting depth when nesting is logical closure nesting, not control flow nesting
+- **Example**: Nested function definitions inside a fixture count as depth increases, even if body is simple
+- **Trade-off**: Conservative approach avoids under-counting; classified members and closures are counted together
+- **Mitigation**: Combine with `cognitive_complexity` for more accurate assessment of actual code complexity

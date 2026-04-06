@@ -8,10 +8,10 @@ This document lists scientific papers referenced in the FixtureDB project. These
 
 Our design decisions are grounded in empirical software engineering practice:
 
-- **Repository Selection** ([docs/10-configuration.md](10-configuration.md), [docs/04-data-collection.md](04-data-collection.md)): The 500-star threshold for the `core` tier and 100-star minimum follow established conventions from large-scale empirical studies (Hamster; Pan et al., 2025).
-- **Quality Filters** ([docs/10-configuration.md](10-configuration.md)): The MIN_TEST_FILES = 5 threshold is grounded in observations about test project characteristics (Ahmed et al., 2025).
+- **Repository Selection** ([docs/10-configuration.md](../architecture/10-configuration.md), [docs/04-data-collection.md](../data/04-data-collection.md)): The 500-star threshold for the `core` tier and 100-star minimum follow established conventions from large-scale empirical studies (Hamster; Pan et al., 2025).
+- **Quality Filters** ([docs/10-configuration.md](../architecture/10-configuration.md)): The MIN_TEST_FILES = 5 threshold is grounded in observations about test project characteristics (Ahmed et al., 2025).
 - **Sampling Bias Analysis** ([docs/12-limitations.md](12-limitations.md)): We compare our methodology to Hamster's approach to managing star-based sampling bias.
-- **Empirical Methods** ([docs/METRICS_AUDIT_AND_EXTERNAL_TOOLS.md](METRICS_AUDIT_AND_EXTERNAL_TOOLS.md)): Large-scale studies (Pan et al., 2025; Ahmed et al., 2025) motivate our comprehensive quantitative characterization approach. We acknowledge recent work (Ouédraogo et al., 2025) on test-specific complexity metrics that suggests future refinements.
+- **Empirical Methods** ([docs/11-detection.md](../architecture/11-detection.md)): Large-scale studies (Pan et al., 2025; Ahmed et al., 2025) motivate our comprehensive quantitative characterization approach. We acknowledge recent work (Ouédraogo et al., 2025) on test-specific complexity metrics that suggests future refinements.
 
 ---
 
@@ -91,7 +91,7 @@ Pan, R., Stennett, T., Pavuluri, R., Levin, N., Orso, A., & Sinha, S. (2025).
 Springer *Empirical Software Engineering* (EMSE) is a primary venue for empirical studies in software engineering. The following papers in this journal inform our empirical methodology:
 
 - **DOI: 10.1007/s10664-023-10410-y** (2023)
-  - See [06-setup.md](06-setup.md) for methodological details
+  - See [06-setup.md](../getting-started/06-setup.md) for methodological details
   
 - **DOI: 10.1007/s10664-018-9663-0** (2018)
   - Foundational empirical methods in software engineering

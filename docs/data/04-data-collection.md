@@ -15,7 +15,7 @@
 2. **Data Level**: The database (`data/corpus.db`) contains only 4 languages: Python, Java, JavaScript, TypeScript
 3. **CSV Level**: CSV exports (`fixtures.csv`, `fixtures_python.csv`, etc.) contain only data from the 4 languages
 
-See [Limitations — Go language exclusion](12-limitations.md#go-language-exclusion) for rationale.
+See [Limitations — Go language exclusion](../reference/12-limitations.md) for rationale.
 
 ## Tool Versions (for Reproducibility)
 
@@ -23,20 +23,31 @@ The following tool versions were used during extraction. To exactly replicate th
 
 ```
 GitHub API:                    v3 REST API
-Tree-sitter core:             v0.21.0+
-Tree-sitter grammars:         v0.21.0+
-  - tree-sitter-python        v0.21.0+
-  - tree-sitter-java          v0.21.0+
-  - tree-sitter-javascript    v0.21.0+
-  - tree-sitter-typescript    v0.21.0+
 
-Complexity Metrics:
-  - Lizard (cyclomatic)        v1.21.0+
-  - cognitive_complexity       v1.3.0+
+AST Parsing:
+  - Tree-sitter core:          v0.21.0+
+  - tree-sitter-python         v0.21.0+
+  - tree-sitter-java           v0.21.0+
+  - tree-sitter-javascript     v0.21.0+
+  - tree-sitter-typescript     v0.21.0+
 
-Python:                        3.8+
-SQLite:                        3.x
+Code Metrics:
+  - Lizard                      v1.21.3+ (cyclomatic complexity, cognitive complexity, LOC, 
+                                          parameters, external call count)
+  - cognitive-complexity        v1.3.0+ (Python cognitive complexity, SonarQube-standard)
+
+Runtime:
+  - Python                      3.8+
+  - SQLite                      3.x
 ```
+
+**Key Tools & Rationale:**
+
+- **Lizard** (v1.21.3+): Handles cyclomatic complexity, cognitive complexity fallback, LOC, parameters, and external function call detection across all languages. Reduces custom metric code while maintaining reproducibility via industry-standard tool.
+
+- **cognitive-complexity** (v1.3.0+): Python-specific SonarQube-standard cognitive complexity implementation. Provides accurate nesting-depth-weighted complexity for Python; other languages use Lizard-based formula fallback.
+
+- **Tree-sitter** (v0.21.0+): AST parsing for fixture detection, scope analysis, and code structure metrics across 5 languages. Provides consistent abstract syntax representation independent of language syntax quirks.
 
 See [requirements.txt](../requirements.txt) for exact pinned versions used in this execution.
 
@@ -140,7 +151,7 @@ Produces a versioned zip file ready for Zenodo deposit. **This phase creates two
 
 **SQLite Database** (`fixturedb.sqlite`) — For reproducibility verification and raw source inspection:
 - `fixturedb.sqlite` — the full database with all fields, internal classifications, and raw source code
-- See [Database Schema — SQLite Section](03-database-schema.md#sqlite-database-schema)
+- See [Database Schema — SQLite Section](../architecture/03-database-schema.md)
 
 **CSV Exports** (`.csv` files) — For spreadsheet and statistical analysis:
 - `repositories.csv`, `test_files.csv`, `fixtures.csv`, `mock_usages.csv` — core tables
@@ -150,4 +161,4 @@ Produces a versioned zip file ready for Zenodo deposit. **This phase creates two
 
 **Key Difference**: The `raw_source` column (full fixture source code) is excluded from CSVs by default because it is large and already available in the SQLite file. Pass `--include-source` to include raw source in `fixtures.csv` if needed.
 
-See [Database Schema — CSV Export Schema](03-database-schema.md#csv-export-schema) for detailed column documentation and [Using the Dataset for Research](09-usage.md) for guidance on which format to use.
+See [Database Schema — CSV Export Schema](../architecture/03-database-schema.md) for detailed column documentation and [Using the Dataset for Research](../usage/09-usage.md) for guidance on which format to use.

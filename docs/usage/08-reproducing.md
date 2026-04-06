@@ -1,6 +1,6 @@
 # Reproducing the Paper Corpus
 
-**For reproducibility verification**  — This section uses the SQLite database to confirm exact extraction state. For analysis, use CSV exports or the full database (see [Using the Dataset for Research](09-usage.md)).
+**For reproducibility verification**  — This section uses the SQLite database to confirm exact extraction state. For analysis, use CSV exports or the full database (see [Using the Dataset for Research](../usage/09-usage.md)).
 
 The exact state of every repository analysed in the paper is reproducible
 via the `pinned_commit` SHA stored in the `repositories` table.

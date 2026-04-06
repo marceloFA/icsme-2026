@@ -3,9 +3,9 @@
 **For researchers who want to analyze FixtureDB without using SQL or SQLite**
 
 > **Quick Links:**  
-> - Need SQLite instead? See [Using the Dataset for Research — SQLite Pathway](09-usage.md#use-case-1-querying-the-sqlite-database)  
-> - Need column definitions? See [Database Schema — CSV Section](03-database-schema.md#csv-export-schema)  
-> - Questions about data format? See [Using the Dataset for Research — Comparison](09-usage.md#key-differences-sqlite-vs-csv)
+> - Need SQLite instead? See [Using the Dataset for Research — SQLite Pathway](../usage/09-usage.md)  
+> - Need column definitions? See [Database Schema — CSV Section](../architecture/03-database-schema.md)  
+> - Questions about data format? See [Using the Dataset for Research — Comparison](../usage/09-usage.md)
 
 ---
 
@@ -17,7 +17,7 @@ FixtureDB provides CSV exports of the main analysis tables across 4 programming 
 - How to link tables together
 - Common analyses and their queries
 
-**Go Language Note**: By configuration, FixtureDB contains **zero Go data** in all CSV exports and database tables. Go repositories are excluded due to unvalidated fixture detection heuristics. The collection code (`detector.py`, `config.py`) retains Go extraction logic for reference, but no Go data is present in the published dataset. All CSV files below contain only 4 languages: Python, Java, JavaScript, and TypeScript. See [Data Collection — Go Language Handling](04-data-collection.md#go-language-handling) and [Limitations](12-limitations.md#go-language-exclusion-v2) for details.
+**Go Language Note**: By configuration, FixtureDB contains **zero Go data** in all CSV exports and database tables. Go repositories are excluded due to unvalidated fixture detection heuristics. The collection code (`detector.py`, `config.py`) retains Go extraction logic for reference, but no Go data is present in the published dataset. All CSV files below contain only 4 languages: Python, Java, JavaScript, and TypeScript. See [Data Collection — Go Language Handling](../data/04-data-collection.md) and [Limitations](../reference/12-limitations.md) for details.
 
 ---
 
@@ -122,7 +122,7 @@ head(df)
 | `before_each` | JS/TS | `beforeEach(...)` | Modern test framework |
 | `before_all` | JS/TS | `beforeAll(...)` | Modern test framework |
 
-(See [docs/11-detection.md](11-detection.md) for complete list and detection methodology)
+(See [docs/11-detection.md](../architecture/11-detection.md) for complete list and detection methodology)
 
 ### Scope Values Explained
 
@@ -405,16 +405,16 @@ fixtures.groupby('language').apply(
 **Limitations:**
 - Snapshot at one commit per repository (no time series)
 - Mock detection uses pattern matching (may miss unusual patterns)
-- Go repositories excluded by design (dataset uses 4 languages only; see [docs/12-limitations.md](12-limitations.md))
+- Go repositories excluded by design (dataset uses 4 languages only; see [docs/12-limitations.md](../reference/12-limitations.md))
 
 ---
 
 ## Need Help?
 
-- **Database access needed?** Use SQLite viewer or SQL commands (see [docs/09-usage.md](09-usage.md))
+- **Database access needed?** Use SQLite viewer or SQL commands (see [docs/09-usage.md](../usage/09-usage.md))
 - **Want raw source code?** Available in SQLite database (`fixtures.raw_source`)
 - **Specific research question?** See [EXAMPLE-ANALYSES.md](EXAMPLE-ANALYSES.md) for 5 exemplar analyses
-- **Schema details?** See [docs/03-database-schema.md](03-database-schema.md)
+- **Schema details?** See [docs/03-database-schema.md](../architecture/03-database-schema.md)
 
 ---
 

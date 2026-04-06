@@ -22,7 +22,7 @@ FixtureDB offers two complementary analysis pathways, suited to different resear
 - No database knowledge required
 - Works in any spreadsheet application
 - Language-specific exports pre-filtered for convenience
-- Column documentation in [docs/14-csv-export-guide.md](14-csv-export-guide.md)
+- Column documentation in [docs/14-csv-export-guide.md](../data/14-csv-export-guide.md)
 
 ---
 
@@ -150,7 +150,7 @@ The CSV exports provide a curated, denormalized view of the dataset optimized fo
 | `repositories.csv` | Repository metadata | `id`, `full_name`, `language`, `stars`, `forks`, `domain`, `star_tier`, `status`, `num_test_files`, `num_fixtures`, `num_mock_usages` |
 | `test_files.csv` | Metadata per test file | `id`, `repo_id`, `file_path`, `num_fixtures` |
 
-**Full column documentation:** See [docs/14-csv-export-guide.md](14-csv-export-guide.md)
+**Full column documentation:** See [docs/14-csv-export-guide.md](../data/14-csv-export-guide.md)
 
 ### Python (Pandas) Examples
 
@@ -276,6 +276,6 @@ print(f"{pct:.1f}%")
 
 ## Need help?
 
-- **CSV column meanings:** See [docs/14-csv-export-guide.md](14-csv-export-guide.md)
-- **Full CSV guide with tool-specific walkthrough:** See [docs/15-csv-user-guide.md](15-csv-user-guide.md)
-- **Schema details:** See [docs/03-database-schema.md](03-database-schema.md)
+- **CSV column meanings:** See [docs/14-csv-export-guide.md](../data/14-csv-export-guide.md)
+- **Full CSV guide with tool-specific walkthrough:** See [docs/15-csv-user-guide.md](../data/15-csv-user-guide.md)
+- **Schema details:** See [docs/03-database-schema.md](../architecture/03-database-schema.md)

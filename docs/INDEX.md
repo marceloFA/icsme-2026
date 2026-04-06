@@ -1,69 +1,87 @@
 # FixtureDB Documentation Index
 
-This folder contains the complete documentation for FixtureDB, split into dedicated sections.
+This folder contains the complete documentation for FixtureDB, organized into sections.
 
-## Quick links
+## Getting Started (5 min read)
 
-1. **[What is FixtureDB?](01-intro.md)** — Overview, language coverage, and why this dataset matters
-2. **[Repository Structure](02-repository-structure.md)** — Project layout and file organization
-3. **[Database Schema](03-database-schema.md)** — SQLite and CSV schema specifications
-4. **[Data Collection Process](04-data-collection.md)** — Five-phase pipeline walkthrough
-5. **[Storage and Scale Estimates](05-storage.md)** — Disk usage and database growth
-6. **[Setup and Requirements](06-setup.md)** — Installation and dependencies
-7. **[Running the Pipeline](07-running.md)** — Command reference for all pipeline operations
+1. **[What is FixtureDB?](getting-started/01-intro.md)** — Overview, language coverage, and why this dataset matters
+2. **[Quick Start](getting-started/06-setup.md)** — Installation and first steps
+3. **[Running the Pipeline](getting-started/07-running.md)** — Command reference for all operations
 
-## Choose Your Path
+## Documentation by Use Case
 
-### **Analysis Path** — Using CSV Exports (Most Users)
-- Start: [Using the Dataset for Research — Use Case 2: CSV Exports](09-usage.md#use-case-2-analyzing-csv-exports)
-- Column Reference: [CSV Export Guide](14-csv-export-guide.md)
-- Tool-Specific Walkthrough: [CSV User Guide](15-csv-user-guide.md) (Excel, pandas, R)
-- For specifics on individual columns: [Database Schema — CSV Section](03-database-schema.md#csv-export-schema)
+### **I want to analyze the data (CSV exports)**
+- Start: [Using the Dataset for Research — CSV Exports](usage/09-usage.md#use-case-2-analyzing-csv-exports)
+- Reference: [CSV Export Guide](data/14-csv-export-guide.md) — Full column documentation
+- How-to: [CSV User Guide](data/15-csv-user-guide.md) — Import & analyze in Excel, pandas, R
+- Language-specific data: [Language-Specific Fixture CSV](data/15-language-specific-csv-export.md)
 
-### **Verification Path** — Using SQLite Database (Advanced Users, Reproducibility)
-- Start: [Using the Dataset for Research — Use Case 1: SQLite](09-usage.md#use-case-1-querying-the-sqlite-database)
-- Schema Reference: [Database Schema — SQLite Section](03-database-schema.md#sqlite-database-schema)
-- Reproducibility: [Reproducing the Paper Corpus](08-reproducing.md)
-- Configuration Reference: [Configuration Reference](10-configuration.md)
+### **I want to query the SQLite database**
+- Start: [Using the Dataset for Research — SQLite](usage/09-usage.md#use-case-1-querying-the-sqlite-database)
+- Schema: [Database Schema](architecture/03-database-schema.md)
+- Advanced: [Data Pipeline Overview](architecture/18-data-pipeline-overview.md)
+
+### **I want to verify or reproduce results**
+- How-to: [Reproducing the Paper Corpus](usage/08-reproducing.md)
+- Configuration: [Configuration Reference](architecture/10-configuration.md)
+- Details: [Fixture Detection Logic](architecture/11-detection.md)
+
+### **I want to understand limitations**
+- Overview: [Limitations & Threats to Validity](reference/12-limitations.md)
+- Testing: [Testing Strategy](reference/17-testing.md)
 
 ## All Documentation
 
-**Pipeline Development (for contributors):**
-8. **[Reproducing the Paper Corpus](08-reproducing.md)** — Exact replication with pinned commits
-9. **[Using the Dataset for Research](09-usage.md)** — SQL queries and CSV analysis with examples
-10. **[Configuration Reference](10-configuration.md)** — All tunable parameters
-11. **[Fixture Detection Logic](11-detection.md)** — Tree-sitter AST and mock detection
-12. **[Limitations and Threats to Validity](12-limitations.md)** — Known constraints and validation status
-13. **[License](13-license.md)** — MIT (code) and CC BY 4.0 (dataset)
+### Getting Started
+- [What is FixtureDB?](getting-started/01-intro.md)
+- [Repository Structure](getting-started/02-repository-structure.md)
+- [Setup & Requirements](getting-started/06-setup.md)
+- [Running the Pipeline](getting-started/07-running.md)
 
-**Data Access & Analysis:**
-14. **[CSV Export Guide](14-csv-export-guide.md)** — Full column documentation for exported CSV files
-15. **[CSV User Guide for Data Analysis](15-csv-user-guide.md)** — How to import and analyze CSVs in Excel, Python (pandas), and R
-16. **[Language-Specific Fixture CSV Export](16-language-specific-csv-export.md)** — Python/Java/JavaScript fixtures for Zenodo
+### Architecture & Technical
+- [Database Schema](architecture/03-database-schema.md)
+- [Configuration Reference](architecture/10-configuration.md)
+- [Fixture Detection Logic](architecture/11-detection.md)
+- [Data Pipeline Overview](architecture/18-data-pipeline-overview.md)
 
-**Technical Depth:**
-17. **[Testing Strategy & Execution](17-testing.md)** — Test suite overview, categories, and how to run
-18. **[Data Pipeline Overview](18-data-pipeline-overview.md)** — System architecture and pipeline orchestration
-19. **[Scientific References](19-references.md)** — Papers and works that inform FixtureDB methodology
+### Data Collection & Export
+- [Data Collection Process](data/04-data-collection.md)
+- [Storage & Scale](data/05-storage.md)
+- [CSV Export Guide](data/14-csv-export-guide.md)
+- [CSV User Guide](data/15-csv-user-guide.md)
+- [Language-Specific CSV Export](data/15-language-specific-csv-export.md)
 
-## Technical Methodology
+### Usage & Analysis
+- [Reproducing Results](usage/08-reproducing.md)
+- [Using the Dataset for Research](usage/09-usage.md)
+- [Fixture Patterns Reference](usage/16-fixture-patterns-reference.md)
+- [Mock Classification Reference](usage/18-mock-classification-reference.md)
 
-- **[Metrics Audit & External Tools](METRICS_AUDIT_AND_EXTERNAL_TOOLS.md)** — Comprehensive analysis of all quantitative metrics and available external tools
-- **[Phase 3 Advanced Metrics](PHASE-3-ADVANCED-METRICS.md)** — max_nesting_depth, reuse_count, has_teardown_pair, num_contributors
+### Reference & Specs
+- [Limitations & Validity](reference/12-limitations.md)
+- [License](reference/13-license.md)
+- [Testing Strategy](reference/17-testing.md)
+- [Scientific References](reference/19-references.md)
 
-## Getting started
+## Quick Navigation
 
-- **New to the project?** Start with [What is FixtureDB?](01-intro.md)
-- **Ready to install?** Go to [Setup and Requirements](06-setup.md)
-- **Want to run it?** See [Running the Pipeline](07-running.md)
-- **Need to query the data?** Check [Using the Dataset for Research](09-usage.md)
-- **Want to run the test suite?** See [Testing Strategy & Execution](17-testing.md)
+- **New to FixtureDB?** → [What is FixtureDB?](getting-started/01-intro.md)
+- **How do I install?** → [Setup & Requirements](getting-started/06-setup.md)
+- **How do I run it?** → [Running the Pipeline](getting-started/07-running.md)
+- **Where's the data schema?** → [Database Schema](architecture/03-database-schema.md)
+- **How do I analyze CSVs?** → [CSV User Guide](data/15-csv-user-guide.md)
+- **How do I query SQLite?** → [Using the Dataset for Research](usage/09-usage.md)
+- **What are the limitations?** → [Limitations & Validity](reference/12-limitations.md)
 
-## Paper citation
+## Citation
 
 FixtureDB: A Multi-Language Dataset of Test Fixture Definitions from Open-Source Software  
 João Almeida, Andre Hora  
 *ICSME 2026 — Tool Demonstration and Data Showcase Track*  
-TODO: add DOI once published
 
-Dataset archived on Zenodo at: **TODO: Zenodo DOI**
+Dataset: [![DOI](https://zenodo.org/badge/DOI/TODO.svg)](https://doi.org/TODO)
+
+## License
+
+- **Code:** MIT License — See [LICENSE](../LICENSE) or [reference/13-license.md](reference/13-license.md)
+- **Dataset:** CC BY 4.0 — See [reference/13-license.md](reference/13-license.md)

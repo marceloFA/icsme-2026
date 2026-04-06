@@ -43,9 +43,12 @@ The directory is then zipped into `fixturedb_v1.0_<date>.zip` for upload to Zeno
 |--------|------|-------------|
 | `github_id` | INT | GitHub numeric ID of the repository |
 | `full_name` | TEXT | Repository slug (e.g., "pytest-dev/pytest") |
+| `pinned_commit` | TEXT | Commit SHA for repo at analysis time |
 | `stars` | INT | Star count at collection time |
 | `forks` | INT | Fork count at collection time |
+| `num_contributors` | INT | Repository contributor count (Phase 3 metric) |
 | `test_file_path` | TEXT | Path to the test file (relative to repo root) |
+| `github_url` | TEXT | Direct HTTPS GitHub link to fixture in source |
 | `fixture_id` | INT | Unique fixture ID in database |
 | `fixture_name` | TEXT | Function/method name of the fixture |
 | `fixture_type` | TEXT | Detection pattern (pytest_decorator, junit4_before, etc.) |
@@ -55,6 +58,8 @@ The directory is then zipped into `fixturedb_v1.0_<date>.zip` for upload to Zeno
 | `loc` | INT | Non-blank lines of code in the fixture |
 | `cyclomatic_complexity` | INT | Code complexity (branches + 1) |
 | `cognitive_complexity` | INT | Nesting-depth-weighted complexity |
+| `max_nesting_depth` | INT | Maximum block nesting level (Phase 3 metric) |
+| `reuse_count` | INT | Test functions using this fixture (Phase 3 metric) |
 | `num_objects_instantiated` | INT | Estimated constructor calls |
 | `num_external_calls` | INT | Estimated I/O and external API calls |
 | `num_parameters` | INT | Number of function parameters |
@@ -65,8 +70,8 @@ The directory is then zipped into `fixturedb_v1.0_<date>.zip` for upload to Zeno
 ### Example Row
 
 ```csv
-github_id,full_name,stars,forks,test_file_path,fixture_id,fixture_name,fixture_type,scope,start_line,end_line,loc,cyclomatic_complexity,cognitive_complexity,num_objects_instantiated,num_external_calls,num_parameters,fixture_framework,num_mocks,num_mock_frameworks
-101,pytest-dev/pytest,7850,1200,src/pytest/test_config.py,1,setup_test_db,pytest_decorator,per_test,45,62,18,2,3,3,2,1,pytest,2,1
+github_id,full_name,pinned_commit,stars,forks,num_contributors,test_file_path,github_url,fixture_id,fixture_name,fixture_type,scope,start_line,end_line,loc,cyclomatic_complexity,cognitive_complexity,max_nesting_depth,reuse_count,num_objects_instantiated,num_external_calls,num_parameters,fixture_framework,num_mocks,num_mock_frameworks
+101,pytest-dev/pytest,abc123def456,7850,1200,150,src/pytest/test_config.py,https://github.com/pytest-dev/pytest/blob/abc123def456/src/pytest/test_config.py#L45,1,setup_test_db,pytest_decorator,per_test,45,62,18,2,3,2,5,3,2,1,pytest,2,1
 ```
 
 ## Usage in Analysis

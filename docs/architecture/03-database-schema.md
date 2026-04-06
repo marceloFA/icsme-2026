@@ -96,7 +96,7 @@ One row per fixture definition. This is the primary analysis table.
 | `num_external_calls`           | INTEGER | Estimated I/O / external API calls (DB, HTTP, filesystem, env) |
 | `num_parameters`               | INTEGER | Number of function parameters |
 | `reuse_count`                  | INTEGER | Number of test functions that use this fixture as a parameter (fixture modularity metric) |
-
+| `has_teardown_pair`            | INTEGER | Binary (0/1): whether fixture has cleanup logic paired with setup (yield, tearDown, @After, etc.) — **excluded from CSV exports** |
 | `raw_source`                   | TEXT    | Full source text of the fixture as extracted |
 | `category`                     | TEXT    | Fixture classification for internal analysis — **excluded from CSV exports** |
 | `framework`                    | TEXT    | Testing framework (pytest, unittest, junit, nunit, testify, jest, vitest, etc.) |
@@ -312,6 +312,6 @@ One row per test file analyzed. Use this to study test file characteristics and 
 ## Column Documentation
 
 For detailed descriptions of what each metric means and how it's calculated, see:
-- **[Metrics Audit & External Tools](METRICS_AUDIT_AND_EXTERNAL_TOOLS.md)** — How each metric is computed
-- **[Phase 3 Advanced Metrics](PHASE-3-ADVANCED-METRICS.md)** — Detailed definitions of `max_nesting_depth`, `reuse_count`, `has_teardown_pair`
-- **[CSV Export Guide](14-csv-export-guide.md)** — Column-by-column definitions (consolidated reference)
+- **[Fixture Detection Logic](../architecture/11-detection.md)** — How each metric is computed and which tools are used; includes Phase 3 metrics (max_nesting_depth, reuse_count, has_teardown_pair, num_contributors)
+- **[Limitations and Threats to Validity](../reference/12-limitations.md)** — Known limitations of Phase 3 metrics and mitigation strategies
+- **[CSV Export Guide](../data/14-csv-export-guide.md)** — Column-by-column definitions (consolidated reference)
