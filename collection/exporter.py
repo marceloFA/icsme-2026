@@ -24,7 +24,7 @@ import sqlite3
 import zipfile
 import logging
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pandas as pd
 
@@ -120,7 +120,7 @@ def export_dataset(version: str = "1.0", include_raw_source: bool = False) -> Pa
     Returns the path to the zip file.
     """
     EXPORT_DIR.mkdir(parents=True, exist_ok=True)
-    timestamp = datetime.utcnow().strftime("%Y%m%d")
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d")
     archive_name = f"fixturedb_v{version}_{timestamp}"
     staging = EXPORT_DIR / archive_name
     staging.mkdir(exist_ok=True)
@@ -281,7 +281,7 @@ def _export_language_specific_fixtures(conn: sqlite3.Connection, staging: Path) 
 
 def _write_readme(path: Path, version: str) -> None:
     header = f"""FixtureDB v{version}
-Generated: {datetime.utcnow().strftime('%Y-%m-%d')}
+Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%d')}
 
 A multi-language dataset of test fixture definitions extracted from
 open-source software repositories on GitHub.
