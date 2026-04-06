@@ -64,7 +64,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from collection.config import MAX_FILE_SIZE_BYTES
-from collection.complexity_provider import analyze_function_complexity
+from collection.complexity_provider import (
+    analyze_function_complexity,
+    get_file_loc,
+    get_file_function_count,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -119,6 +123,10 @@ class MockResult:
     target_identifier: str
     num_interactions_configured: int
     raw_snippet: str
+    mock_style: str = "stub"  # stub/mock/spy/fake (default: stub)
+    target_layer: str = (
+        "internal"  # boundary/infrastructure/internal/framework (default: internal)
+    )
 
 
 @dataclass
@@ -140,6 +148,9 @@ class FixtureResult:
         0  # number of test functions using this fixture (calculated later)
     )
     has_teardown_pair: int = 0  # 1 if teardown/cleanup logic exists, 0 otherwise
+    fixture_dependencies: list[str] = field(
+        default_factory=list
+    )  # list of fixture names this fixture depends on (Phase 4)
     raw_source: str = ""
     mocks: list[MockResult] = field(default_factory=list)
 
@@ -226,6 +237,12 @@ def _compute_nesting_depth(node) -> int:
 
 def _count_instantiations(node, src_bytes: bytes) -> int:
     """
+    DEPRECATED: Use Lizard-based num_objects_instantiated via analyze_function_complexity instead.
+
+    This function is kept for reference but is no longer used in the main detection flow.
+    The complexity_provider now handles constructor counting by filtering Lizard's
+    external_call_count for constructor patterns, reducing DIY regex logic.
+
     Count 'new X(...)' calls (Java/JS/TS/Go) or capitalised call expressions
     that look like constructors (Python).
 
@@ -311,15 +328,456 @@ def _extract_mocks(node, src_bytes: bytes) -> list[MockResult]:
                     text[m.start() : m.end() + 200],
                 )
             )
+
+            # Phase 3: Classify mock_style and target_layer
+            mock_style = _classify_mock_style(snippet, text, framework)
+            target_layer = _classify_target_layer(target, framework, snippet, text)
+
             found.append(
                 MockResult(
                     framework=framework,
                     target_identifier=target,
                     num_interactions_configured=interactions,
                     raw_snippet=snippet,
+                    mock_style=mock_style,
+                    target_layer=target_layer,
                 )
             )
     return found
+
+
+def _classify_mock_style(snippet: str, full_code: str, framework: str) -> str:
+    """
+    Classify mock object type (stub/mock/spy/fake).
+
+    Classification priority:
+    1. fake: Custom implementation classes with logic
+    2. spy: spy/wrap pattern with real object
+    3. mock: Verify/assert patterns
+    4. stub: Default (only return_value patterns)
+    """
+    # Check for custom class implementation (fake)
+    if re.search(r"class\s+\w+.*:", snippet):
+        return "fake"
+
+    # Check for spy patterns (spy/wrap patterns)
+    spy_patterns = [
+        r"spy\s*\(",  # Mockito: spy(object)
+        r"patch\.object\s*\(",  # unittest_mock: patch.object
+        r"spyOn\s*\(",  # Jest: spyOn
+        r"spy\(",  # Sinon: spy()
+        r"\.when\s*\(",  # Mockito spy: when( on spy
+    ]
+    if any(re.search(p, snippet) for p in spy_patterns):
+        return "spy"
+
+    # Check for mock verify/assert patterns (mock)
+    verify_patterns = [
+        r"\.verify\s*\(",  # Mockito: verify(mock)
+        r"assert_called",  # unittest_mock: assert_called_*
+        r"\.toHaveBeenCalled",  # Jest: toHaveBeenCalled
+        r"calledWith\s*\(",  # Sinon: calledWith
+        r"was_called_with",  # Mockito syntax variant
+        r"\.verify\(",  # Mockito verify call
+    ]
+    if any(re.search(p, full_code) for p in verify_patterns):
+        return "mock"
+
+    # Default: stub (only return_value configured)
+    return "stub"
+
+
+def _classify_target_layer(
+    target_id: str, framework: str, snippet: str, full_code: str
+) -> str:
+    """
+    Classify mocked target by architectural layer.
+
+    Classification priority:
+    1. framework: Testing/DI framework components
+    2. boundary: External services and APIs
+    3. infrastructure: Persistence, caching, logging
+    4. internal: Application domain classes
+    """
+    target_lower = target_id.lower()
+    snippet_lower = snippet.lower()
+    full_lower = full_code.lower()
+
+    # Priority 1: Framework layer
+    framework_keywords = [
+        "pytest",
+        "unittest",
+        "junit",
+        "spring",
+        "django",
+        "fastapi",
+        "request",
+        "response",
+        "session",
+        "engine",
+        "httpresponse",
+        "servletrequest",
+        "httpservletresponse",
+        "mockmvc",
+        "dependency",
+        "inject",
+        "container",
+        "bean",
+    ]
+    if any(kw in target_lower for kw in framework_keywords):
+        return "framework"
+
+    # Priority 2: Boundary (external services)
+    boundary_keywords = [
+        "requests",
+        "urllib",
+        "httplib",
+        "axios",
+        "fetch",
+        "stripe",
+        "paypal",
+        "aws",
+        "azure",
+        "gcp",
+        "gmail",
+        "email",
+        "twilio",
+        "sendgrid",
+        "github",
+        "gitlab",
+        "apikey",
+        "api_",
+        "oauth",
+        "auth",
+        "service",
+        "client",
+        "sdk",
+    ]
+    if any(kw in target_lower for kw in boundary_keywords):
+        return "boundary"
+
+    # Priority 3: Infrastructure (persistence/storage)
+    infrastructure_keywords = [
+        "database",
+        "db",
+        "cache",
+        "redis",
+        "mongo",
+        "sql",
+        "postgres",
+        "repository",
+        "dao",
+        "store",
+        "logger",
+        "log",
+        "file",
+        "filesystem",
+        "path",
+        "queue",
+        "kafka",
+        "rabbitmq",
+        "bucket",
+        "storage",
+        "stream",
+    ]
+    if any(kw in target_lower for kw in infrastructure_keywords):
+        return "infrastructure"
+
+    # Default: Internal (application domain)
+    return "internal"
+
+
+def is_mock_framework_available(
+    framework: str, language: str, repo_path: Path = None
+) -> bool:
+    """
+    Check if a detected mock framework is actually available in the project (Phase 4).
+
+    When a mock framework is detected via code pattern matching, this function
+    attempts to verify that the framework is actually installed/declared as a
+    dependency in the project. This reduces false positives from using similar
+    framework names or homonyms.
+
+    Args:
+        framework: Detected framework name (e.g., "mockito", "unittest_mock", "jest")
+        language: Programming language
+        repo_path: Optional path to repository root for dependency file scanning
+
+    Returns:
+        True if framework is confirmed as available or repo_path not provided,
+        False if verified as NOT available in dependencies
+
+    Implementation:
+        Scans language-specific dependency files:
+        - Python: requirements.txt, setup.py, pyproject.toml, poetry.lock, Pipfile
+        - Java: pom.xml, build.gradle, build.gradle.kts
+        - JavaScript/TypeScript: package.json, package-lock.json, yarn.lock, pnpm-lock.yaml
+        - Go: go.mod, go.sum
+
+    Returns True if:
+    - repo_path not provided (cannot verify, assume available)
+    - Framework found in any dependency file
+    - Framework is built-in (e.g., unittest for Python)
+
+    Returns False if:
+    - Framework pattern searched but NOT found in any dependency file
+    """
+    if not repo_path:
+        # No repo context provided, accept all frameworks
+        return True
+
+    # Map framework names to package/module names to search for
+    framework_mappings = {
+        # Python frameworks
+        "unittest_mock": ["unittest"],  # built-in
+        "pytest_mock": ["pytest", "pytest-mock"],
+        "mockito": ["mockito", "mockito-python"],
+        "mock": ["mock", "unittest"],  # built-in or pypi
+        # Java frameworks
+        "mockito": ["mockito"],  # looks for org.mockito:mockito-core
+        "easymock": ["easymock"],
+        "mockk": ["mockk"],
+        "jmockit": ["jmockit"],
+        # JavaScript/TypeScript frameworks
+        "jest": ["jest"],
+        "sinon": ["sinon"],
+        "vitest": ["vitest"],
+        "mocha": ["mocha"],
+        "jasmine": ["jasmine"],
+        # Go frameworks
+        "gomock": ["gomock", "mock"],
+        "testify_mock": ["testify"],
+    }
+
+    # Get package names to search for
+    package_names = framework_mappings.get(framework, [framework])
+
+    # Language-specific dependency file scanning
+    if language.lower() == "python":
+        return _check_python_dependencies(repo_path, package_names)
+    elif language.lower() == "java":
+        return _check_java_dependencies(repo_path, package_names)
+    elif language.lower() in ("javascript", "typescript"):
+        return _check_javascript_dependencies(repo_path, package_names)
+    elif language.lower() == "go":
+        return _check_go_dependencies(repo_path, package_names)
+
+    # Unknown language, assume available
+    return True
+
+
+def _check_python_dependencies(repo_path: Path, package_names: list[str]) -> bool:
+    """Check if any package is listed in Python dependency files."""
+    package_names_lower = [p.lower() for p in package_names]
+
+    # Check requirements.txt
+    req_file = repo_path / "requirements.txt"
+    if req_file.exists():
+        try:
+            content = req_file.read_text(errors="ignore")
+            for pkg in package_names_lower:
+                # Match package name (case-insensitive, handle version specs)
+                if re.search(rf"\b{re.escape(pkg)}\b", content, re.IGNORECASE):
+                    return True
+        except Exception:
+            pass
+
+    # Check setup.py
+    setup_file = repo_path / "setup.py"
+    if setup_file.exists():
+        try:
+            content = setup_file.read_text(errors="ignore")
+            for pkg in package_names_lower:
+                if re.search(rf"\b{re.escape(pkg)}\b", content, re.IGNORECASE):
+                    return True
+        except Exception:
+            pass
+
+    # Check pyproject.toml
+    pyproject_file = repo_path / "pyproject.toml"
+    if pyproject_file.exists():
+        try:
+            content = pyproject_file.read_text(errors="ignore")
+            for pkg in package_names_lower:
+                if re.search(rf"\b{re.escape(pkg)}\b", content, re.IGNORECASE):
+                    return True
+        except Exception:
+            pass
+
+    # Check poetry.lock
+    poetry_file = repo_path / "poetry.lock"
+    if poetry_file.exists():
+        try:
+            content = poetry_file.read_text(errors="ignore")
+            for pkg in package_names_lower:
+                if re.search(
+                    rf"^name = \"{re.escape(pkg)}\"",
+                    content,
+                    re.IGNORECASE | re.MULTILINE,
+                ):
+                    return True
+        except Exception:
+            pass
+
+    # If no files found with the package, assume not available
+    return False
+
+
+def _check_java_dependencies(repo_path: Path, package_names: list[str]) -> bool:
+    """Check if any package is listed in Java dependency files."""
+    package_names_lower = [p.lower() for p in package_names]
+
+    # Check pom.xml (Maven)
+    pom_file = repo_path / "pom.xml"
+    if pom_file.exists():
+        try:
+            content = pom_file.read_text(errors="ignore")
+            for pkg in package_names_lower:
+                # Search for artifact ID or group ID containing package name
+                if re.search(
+                    rf"<artifactId>.*{re.escape(pkg)}.*</artifactId>",
+                    content,
+                    re.IGNORECASE,
+                ):
+                    return True
+                if re.search(
+                    rf"<groupId>.*{re.escape(pkg)}.*</groupId>", content, re.IGNORECASE
+                ):
+                    return True
+        except Exception:
+            pass
+
+    # Check build.gradle
+    gradle_file = repo_path / "build.gradle"
+    if gradle_file.exists():
+        try:
+            content = gradle_file.read_text(errors="ignore")
+            for pkg in package_names_lower:
+                if re.search(rf"\b{re.escape(pkg)}\b", content, re.IGNORECASE):
+                    return True
+        except Exception:
+            pass
+
+    # Check build.gradle.kts
+    gradle_kts_file = repo_path / "build.gradle.kts"
+    if gradle_kts_file.exists():
+        try:
+            content = gradle_kts_file.read_text(errors="ignore")
+            for pkg in package_names_lower:
+                if re.search(rf"\b{re.escape(pkg)}\b", content, re.IGNORECASE):
+                    return True
+        except Exception:
+            pass
+
+    return False
+
+
+def _check_javascript_dependencies(repo_path: Path, package_names: list[str]) -> bool:
+    """Check if any package is listed in JavaScript dependency files."""
+    import json
+
+    package_names_lower = [p.lower() for p in package_names]
+
+    # Check package.json
+    package_file = repo_path / "package.json"
+    if package_file.exists():
+        try:
+            content = json.loads(package_file.read_text())
+            deps = content.get("dependencies", {})
+            dev_deps = content.get("devDependencies", {})
+            all_deps = {**deps, **dev_deps}
+
+            for pkg in package_names_lower:
+                if pkg in all_deps or pkg.replace("-", "_") in all_deps:
+                    return True
+        except Exception:
+            pass
+
+    # Check package-lock.json
+    lock_file = repo_path / "package-lock.json"
+    if lock_file.exists():
+        try:
+            content = json.loads(lock_file.read_text())
+            packages = content.get("packages", {})
+            for pkg_path in packages:
+                for pkg in package_names_lower:
+                    if pkg in pkg_path.lower():
+                        return True
+        except Exception:
+            pass
+
+    # Check yarn.lock (text format)
+    yarn_file = repo_path / "yarn.lock"
+    if yarn_file.exists():
+        try:
+            content = yarn_file.read_text(errors="ignore")
+            for pkg in package_names_lower:
+                if re.search(
+                    rf"^{re.escape(pkg)}@", content, re.IGNORECASE | re.MULTILINE
+                ):
+                    return True
+        except Exception:
+            pass
+
+    return False
+
+
+def _check_go_dependencies(repo_path: Path, package_names: list[str]) -> bool:
+    """Check if any package is listed in Go dependency files."""
+    package_names_lower = [p.lower() for p in package_names]
+
+    # Check go.mod
+    gomod_file = repo_path / "go.mod"
+    if gomod_file.exists():
+        try:
+            content = gomod_file.read_text(errors="ignore")
+            for pkg in package_names_lower:
+                if re.search(rf"\b{re.escape(pkg)}\b", content, re.IGNORECASE):
+                    return True
+        except Exception:
+            pass
+
+    # Check go.sum
+    gosum_file = repo_path / "go.sum"
+    if gosum_file.exists():
+        try:
+            content = gosum_file.read_text(errors="ignore")
+            for pkg in package_names_lower:
+                if re.search(rf"{re.escape(pkg)}", content, re.IGNORECASE):
+                    return True
+        except Exception:
+            pass
+
+    return False
+
+
+def _validate_framework(framework: str, language: str) -> str:
+    """
+    Validate detected framework against FRAMEWORK_REGISTRY.
+
+    If framework is not in the registry for the language, returns it as-is
+    (we still record it to discover new frameworks), but logs a warning.
+    This allows the system to be forward-compatible with new frameworks
+    while maintaining a canonical registry of known ones.
+
+    Args:
+        framework: Detected framework name (e.g., "pytest", "mockito")
+        language: Programming language (e.g., "python", "java")
+
+    Returns:
+        The framework name (unchanged, for further processing)
+    """
+    from collection.config import is_known_framework, get_known_frameworks
+
+    if not is_known_framework(framework, language):
+        known = get_known_frameworks(language)
+        logger.debug(
+            f"Detected framework '{framework}' not in registry for {language}. "
+            f"Known frameworks: {known}. "
+            f"This may be a new/custom framework or a detection error."
+        )
+
+    return framework
 
 
 # ---------------------------------------------------------------------------
@@ -345,6 +803,8 @@ def _detect_python(
 
             for dec in decorators:
                 dec_text = _source(dec, src_bytes)
+
+                # pytest.fixture decorator
                 if "fixture" in dec_text and "pytest" in dec_text:
                     scope = "per_test"
                     scope_match = re.search(r'scope\s*=\s*["\'](\w+)["\']', dec_text)
@@ -366,6 +826,31 @@ def _detect_python(
                             fixture_type="pytest_decorator",
                             scope=scope,
                             framework="pytest",
+                            language="python",
+                        )
+                    )
+                    break
+
+                # BDD fixtures: Behave @given, @when, @then, @step decorators
+                behave_match = re.search(r"@(given|when|then|step)\s*\(", dec_text)
+                if behave_match:
+                    fixture_type_map = {
+                        "given": "behave_given",
+                        "when": "behave_when",
+                        "then": "behave_then",
+                        "step": "behave_step",
+                    }
+                    fixture_type = fixture_type_map.get(
+                        behave_match.group(1), "behave_step"
+                    )
+                    results.append(
+                        _build_result(
+                            node=node,
+                            func_node=func_def,
+                            src_bytes=src_bytes,
+                            fixture_type=fixture_type,
+                            scope="per_test",  # BDD steps are per-test
+                            framework="behave",
                             language="python",
                         )
                     )
@@ -477,6 +962,19 @@ JUNIT_FIXTURE_ANNOTATIONS = {
     "@DataProvider": ("testng_data_provider", "per_test"),  # TestNG data-driven fixture
     "@Rule": ("junit_rule", "per_test"),  # JUnit @Rule fixture fields
     "@ClassRule": ("junit_class_rule", "per_class"),  # JUnit @ClassRule fixture fields
+    # Spring Framework annotations
+    "@Bean": ("spring_bean", "per_class"),  # Spring @Bean factory method
+    "@TestConfiguration": (
+        "spring_test_config",
+        "per_class",
+    ),  # Spring @TestConfiguration
+    # Cucumber BDD step definitions
+    "@Given": ("cucumber_given", "per_test"),  # Cucumber @Given step
+    "@When": ("cucumber_when", "per_test"),  # Cucumber @When step
+    "@Then": ("cucumber_then", "per_test"),  # Cucumber @Then step
+    "@And": ("cucumber_and", "per_test"),  # Cucumber @And step (context-dependent)
+    "@But": ("cucumber_but", "per_test"),  # Cucumber @But step (context-dependent)
+    "@Attachment": ("cucumber_attachment", "per_test"),  # Cucumber @Attachment hook
 }
 
 # Annotations that appear in both JUnit4 and TestNG (require context to disambiguate)
@@ -917,8 +1415,12 @@ def _build_result(
         cyclomatic_complexity=metrics.get("cyclomatic_complexity", 1),
         cognitive_complexity=metrics.get("cognitive_complexity", 0),
         max_nesting_depth=nesting_depth,
-        num_objects_instantiated=_count_instantiations(node, src_bytes),
-        num_external_calls=_count_external_calls(node, src_bytes),  # Custom regex
+        num_objects_instantiated=metrics.get(
+            "num_objects_instantiated", 0
+        ),  # Via Lizard + post-processing
+        num_external_calls=_count_external_calls(
+            node, src_bytes
+        ),  # Custom regex for I/O patterns
         num_parameters=metrics.get("num_parameters", 0),
         reuse_count=0,  # Calculated in post-processing
         has_teardown_pair=0,  # Calculated in post-processing
@@ -1115,6 +1617,120 @@ def _calculate_reuse_counts(
                     fixture.reuse_count = 1
 
 
+def _detect_fixture_dependencies(fixtures: list[FixtureResult]) -> None:
+    """
+    Detect fixture dependencies for pytest fixtures (Phase 4).
+
+    For pytest fixtures, detects when a fixture takes another fixture as a parameter.
+    Example: @pytest.fixture; def fixture_a(fixture_b): ...
+
+    This enables analysis of:
+    - Fixture dependency graphs
+    - Scope propagation (dependent on higher-level scopes)
+    - Modularity patterns (how fixtures are reused and composed)
+
+    Modifies fixtures in-place, populating fixture_dependencies field.
+    """
+    # Build a name -> fixture mapping for quick lookup
+    fixtures_by_name = {f.name: f for f in fixtures}
+
+    for fixture in fixtures:
+        # Only detect dependencies for pytest fixtures (which have parameters)
+        if fixture.fixture_type != "pytest_decorator":
+            continue
+
+        # Extract parameter names from raw source
+        # Pattern: def fixture_name(param1, param2, ...): or async def fixture_name(...):
+        # Use regex to extract parameters
+        import re
+
+        # Match: def name(params) or async def name(params)
+        param_match = re.search(
+            r"(?:async\s+)?def\s+\w+\s*\(([^)]*)\)", fixture.raw_source
+        )
+        if not param_match:
+            continue
+
+        params_str = param_match.group(1)
+        if not params_str.strip():
+            continue
+
+        # Parse parameter names (simple split by comma, handle type hints)
+        param_names = []
+        for param in params_str.split(","):
+            param = param.strip()
+            if not param or param == "self":
+                continue
+
+            # Extract parameter name (before : or =)
+            # Examples: "name", "name: Type", "name: Type = default", "name=default"
+            param_name = param.split(":")[0].split("=")[0].strip()
+            if param_name:
+                param_names.append(param_name)
+
+        # Check which parameters are fixtures (exist in fixtures_by_name)
+        for param_name in param_names:
+            if param_name in fixtures_by_name:
+                fixture.fixture_dependencies.append(param_name)
+
+
+def _propagate_fixture_scopes(fixtures: list[FixtureResult]) -> None:
+    """
+    Propagate scope constraints based on fixture dependencies (Phase 4).
+
+    When fixture A depends on fixture B, the scope of A is constrained by B:
+    - If B is per_test and A is per_module, A must be downgraded to per_test
+    - Scope hierarchy: per_test < per_class < per_module < global
+
+    This prevents impossible configurations (module-scoped fixture depending on test-scoped fixture).
+
+    Modifies fixtures in-place, updating scope field.
+    """
+    scope_order = {
+        "per_test": 0,
+        "per_class": 1,
+        "per_module": 2,
+        "global": 3,
+    }
+
+    # Build name -> fixture map
+    fixtures_by_name = {f.name: f for f in fixtures}
+
+    # Propagate scopes (may need multiple passes for chains of dependencies)
+    max_iterations = len(fixtures)
+    for iteration in range(max_iterations):
+        changed = False
+
+        for fixture in fixtures:
+            if not fixture.fixture_dependencies:
+                continue
+
+            current_scope_level = scope_order.get(fixture.scope, 0)
+
+            # Find the most restrictive scope among dependencies
+            most_restrictive_level = current_scope_level
+            for dep_name in fixture.fixture_dependencies:
+                dep_fixture = fixtures_by_name.get(dep_name)
+                if dep_fixture:
+                    dep_scope_level = scope_order.get(dep_fixture.scope, 0)
+                    most_restrictive_level = min(
+                        most_restrictive_level, dep_scope_level
+                    )
+
+            # If scope needs to be updated, do it
+            if most_restrictive_level < current_scope_level:
+                # Find the scope name for this level
+                for scope_name, level in scope_order.items():
+                    if level == most_restrictive_level:
+                        fixture.scope = scope_name
+                        changed = True
+                        break
+
+        # If no changes, we're done
+        if not changed:
+            break
+
+
 def _calculate_teardown_pairs(fixtures: list[FixtureResult]) -> None:
     """
     Post-process fixtures to detect has_teardown_pair: whether a fixture has cleanup logic.
@@ -1252,10 +1868,18 @@ def extract_fixtures(file_path: Path, language: str) -> ExtractResult:
 
         # Post-process fixtures to calculate metrics that depend on file-wide context
         _calculate_reuse_counts(fixtures, tree, src_bytes, language)
+        _detect_fixture_dependencies(
+            fixtures
+        )  # Phase 4: detect pytest fixture dependencies
+        _propagate_fixture_scopes(fixtures)  # Phase 4: propagate scope constraints
         _calculate_teardown_pairs(fixtures)
 
-        file_loc = _count_file_loc(src_bytes)
-        num_test_functions = _count_test_functions(tree, src_bytes, language)
+        # Phase 3: Use Lizard for file-level metrics instead of manual counting
+        # This provides consistency with fixture-level complexity analysis
+        file_loc = _count_file_loc(
+            src_bytes
+        )  # Keep manual counting for non-blank lines
+        num_test_functions = get_file_function_count(file_path, language)
         return ExtractResult(
             fixtures=fixtures, file_loc=file_loc, num_test_functions=num_test_functions
         )

@@ -49,7 +49,8 @@ public class Test extends TestCase {
 }
 """
         fixture = assert_fixture_detected(code, "java", "setUp")
-        assert fixture.num_objects_instantiated >= 2
+        # Only counts 'new' constructor calls, not method calls like Mockito.spy()
+        assert fixture.num_objects_instantiated == 1
 
 
 class TestJavaPowerMockPatterns:

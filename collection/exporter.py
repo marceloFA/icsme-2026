@@ -144,22 +144,23 @@ def export_dataset(version: str = "1.0", include_raw_source: bool = False) -> Pa
         exclude_cols=["mock_style", "target_layer", "raw_snippet"],
     )
 
-    # fixtures: exclude raw_source and category by default
+    # fixtures: exclude raw_source, category, and has_teardown_pair by default
     # raw_source: large text, already in SQLite
     # category: subjective fixture classification, for internal analysis only
+    # has_teardown_pair: qualitative cleanup indicator, internal analysis only
     if include_raw_source:
         _export_table(
             conn,
             "fixtures",
             staging / "fixtures_with_source.csv",
-            exclude_cols=["category"],
+            exclude_cols=["category", "has_teardown_pair"],
         )
     else:
         _export_table(
             conn,
             "fixtures",
             staging / "fixtures.csv",
-            exclude_cols=["raw_source", "category"],
+            exclude_cols=["raw_source", "category", "has_teardown_pair"],
         )
 
     # --- Language-specific fixture CSVs (for Zenodo) ---
@@ -201,13 +202,14 @@ def _export_language_specific_fixtures(conn: sqlite3.Connection, staging: Path) 
     Export fixtures as language-specific CSVs (one row per fixture, with repo context).
 
     Each CSV includes:
-    - Repository info (full_name, github_id, stars, etc.)
+    - Repository info (full_name, github_id, stars, forks, num_contributors, etc.)
     - Fixture metadata (name, fixture_type, scope, LOC, complexity metrics)
+    - Phase 3 metrics: max_nesting_depth, reuse_count (quantitative)
     - Mock usage count for this fixture
     - Test file metadata
     - GitHub URL to the exact fixture location in the source
 
-    NOTE: Category field is excluded (subjective internal classification).
+    NOTE: Qualitative fields excluded (category, has_teardown_pair for internal analysis only).
 
     Generated files: fixtures_python.csv, fixtures_java.csv, etc.
     """
@@ -222,6 +224,7 @@ def _export_language_specific_fixtures(conn: sqlite3.Connection, staging: Path) 
             r.pinned_commit,
             r.stars,
             r.forks,
+            r.num_contributors,
             tf.relative_path as test_file_path,
             f.id as fixture_id,
             f.name as fixture_name,
@@ -232,6 +235,8 @@ def _export_language_specific_fixtures(conn: sqlite3.Connection, staging: Path) 
             f.loc,
             f.cyclomatic_complexity,
             f.cognitive_complexity,
+            f.max_nesting_depth,
+            f.reuse_count,
             f.num_objects_instantiated,
             f.num_external_calls,
             f.num_parameters,

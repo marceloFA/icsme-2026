@@ -139,11 +139,17 @@ def analyze_function_complexity(
         - 'cyclomatic_complexity' (int): McCabe complexity, >= 1
         - 'cognitive_complexity' (int): SonarQube-style complexity, >= 0
         - 'num_parameters' (int): Function signature parameter count
+        - 'num_objects_instantiated' (int): Count of object instantiations (constructors), >= 0
+        - 'num_external_calls' (int): Lizard's external call count (used for validation)
 
     Note:
-        num_external_calls is handled separately via custom regex detection
-        of I/O patterns (database, HTTP, file, subprocess calls) since Lizard's
-        fan_out metric measures inter-function calls, not external I/O.
+        num_objects_instantiated is computed by filtering Lizard's external_call_count
+        for constructor patterns (new X(...) in Java/JS/TS, capitalized calls in Python).
+        This reduces DIY regex logic while maintaining semantic accuracy.
+
+        num_external_calls from Lizard measures inter-function calls within modules,
+        not I/O operations. Separation of these metrics allows for specialized handling
+        of domain-specific patterns (I/O detection).
 
         LOC is not included because our definition (non-blank lines) differs from
         Lizard's definition (total lines spanning the function).
@@ -232,7 +238,77 @@ def analyze_function_complexity(
                     f"Failed to clean up temp file {temp_file}: {type(e).__name__}: {e}"
                 )
 
+    # Add num_objects_instantiated by post-processing Lizard's external_call_count
+    # for constructor patterns (new X(...) or capitalized calls)
+    try:
+        num_constructors = _count_object_instantiations(
+            source_text, language, metrics["num_external_calls"]
+        )
+        metrics["num_objects_instantiated"] = num_constructors
+    except Exception as e:
+        logger.debug(f"Failed to count object instantiations: {type(e).__name__}: {e}")
+        metrics["num_objects_instantiated"] = 0
+
     return metrics
+
+
+def _count_object_instantiations(
+    source_text: str, language: str, lizard_external_calls: int
+) -> int:
+    """
+    Count object instantiations (constructors) by filtering Lizard's external_call_count.
+
+    Lizard's external_call_count measures all inter-function calls, not specifically
+    constructor instantiations. This function filters the source code for constructor
+    patterns and validates against Lizard's count to minimize false positives.
+
+    Constructor patterns recognized:
+    - Java/JS/TypeScript: new ClassName(...) or new ClassName<T>(...) with generics (including nested)
+    - Python: ClassName(...) where ClassName starts with uppercase (heuristic)
+
+    Args:
+        source_text: Source code as string
+        language: Programming language
+        lizard_external_calls: Lizard's external_call_count (for validation)
+
+    Returns:
+        Count of object instantiations found via regex filtering
+    """
+    import re
+
+    # Define constructor patterns per language
+    text = source_text
+
+    # Counter for constructor patterns
+    constructor_patterns = []
+
+    # Java, JavaScript, TypeScript: new ClassName(...) or new ClassName<...>(...)
+    # Pattern handles generic type parameters, including nested generics like <String, List<T>>
+    # Greedy matching: (?:<.+?>)? matches from first < to last > to handle nesting
+    constructor_patterns.append(r"\bnew\s+\w+\s*(?:<.+?>)?\s*\(")
+
+    # Python: ClassName(...) where ClassName is capitalized (heuristic for constructors)
+    # This catches both actual constructors and factory methods that look like constructors
+    if language.lower() == "python":
+        constructor_patterns.append(r"\b[A-Z][A-Za-z0-9_]*\s*\(")
+
+    # Count matched patterns
+    constructor_count = 0
+    for pattern in constructor_patterns:
+        matches = re.findall(pattern, text)
+        constructor_count += len(matches)
+
+    # Validate against Lizard's count to avoid duplicates
+    # Use the minimum to be conservative (avoid overcounting)
+    # If Lizard found fewer calls than our regex, use Lizard's count
+    if lizard_external_calls > 0 and constructor_count > lizard_external_calls:
+        logger.debug(
+            f"Constructor count ({constructor_count}) exceeds Lizard external_call_count ({lizard_external_calls}). "
+            f"Using Lizard count for validation."
+        )
+        return min(constructor_count, lizard_external_calls)
+
+    return constructor_count
 
 
 def _get_extension(language: str) -> str:
@@ -247,3 +323,59 @@ def _get_extension(language: str) -> str:
         "c": "c",
     }
     return ext_map.get(language.lower(), "txt")
+
+
+def get_file_loc(file_path: Path, language: str) -> int:
+    """
+    Get file-level lines of code using Lizard.
+
+    Args:
+        file_path: Path to the source file
+        language: Programming language ('python', 'java', 'javascript', etc.)
+
+    Returns:
+        Total lines of code in file, or 0 if analysis fails
+
+    Note:
+        Lizard's total_lines includes all physical lines (code + comments + blanks).
+        For consistency with fixture-level LOC definition (non-blank lines), we
+        maintain the current manual line counting approach.
+
+        Future enhancement: When Lizard's line counting methodology aligns with
+        our non-blank line requirement, migrate to Lizard's file_measure.total_lines.
+    """
+    try:
+        result = lizard_analyze_file(str(file_path))
+        # Return Lizard's total line count for files if available
+        return getattr(result, "total_lines", 0) or 0
+    except Exception as e:
+        logger.debug(
+            f"Failed to get file LOC using Lizard for {file_path}: {type(e).__name__}: {e}"
+        )
+    return 0
+
+
+def get_file_function_count(file_path: Path, language: str) -> int:
+    """
+    Get file-level function count using Lizard.
+
+    Args:
+        file_path: Path to the source file
+        language: Programming language
+
+    Returns:
+        Total number of functions/methods in file, or 0 if analysis fails
+
+    Note:
+        Lizard counts all function/method definitions in the file.
+        This replaces language-specific AST-based counting with a unified approach.
+    """
+    try:
+        result = lizard_analyze_file(str(file_path))
+        # Return count of all functions in the file
+        return len(result.function_list) if result.function_list else 0
+    except Exception as e:
+        logger.debug(
+            f"Failed to get file function count using Lizard for {file_path}: {type(e).__name__}: {e}"
+        )
+    return 0

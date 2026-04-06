@@ -238,6 +238,42 @@ def star_tier(stars: int) -> str:
     return "core" if stars >= STAR_TIER_CORE_THRESHOLD else "extended"
 
 
+def is_known_framework(framework: str, language: str) -> bool:
+    """
+    Check if a detected framework is in the official registry for the language.
+
+    This is used to validate framework detection results and catch misdetections.
+    Framework names are case-insensitive for comparison.
+
+    Args:
+        framework: Detected framework name (e.g., "pytest", "junit")
+        language: Programming language (e.g., "python", "java")
+
+    Returns:
+        True if framework is in FRAMEWORK_REGISTRY for the language, False otherwise
+    """
+    if language not in FRAMEWORK_REGISTRY:
+        return False
+
+    # Normalize to lowercase for comparison
+    framework_lower = framework.lower()
+    known_frameworks = [f.lower() for f in FRAMEWORK_REGISTRY[language]]
+    return framework_lower in known_frameworks
+
+
+def get_known_frameworks(language: str) -> list[str]:
+    """
+    Get the list of known frameworks for a language.
+
+    Args:
+        language: Programming language (e.g., "python", "java")
+
+    Returns:
+        List of canonical framework names for the language, or empty list if language not found
+    """
+    return FRAMEWORK_REGISTRY.get(language, [])
+
+
 EXCLUSION_KEYWORDS = [
     "tutorial",
     "course",
@@ -326,6 +362,96 @@ LANGUAGE_CONFIGS = {
         test_path_patterns=["test/", "tests/", "_test.go"],
         test_file_suffixes=["_test.go"],
     ),
+}
+
+# ---------------------------------------------------------------------------
+# Testing Framework Registry
+#
+# Authoritative mapping of testing frameworks per language.
+# Used to validate detected frameworks and ensure consistency.
+# Categories: unit, integration, bdd, mocking
+#
+# This registry supports:
+# 1. Validation of detected frameworks (catch typos/misspellings)
+# 2. Documentation of known frameworks for each language
+# 3. Consistency across analyses (canonical names)
+# 4. Future enhancement: generating detection patterns from registry
+# ---------------------------------------------------------------------------
+
+FRAMEWORK_REGISTRY = {
+    "python": [
+        # Unit testing frameworks
+        "pytest",  # Most popular, decorator-based
+        "unittest",  # Standard library
+        "nose",  # Legacy discovery-based
+        "nose2",  # Modernized nose
+        "doctest",  # Docstring-based
+        # BDD frameworks
+        "behave",  # Gherkin syntax
+        "pytest-bdd",  # BDD with pytest
+        # Mocking frameworks (detected in fixtures)
+        "unittest_mock",  # Standard library mocking
+        "pytest_mock",  # Pytest-style mocking
+        # Async testing
+        "pytest-asyncio",  # Async fixtures
+        # Other frameworks
+        "testtools",  # Extended assertions
+        "trial",  # Twisted async testing
+    ],
+    "java": [
+        # Unit testing frameworks
+        "junit",  # JUnit 3/4/5 (captured as generic "junit")
+        "testng",  # Annotations-based
+        # BDD frameworks
+        "spock",  # Groovy-based BDD
+        "cucumber",  # Gherkin syntax
+        # Mocking frameworks (detected in fixtures)
+        "mockito",  # Primary Java mocking framework
+        "easymock",  # Legacy Java mocking
+        "powermock",  # Extension to Mockito
+        # Specialized
+        "testify",  # Custom framework
+        "jtest",  # Genetic programming testing
+        "arquillian",  # Container testing
+    ],
+    "javascript": [
+        # Unit testing frameworks
+        "jest",  # Snapshot and coverage built-in
+        "mocha",  # Most flexible, often paired with chai
+        "jasmine",  # Behavior-driven
+        "ava",  # Concurrent test runner
+        "vitest",  # Vite-native test runner
+        # BDD frameworks
+        "cucumber",  # Gherkin syntax
+        # Mocking/stubbing (detected in fixtures)
+        "sinon",  # Spies, stubs, mocks (often with mocha/jasmine)
+        # Testing utilities
+        "tap",  # Test Anything Protocol
+        "uvu",  # Lightweight test runner
+        "node-tap",  # TAP version for Node
+    ],
+    "typescript": [
+        # Unit testing frameworks (TypeScript-native)
+        "jest",  # With @types/jest
+        "mocha",  # With typescript plugin
+        "jasmine",  # TypeScript support
+        "vitest",  # Vite-native with TypeScript
+        "ava",  # With TypeScript support
+        # BDD frameworks
+        "cucumber",  # With TypeScript support
+        # Mocking (detected in fixtures)
+        "sinon",  # Works with TypeScript
+    ],
+    "go": [
+        # Built-in and standard approaches
+        "testing",  # Go standard library (captured as framework name)
+        # BDD frameworks
+        "ginkgo",  # BDD testing framework
+        "goblin",  # Mocha-like BDD
+        # Mocking frameworks (detected in fixtures)
+        "gomock",  # Code generation for mocks
+        "testify",  # Testify with mock support
+    ],
 }
 
 # Minimum thresholds applied after cloning

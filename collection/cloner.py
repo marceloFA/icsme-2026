@@ -181,7 +181,12 @@ def clone_repo(
     if commit_count < MIN_COMMITS:
         shutil.rmtree(target_dir, ignore_errors=True)
         logger.debug(f"[clone] Skip {full_name}: only {commit_count} commits")
-        return repo_id, "skipped", None, f"insufficient commits ({commit_count} < {MIN_COMMITS})"
+        return (
+            repo_id,
+            "skipped",
+            None,
+            f"insufficient commits ({commit_count} < {MIN_COMMITS})",
+        )
 
     # Quality filter 2: test file count
     config = LANGUAGE_CONFIGS.get(language)
@@ -189,7 +194,12 @@ def clone_repo(
     if test_file_count < MIN_TEST_FILES:
         shutil.rmtree(target_dir, ignore_errors=True)
         logger.debug(f"[clone] Skip {full_name}: only {test_file_count} test files")
-        return repo_id, "skipped", None, f"insufficient test files ({test_file_count} < {MIN_TEST_FILES})"
+        return (
+            repo_id,
+            "skipped",
+            None,
+            f"insufficient test files ({test_file_count} < {MIN_TEST_FILES})",
+        )
 
     commit = _get_head_sha(target_dir)
     logger.info(
@@ -399,7 +409,9 @@ def clone_pending_repos(
             processed += 1
 
             with db_session() as conn:
-                set_repo_status(conn, repo_id, status, skip_reason=skip_reason, pinned_commit=commit)
+                set_repo_status(
+                    conn, repo_id, status, skip_reason=skip_reason, pinned_commit=commit
+                )
 
             # Log progress periodically
             if processed % progress_interval == 0 or processed == batch_total:

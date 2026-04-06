@@ -27,7 +27,8 @@ def temp_db():
         stars INTEGER,
         forks INTEGER,
         status TEXT DEFAULT 'discovered',
-        pinned_commit TEXT
+        pinned_commit TEXT,
+        num_contributors INTEGER DEFAULT 0
     );
     
     CREATE TABLE test_files (
@@ -50,9 +51,12 @@ def temp_db():
         loc INTEGER,
         cyclomatic_complexity INTEGER,
         cognitive_complexity INTEGER,
+        max_nesting_depth INTEGER DEFAULT 1,
         num_objects_instantiated INTEGER,
         num_external_calls INTEGER,
         num_parameters INTEGER,
+        reuse_count INTEGER DEFAULT 0,
+        has_teardown_pair INTEGER DEFAULT 0,
         category TEXT,
         framework TEXT,
         UNIQUE(file_id, name, start_line)
@@ -68,10 +72,10 @@ def temp_db():
 
     # Insert test data
     conn.execute(
-        "INSERT INTO repositories VALUES (1, 12345, 'pytest-dev/pytest', 'python', 5000, 500, 'analysed', 'abc123def456')"
+        "INSERT INTO repositories VALUES (1, 12345, 'pytest-dev/pytest', 'python', 5000, 500, 'analysed', 'abc123def456', 150)"
     )
     conn.execute(
-        "INSERT INTO repositories VALUES (2, 12346, 'junit-team/junit4', 'java', 4000, 400, 'analysed', 'xyz789uvw012')"
+        "INSERT INTO repositories VALUES (2, 12346, 'junit-team/junit4', 'java', 4000, 400, 'analysed', 'xyz789uvw012', 75)"
     )
     conn.execute(
         "INSERT INTO test_files VALUES (1, 1, 'testing/test_config.py', 'python')"
@@ -83,15 +87,15 @@ def temp_db():
     # Fixtures
     conn.execute(
         """INSERT INTO fixtures VALUES 
-           (1, 1, 1, 'setup_config', 'pytest_decorator', 'per_test', 10, 20, 11, 2, 2, 2, 1, 0, 'setup', 'pytest')"""
+           (1, 1, 1, 'setup_config', 'pytest_decorator', 'per_test', 10, 20, 11, 2, 2, 1, 2, 1, 0, 1, 0, 'setup', 'pytest')"""
     )
     conn.execute(
         """INSERT INTO fixtures VALUES 
-           (2, 1, 1, 'teardown_config', 'pytest_decorator', 'per_test', 22, 25, 4, 1, 1, 0, 0, 0, 'teardown', 'pytest')"""
+           (2, 1, 1, 'teardown_config', 'pytest_decorator', 'per_test', 22, 25, 4, 1, 1, 1, 0, 0, 0, 0, 1, 'teardown', 'pytest')"""
     )
     conn.execute(
         """INSERT INTO fixtures VALUES 
-           (3, 2, 2, 'setUp', 'junit4_before', 'per_test', 15, 25, 11, 2, 2, 1, 0, 0, 'setup', 'junit')"""
+           (3, 2, 2, 'setUp', 'junit4_before', 'per_test', 15, 25, 11, 2, 2, 2, 1, 0, 0, 1, 0, 'setup', 'junit')"""
     )
 
     # Mock usages
@@ -178,7 +182,8 @@ def test_fixture_csv_has_expected_columns():
         stars INTEGER,
         forks INTEGER,
         status TEXT DEFAULT 'discovered',
-        pinned_commit TEXT
+        pinned_commit TEXT,
+        num_contributors INTEGER DEFAULT 0
     );
     
     CREATE TABLE test_files (
@@ -201,9 +206,12 @@ def test_fixture_csv_has_expected_columns():
         loc INTEGER,
         cyclomatic_complexity INTEGER,
         cognitive_complexity INTEGER,
+        max_nesting_depth INTEGER DEFAULT 1,
         num_objects_instantiated INTEGER,
         num_external_calls INTEGER,
         num_parameters INTEGER,
+        reuse_count INTEGER DEFAULT 0,
+        has_teardown_pair INTEGER DEFAULT 0,
         category TEXT,
         framework TEXT,
         UNIQUE(file_id, name, start_line)
@@ -218,14 +226,15 @@ def test_fixture_csv_has_expected_columns():
     """)
 
     conn.execute(
-        "INSERT INTO repositories VALUES (1, 11111, 'test/repo', 'python', 100, 10, 'analysed', 'abc1234567890')"
+        "INSERT INTO repositories VALUES (1, 11111, 'test/repo', 'python', 100, 10, 'analysed', 'abc1234567890', 5)"
     )
     conn.execute("INSERT INTO test_files VALUES (1, 1, 'test.py', 'python')")
     conn.execute(
         """INSERT INTO fixtures (file_id, repo_id, name, fixture_type, scope, start_line, end_line, loc, 
-           cyclomatic_complexity, cognitive_complexity, num_objects_instantiated, num_external_calls, 
-           num_parameters, category, framework) 
-           VALUES (1, 1, 'my_fixture', 'pytest_decorator', 'per_test', 5, 15, 10, 2, 1, 2, 3, 4, 'setup', 'pytest')"""
+           cyclomatic_complexity, cognitive_complexity, max_nesting_depth, 
+           num_objects_instantiated, num_external_calls, num_parameters, 
+           reuse_count, has_teardown_pair, category, framework) 
+           VALUES (1, 1, 'my_fixture', 'pytest_decorator', 'per_test', 5, 15, 10, 2, 1, 1, 2, 3, 4, 1, 0, 'setup', 'pytest')"""
     )
 
     conn.commit()
@@ -245,6 +254,7 @@ def test_fixture_csv_has_expected_columns():
                 "pinned_commit",
                 "stars",
                 "forks",
+                "num_contributors",
                 "test_file_path",
                 "github_url",
                 "fixture_id",
@@ -256,6 +266,8 @@ def test_fixture_csv_has_expected_columns():
                 "loc",
                 "cyclomatic_complexity",
                 "cognitive_complexity",
+                "max_nesting_depth",
+                "reuse_count",
                 "num_objects_instantiated",
                 "num_external_calls",
                 "num_parameters",
