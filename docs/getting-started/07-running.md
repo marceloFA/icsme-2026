@@ -1,5 +1,25 @@
 # Running the Pipeline
 
+## Prerequisites
+
+Before running the pipeline, download repository data from SEART-GHS:
+
+1. **Visit** https://seart-ghs.si.usi.ch/
+2. **Configure filters** for each language (Python, Java, JavaScript, TypeScript)
+3. **Download CSV files** and place them in the `github-search/` directory
+
+Required files:
+```
+github-search/
+  ├── python-results.csv.gz
+  ├── java-results.csv.gz
+  ├── javascript-results.csv.gz
+  └── typescript-results.csv.gz
+```
+
+See [Data Collection](../data/04-data-collection.md#phase-1--repository-loading-from-seart-ghs-search) 
+for details on why SEART-GHS and how to obtain the data.
+
 ## Quick Start (Toy Dataset)
 
 For rapid validation after code changes, use the toy dataset:
@@ -12,7 +32,7 @@ python pipeline.py toy
 python pipeline.py toy --language python
 ```
 
-The `toy` command executes the full pipeline (search → clone → extract → classify)
+The `toy` command executes the full pipeline (load → clone → extract → classify)
 on a small, representative sample of repositories. Completes in minutes and useful
 for:
 - Validating recent code changes
@@ -23,26 +43,23 @@ for:
 ## Full run (recommended)
 
 ```bash
-# All languages, full targets (~4,800 repos searched, ~3,000 expected to survive)
+# All languages, full targets (~4,800 repos loaded, ~3,000 expected to survive)
 python pipeline.py run
 
 # Single language, full target
 python pipeline.py run --language python
 
-# C# only, full target
-python pipeline.py run --language csharp
-
 # Smoke test with a small batch
 python pipeline.py run --language python --max 20
 ```
 
-The `run` command executes all phases in order: init → search → clone → extract → classify.
+The `run` command executes all phases in order: init → load → clone → extract → classify.
 
 ## Running phases independently
 
 ```bash
-# Phase 1: discover repos (writes to DB, no cloning yet)
-python pipeline.py search --language java --max 1000
+# Phase 1: load repos from SEART-GHS CSV (writes to DB, no cloning yet)
+python pipeline.py load --language java --max 1000
 
 # Phase 2: clone a batch of discovered repos
 python pipeline.py clone --language java --batch 50
@@ -59,7 +76,7 @@ python pipeline.py stats
 
 Running phases independently is useful for incremental collection — you can
 run `clone` and `extract` in a loop, processing repos in batches without
-re-running the search phase.
+re-running the load phase.
 
 ## Validation (for the paper's precision/recall numbers)
 

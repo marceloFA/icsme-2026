@@ -72,38 +72,99 @@ Corpus was collected over ~3 hours (April 1–2, 2026 20:16–23:18 UTC). During
 The pipeline runs in five sequential phases. Each phase is idempotent — if it
 is interrupted and restarted, already-completed work is skipped.
 
-## Phase 1 — Repository Discovery (`search`)
+## Phase 1 — Repository Loading from SEART-GHS (`load`)
 
-The GitHub Search API is queried for repositories matching per-language
-criteria. **By default, repositories are collected sorted by star count
-(most stars first)** to maximize the percentage of high-quality (500+ stars)
-repositories.
+Rather than querying GitHub directly, repositories are loaded from pre-scraped 
+data provided by [SEART-GHS](https://seart-ghs.si.usi.ch/), a curated research 
+dataset of GitHub repositories.
 
-The default `--sort-by-stars` strategy paginates through results
-(up to 35 pages × 100 results) ordered by GitHub's native star ranking.
+### Why SEART-GHS?
 
-### Alternative: Stratified collection
+Direct GitHub API searching poses three challenges for reproducible research:
 
-If temporal balance is desired, use `--stratified` flag to collect repos
-proportionally from each year (2015–present). This strategy splits the search
-into **1-year creation-date buckets** and allocates repos per bucket to ensure
-even representation across time. This is useful if analyzing the evolution of
-testing practices over the years.
+1. **Non-determinism**: GitHub API results can vary across queries depending on 
+   indexing state, making it difficult to guarantee the same repos are collected 
+   in replications.
 
-**Note:** GitHub caps search results at 1,000 per query. Both strategies
-respect this limit via pagination (star-count: 35 pages of results; stratified:
-one query per year, paginated up to 10 pages per bucket).
+2. **Temporal Instability**: Repositories are continuously created, deleted, and 
+   modified on GitHub. A search result set from one date cannot be reliably 
+   recreated months later.
 
-### Common to all strategies
+3. **API Rate Limits**: Exhaustive collection requires extensive API calls, 
+   consuming rate limit quota. Lower-quota accounts hit limits quickly.
 
-Repositories are written to the `repositories` table with `status = 'discovered'`.
-Repos that match **exclusion keywords** in their name or description
-(`tutorial`, `homework`, `exercise`, `bootcamp`, `demo`, `awesome-`, etc.)
-are silently dropped before writing.
+**SEART-GHS solves all three** by:
+- Publishing a **fixed, immutable dataset** of repositories scraped at a specific time
+- Documenting **exact filters** used (language, stars, forks, etc.)
+- Making data **freely downloadable** without rate limits
 
-Authenticated requests (with `GITHUB_TOKEN`) are rate-limited to
-30 search requests/minute. The pipeline respects this with a 2-second delay
-between requests and backs off automatically on 403 responses.
+This makes FixtureDB reproducible: any researcher can download the same CSV 
+files and replicate our exact collection 1:1.
+
+### Data Source and Format
+
+CSV files are obtained from https://seart-ghs.si.usi.ch/ and saved locally 
+in the `github-search/` directory:
+
+```
+github-search/
+  ├── python-results.csv.gz       # ~3000 Python repos
+  ├── java-results.csv.gz         # ~2500 Java repos
+  ├── javascript-results.csv.gz   # ~1800 JavaScript repos
+  └── typescript-results.csv.gz   # ~800 TypeScript repos
+```
+
+Each CSV contains columns: `id`, `name`, `isFork`, `commits`, `stargazers`, 
+`isArchived`, `mainLanguage`, `createdAt`, `pushedAt`, `clone_url`, and others 
+provided by SEART-GHS export.
+
+### Filtering on Load
+
+Repositories loaded from the CSV are filtered using the same quality criteria 
+as the original GitHub search approach:
+
+- **Not archived** (`isArchived = false`)
+- **Not a fork** (`isFork = false`)  
+- **Minimum commits** (≥ 100 by default, configurable per language in `config.py`)
+- **Not excluded by keyword** (repos with names/descriptions matching 
+  `tutorial`, `homework`, `exercise`, `bootcamp`, `demo`, `awesome-`, etc. 
+  are silently dropped)
+
+Repositories passing these filters are written to the `repositories` table 
+with `status = 'discovered'` and are ready for Phase 2 cloning.
+
+### How to Update the Dataset
+
+When SEART-GHS publishes newer versions or when you want to collect different 
+languages:
+
+1. **Visit** https://seart-ghs.si.usi.ch/
+2. **Configure filters** (language, minimum stars, minimum commits, etc.)
+3. **Download results** as CSV (gzip-compressed)
+4. **Place in** `github-search/` folder with naming pattern: `{language}-results.csv.gz`
+5. **Run** the pipeline: `python pipeline.py search --language python`
+
+The pipeline will automatically detect the CSV, apply filters, and load 
+repositories into the database. Existing repos are updated in-place; new repos 
+are inserted.
+
+### Command Reference
+
+```bash
+# Load all repos from python-results.csv.gz
+python pipeline.py load --language python
+
+# Load only first 1000 repos (useful for testing)
+python pipeline.py load --language python --max 1000
+
+# Load from all languages
+python pipeline.py load
+```
+
+### Documentation References
+
+- **SEART-GHS**: https://github.com/seart-group/ghs (GitHub repository)
+- **SEART-GHS Web UI**: https://seart-ghs.si.usi.ch/ (Search and download interface)
 
 ## Phase 2 — Cloning (`clone`)
 

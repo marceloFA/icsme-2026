@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 """
-fixture-corpus — corpus collection pipeline CLI
+fixture-corpus -- corpus collection pipeline CLI
+
+IMPORTANT: Pre-scraped repositories from SEART-GHS must be available in github-search/ folder.
+Download CSV files from https://seart-ghs.si.usi.ch/ before running the pipeline.
 
 Commands
 --------
   init          Initialise the SQLite database
-  search        Search GitHub and write candidate repos to DB
+  load          Load repos from SEART-GHS CSV files into DB
   clone         Clone repos in 'discovered' status
   extract       Extract fixtures from repos in 'cloned' status
-  run           Run the full pipeline end-to-end
+  run           Run the full pipeline end-to-end (load -> clone -> extract -> classify -> categorize)
   toy           Build toy dataset (10 repos/language) for validation
   stats         Print current corpus statistics
 
@@ -21,7 +24,7 @@ Examples
   python pipeline.py toy
   python pipeline.py toy --language python
 
-  # Search phase only, all languages
+  # Load phase only, all languages
   python pipeline.py search --max 200
 
   # Check what we have so far
@@ -56,7 +59,7 @@ from collection.db import (
     get_discovered_count_for_language,
     get_survival_rate_for_language,
 )
-from collection.search import collect_repos_for_language, collect_all_languages
+from collection.github_search_loader import load_repos_for_language, load_all_languages
 from collection.cloner import clone_pending_repos, cleanup_stale_clones
 from collection.extractor import extract_all_cloned
 from collection.classifier import classify_all
@@ -90,13 +93,14 @@ def cmd_init(args):
     print("✓ Database initialised.")
 
 
-def cmd_search(args):
+def cmd_load(args):
+    """Load pre-scraped repositories from SEART-GHS CSV files.
+    
+    Loads all repos from CSV that pass basic quality filters (archived, forks,
+    keywords, minimum commits/stars). The 500-per-language target is enforced
+    at the clone/analyze phase, not here.
+    """
     language = args.language
-    max_repos = args.max
-    sort_by_stars = not getattr(
-        args, "stratified", False
-    )  # Default to True unless --stratified is passed
-    stratified = getattr(args, "stratified", False)
 
     if language:
         if language not in LANGUAGE_CONFIGS:
@@ -105,19 +109,11 @@ def cmd_search(args):
                 f"Choose from: {list(LANGUAGE_CONFIGS)}"
             )
             sys.exit(1)
-        count = collect_repos_for_language(
-            language,
-            max_repos=max_repos,
-            sort_by_stars=sort_by_stars,
-            stratified=stratified,
-        )
-        print(f"✓ {count} repos discovered for {language}")
+        count = load_repos_for_language(language)
+        print(f"✓ {count} repos loaded for {language}")
     else:
-        results = collect_all_languages(
-            max_per_language=max_repos,
-            sort_by_stars=sort_by_stars,
-            stratified=stratified,
-        )
+        print(f"Loading all languages (all repos passing basic quality filters)...")
+        results = load_all_languages()
         for lang, count in results.items():
             print(f"  {lang:12s}: {count} repos")
 
@@ -159,8 +155,8 @@ def cmd_run(args):
     else:
         cmd_init(args)
 
-    print("\n── Phase 1: Search GitHub ──────────────────────────")
-    cmd_search(args)
+    print("\n── Phase 1: Load SEART-GHS repos ──────────────────")
+    cmd_load(args)
 
     print("\n── Phase 2: Clone repositories ─────────────────────")
     # Override batch to None so ALL discovered repos are cloned, not just
@@ -200,10 +196,9 @@ def cmd_toy(args):
     else:
         cmd_init(args)
 
-    print("\n── Phase 1: Search GitHub (10 repos per language) ──")
+    print("\n── Phase 1: Load SEART-GHS repos (10 per language) ──")
     args.max = 10
-    args.stratified = False  # Use star-based ranking for more diverse corpus
-    cmd_search(args)
+    cmd_load(args)
 
     print("\n── Phase 2: Clone repositories ─────────────────────")
     args.batch = None  # Clone all discovered repos
@@ -242,8 +237,9 @@ def cmd_collect(args):
     """
     Automated collection for a single language until target analyzed repos reached.
 
-    This command loops: search → clone → extract until the target count of
+    This command loops: load → clone → extract until the target count of
     successfully analyzed repos (status='analysed') is reached for the language.
+    Repos are loaded from pre-scraped SEART-GHS CSV files.
 
     Recommended usage:
       python pipeline.py collect --language python --target 1500
@@ -264,7 +260,6 @@ def cmd_collect(args):
         print("ERROR: --target must be a positive integer")
         sys.exit(1)
 
-    stratified = getattr(args, "stratified", False)
 
     # Initialize DB if needed
     if not db_is_initialised():
@@ -337,15 +332,14 @@ def cmd_collect(args):
                 f"  Calculated discoveries needed (with buffer): {discoveries_needed}"
             )
             print(
-                f"  Will discover this iteration: {discover_target} (capped at {MAX_DISCOVERIES_PER_ITERATION})"
+                f"  Will load this iteration: {discover_target} (capped at {MAX_DISCOVERIES_PER_ITERATION})"
             )
 
             print(
-                f"\n  → Searching for ~{discover_target} more repos (to reach analyzed target)..."
+                f"\n  → Loading ~{discover_target} more repos from SEART-GHS (to reach analyzed target)..."
             )
             args.max = discover_target
-            args.stratified = stratified
-            cmd_search(args)
+            cmd_load(args)
 
         print(
             f"\n  → Cloning discovered repos (capped at {MAX_REPOS_PER_ITERATION} per iteration)..."
@@ -487,21 +481,12 @@ def build_parser() -> argparse.ArgumentParser:
     # init
     sub.add_parser("init", help="Initialise the database")
 
-    # search
-    p_search = sub.add_parser("search", help="Search GitHub for repos")
-    p_search.add_argument(
+    # load
+    p_load = sub.add_parser("load", help="Load repos from SEART-GHS CSV files")
+    p_load.add_argument(
         "--language",
         choices=list(LANGUAGE_CONFIGS),
         help="Limit to one language (default: all)",
-    )
-    p_search.add_argument(
-        "--max", type=int, default=None, help="Max repos per language"
-    )
-    p_search.add_argument(
-        "--stratified",
-        action="store_true",
-        dest="stratified",
-        help="Collect repos proportionally from each year (balanced sampling). Default: sort by star count (most stars first).",
     )
 
     # clone
@@ -524,13 +509,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--language", choices=list(LANGUAGE_CONFIGS), help="Limit to one language"
     )
     p_run.add_argument(
-        "--max", type=int, default=None, help="Max repos per language to search"
-    )
-    p_run.add_argument(
-        "--stratified",
-        action="store_true",
-        dest="stratified",
-        help="Collect repos proportionally from each year (balanced sampling). Default: sort by star count (most stars first).",
+        "--max", type=int, default=None, help="Max repos per language to load"
     )
 
     # toy
@@ -559,12 +538,6 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         required=True,
         help="Target number of successfully analyzed repos (gold standard, post-filtering)",
-    )
-    p_collect.add_argument(
-        "--stratified",
-        action="store_true",
-        dest="stratified",
-        help="Collect repos proportionally from each year (balanced sampling). Default: sort by star count (most stars first).",
     )
 
     # cleanup
@@ -675,7 +648,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 COMMAND_MAP = {
     "init": cmd_init,
-    "search": cmd_search,
+    "load": cmd_load,
     "clone": cmd_clone,
     "extract": cmd_extract,
     "cleanup": cmd_cleanup,

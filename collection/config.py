@@ -27,13 +27,9 @@ for _d in (CLONES_DIR, DATA_DIR, LOGS_DIR):
 # GitHub API
 # ---------------------------------------------------------------------------
 
+# Optional: GitHub token for API rate limit relief during cloning pre-checks
+# (not required for core functionality; pre-checks fail gracefully without it)
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")  # set in .env
-GITHUB_API_BASE = "https://api.github.com"
-GITHUB_SEARCH_URL = f"{GITHUB_API_BASE}/search/repositories"
-GITHUB_RATE_LIMIT_URL = f"{GITHUB_API_BASE}/rate_limit"
-
-# Pause between paginated requests to stay well within rate limits (seconds)
-REQUEST_DELAY = 2.0
 
 # ---------------------------------------------------------------------------
 # File size and type filters
@@ -354,14 +350,6 @@ LANGUAGE_CONFIGS = {
             ".spec.mts",
         ],
     ),
-    "go": LanguageConfig(
-        name="Go",
-        github_language="Go",
-        min_stars=100,
-        target_repos=400,
-        test_path_patterns=["test/", "tests/", "_test.go"],
-        test_file_suffixes=["_test.go"],
-    ),
 }
 
 # ---------------------------------------------------------------------------
@@ -442,16 +430,6 @@ FRAMEWORK_REGISTRY = {
         # Mocking (detected in fixtures)
         "sinon",  # Works with TypeScript
     ],
-    "go": [
-        # Built-in and standard approaches
-        "testing",  # Go standard library (captured as framework name)
-        # BDD frameworks
-        "ginkgo",  # BDD testing framework
-        "goblin",  # Mocha-like BDD
-        # Mocking frameworks (detected in fixtures)
-        "gomock",  # Code generation for mocks
-        "testify",  # Testify with mock support
-    ],
 }
 
 # Minimum thresholds applied after cloning
@@ -466,7 +444,6 @@ MIN_FIXTURES_FOUND = 1  # repos where we detect zero fixtures are dropped
 LANGUAGE_SURVIVAL_RATES = {
     "python": 0.076,  # 7.6% actual from completed collection
     "java": 0.15,  # estimate (Java typically has higher survival)
-    "go": 0.09,  # estimate
     "javascript": 0.08,  # estimate
     "typescript": 0.08,  # estimate
 }
@@ -480,6 +457,9 @@ MAX_DISCOVERIES_PER_ITERATION = 3000  # cap to manage disk space
 MAX_REPOS_PER_ITERATION = (
     500  # max repos (discovered + cloned + extracted) per collection iteration
 )
+
+# Maximum repos to load per language from SEART-GHS (hard limit for reproducibility)
+MAX_REPOS_PER_LANGUAGE_LOAD = 500  # Do not exceed 500 per language
 
 # Maximum repos to clone in a single run (useful for incremental collection)
 CLONE_BATCH_SIZE = 50

@@ -51,7 +51,6 @@ Lower rates = harder to find qualifying repos; higher rates = abundant fixture u
 | `CLONE_BATCH_SIZE`                 | 50      | Repos per `clone` invocation (incremental mode) |
 | `EXTRACT_WORKERS`                  | 3       | Parallel extraction workers (respects SQLite single-writer limit) |
 | `MAX_REPOS_PER_ITERATION`          | 500     | Cap on repos processed per collection iteration (all languages) |
-| `MAX_DISCOVERIES_PER_ITERATION`    | 3,000   | Max repos discovered per iteration (disk space management) |
+| `MAX_DISCOVERIES_PER_ITERATION`    | 3,000   | Max repos loaded per iteration (disk space management) |
 | `DISCOVERY_SURVIVAL_RATE`          | 0.09    | Fallback discovery→analyzed conversion rate |
 | `DISCOVERY_SAFETY_BUFFER`          | 1.25    | 25% safety buffer on discovery estimates |
-| `REQUEST_DELAY`                    | 2.0 s   | Pause between GitHub Search API pages |

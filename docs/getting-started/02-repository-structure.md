@@ -10,7 +10,7 @@ fixture-corpus/
 ├── collection/             # Core pipeline modules
 │   ├── config.py            # All tunable parameters (thresholds, targets, paths)
 │   ├── db.py                # SQLite schema definition and query helpers
-│   ├── search.py            # GitHub Search API client (repo discovery)
+│   ├── github_search_loader.py  # Load repos from SEART-GHS CSV files
 │   ├── cloner.py            # Shallow git clone + post-clone quality filters
 │   ├── detector.py          # Tree-sitter AST queries (fixture + mock detection)
 │   ├── extractor.py         # Per-repo orchestration: files → fixtures → DB
