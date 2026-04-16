@@ -38,6 +38,39 @@ from collection.detector import extract_fixtures
 
 logger = logging.getLogger(__name__)
 
+# ---------------------------------------------------------------------------
+# Language-specific file extensions
+# ---------------------------------------------------------------------------
+
+LANGUAGE_EXTENSIONS = {
+    "python": {".py"},
+    "java": {".java"},
+    "javascript": {".js", ".jsx", ".mjs", ".cjs"},
+    "typescript": {".ts", ".tsx"},
+    "go": {".go"},
+}
+
+
+def should_process_file(file_path: Path, repo_language: str) -> bool:
+    """
+    Validate that file extension matches the repository language.
+
+    Skips files with mismatched extensions (e.g., Kotlin in TypeScript repo).
+    Unknown languages are processed (safe fallback).
+
+    Args:
+        file_path: Path to the file
+        repo_language: Repository language (python/java/javascript/typescript/go)
+
+    Returns:
+        True if file should be processed, False if extension mismatch
+    """
+    if repo_language not in LANGUAGE_EXTENSIONS:
+        return True  # Unknown language - process anyway
+
+    ext = file_path.suffix.lower()
+    return ext in LANGUAGE_EXTENSIONS[repo_language]
+
 
 # ---------------------------------------------------------------------------
 # Timeout handler for long-running file extraction
@@ -247,6 +280,10 @@ def extract_repo(repo_id: int, full_name: str, language: str) -> dict:
 
     for tf_path in test_files:
         relative = str(tf_path.relative_to(repo_dir))
+
+        # Validate file extension matches repository language
+        if not should_process_file(tf_path, language):
+            continue
 
         # Log file size before processing
         try:
