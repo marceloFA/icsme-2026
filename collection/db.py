@@ -132,7 +132,9 @@ def get_connection(db_path: Path = DB_PATH) -> sqlite3.Connection:
     conn = sqlite3.connect(db_path, timeout=60.0)  # 60 second timeout for lock waits
     conn.row_factory = sqlite3.Row  # rows behave like dicts
     conn.execute("PRAGMA journal_mode=WAL")  # safe for concurrent reads
-    conn.execute("PRAGMA busy_timeout=60000")  # 60s busy timeout (milliseconds) for 8 concurrent workers
+    conn.execute(
+        "PRAGMA busy_timeout=60000"
+    )  # 60s busy timeout (milliseconds) for 8 concurrent workers
     conn.execute("PRAGMA foreign_keys=ON")
     return conn
 
@@ -147,12 +149,12 @@ def db_session(db_path: Path = DB_PATH, max_retries: int = 20):
     - PRAGMA busy_timeout: 60s (gives SQLite time to resolve contention)
     - max_retries: 20 with exponential backoff (0.5s → 256s)
     - Total potential wait time: ~10+ minutes for transient locks
-    
+
     For overnight runs: up to 20 retries with base 0.5s, reaching ~260s max wait.
     Handles database locks that occur during both connection and operations.
     """
     last_exception = None
-    
+
     for attempt in range(max_retries):
         conn = None
         caught_exception = None
@@ -170,10 +172,13 @@ def db_session(db_path: Path = DB_PATH, max_retries: int = 20):
         finally:
             if conn:
                 conn.close()
-        
+
         # Handle exception outside the finally block to avoid generator issues
         if caught_exception is not None:
-            if isinstance(caught_exception, sqlite3.OperationalError) and "locked" in str(caught_exception).lower():
+            if (
+                isinstance(caught_exception, sqlite3.OperationalError)
+                and "locked" in str(caught_exception).lower()
+            ):
                 if attempt < max_retries - 1:
                     # Database locked - retry with exponential backoff
                     last_exception = caught_exception
@@ -185,12 +190,14 @@ def db_session(db_path: Path = DB_PATH, max_retries: int = 20):
                     continue  # Retry
                 else:
                     # Max retries reached
-                    logger.error(f"Database lock not resolved after {max_retries} attempts: {caught_exception}")
+                    logger.error(
+                        f"Database lock not resolved after {max_retries} attempts: {caught_exception}"
+                    )
                     raise caught_exception
             else:
                 # Non-lock exceptions should be raised immediately (not retried)
                 raise caught_exception
-    
+
     # Should not reach here, but just in case
     if last_exception:
         raise last_exception
@@ -537,13 +544,15 @@ def get_survival_rate_for_language(conn: sqlite3.Connection, language: str) -> f
     return analyzed / discovered
 
 
-def cleanup_to_toy_dataset(db_path: Path = DB_PATH, toy_count_per_language: int = 50) -> dict:
+def cleanup_to_toy_dataset(
+    db_path: Path = DB_PATH, toy_count_per_language: int = 50
+) -> dict:
     """
     Clean up database to keep only the toy dataset: 50 repos per language.
-    
+
     Removes extracted fixtures and data for all repos beyond the first toy_count_per_language
     analyzed repos per language (ordered by creation date, then by ID for consistency).
-    
+
     Returns a dict with:
       - 'repos_removed': count of repos cleaned
       - 'fixtures_removed': count of fixtures deleted
@@ -552,12 +561,12 @@ def cleanup_to_toy_dataset(db_path: Path = DB_PATH, toy_count_per_language: int 
     """
     with db_session(db_path) as conn:
         summary = {
-            'repos_removed': 0,
-            'fixtures_removed': 0,
-            'mocks_removed': 0,
-            'per_language': {}
+            "repos_removed": 0,
+            "fixtures_removed": 0,
+            "mocks_removed": 0,
+            "per_language": {},
         }
-        
+
         # Get all analyzed repos per language, ordered by creation date
         cursor = conn.execute("""
             SELECT r.id, r.language, r.full_name, r.created_at
@@ -568,74 +577,73 @@ def cleanup_to_toy_dataset(db_path: Path = DB_PATH, toy_count_per_language: int 
             ORDER BY r.language, r.created_at ASC, r.id ASC
         """)
         all_analyzed = cursor.fetchall()
-        
+
         # Group by language and keep track of which IDs to remove
         by_language = {}
         for row in all_analyzed:
-            lang = row['language']
+            lang = row["language"]
             if lang not in by_language:
                 by_language[lang] = []
-            by_language[lang].append(row['id'])
-        
+            by_language[lang].append(row["id"])
+
         # Identify repos to delete (those beyond toy_count_per_language per language)
         repos_to_remove = []
         for lang, repo_ids in by_language.items():
             keep_count = min(toy_count_per_language, len(repo_ids))
             remove_ids = repo_ids[keep_count:]
             repos_to_remove.extend(remove_ids)
-            
+
             if remove_ids:
-                summary['per_language'][lang] = {
-                    'kept': keep_count,
-                    'removed': len(remove_ids)
+                summary["per_language"][lang] = {
+                    "kept": keep_count,
+                    "removed": len(remove_ids),
                 }
                 logger.info(
                     f"{lang}: Keeping {keep_count}/{len(repo_ids)}, "
                     f"removing {len(remove_ids)}"
                 )
-        
+
         # Delete fixtures and mocks for repos to remove
         if repos_to_remove:
             # Delete mock_usages first (foreign key to fixtures)
-            placeholders = ','.join('?' * len(repos_to_remove))
+            placeholders = ",".join("?" * len(repos_to_remove))
             cursor = conn.execute(
                 f"SELECT COUNT(*) as n FROM mock_usages WHERE fixture_id IN "
                 f"(SELECT id FROM fixtures WHERE repo_id IN ({placeholders}))",
-                repos_to_remove
+                repos_to_remove,
             )
-            mock_count = cursor.fetchone()['n']
-            summary['mocks_removed'] = mock_count
-            
+            mock_count = cursor.fetchone()["n"]
+            summary["mocks_removed"] = mock_count
+
             conn.execute(
                 f"DELETE FROM mock_usages WHERE fixture_id IN "
                 f"(SELECT id FROM fixtures WHERE repo_id IN ({placeholders}))",
-                repos_to_remove
+                repos_to_remove,
             )
-            
+
             # Delete fixtures
             cursor = conn.execute(
                 f"SELECT COUNT(*) as n FROM fixtures WHERE repo_id IN ({placeholders})",
-                repos_to_remove
+                repos_to_remove,
             )
-            fixture_count = cursor.fetchone()['n']
-            summary['fixtures_removed'] = fixture_count
-            
+            fixture_count = cursor.fetchone()["n"]
+            summary["fixtures_removed"] = fixture_count
+
             conn.execute(
                 f"DELETE FROM fixtures WHERE repo_id IN ({placeholders})",
-                repos_to_remove
+                repos_to_remove,
             )
-            
+
             # Update repository status to 'skipped' instead of deleting the repo record
             # (keeps provenance that we discovered them, but didn't keep them)
             conn.execute(
                 f"UPDATE repositories SET status = 'skipped', skip_reason = 'Removed to maintain toy dataset balance' "
                 f"WHERE id IN ({placeholders})",
-                repos_to_remove
+                repos_to_remove,
             )
-            
-            summary['repos_removed'] = len(repos_to_remove)
-        
-        conn.commit()
-    
-    return summary
 
+            summary["repos_removed"] = len(repos_to_remove)
+
+        conn.commit()
+
+    return summary

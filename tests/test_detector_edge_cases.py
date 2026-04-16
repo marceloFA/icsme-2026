@@ -22,9 +22,9 @@ class TestDetectorErrorHandling:
         """Detector should handle empty files gracefully."""
         empty_file = tmp_path / "test_empty.py"
         empty_file.write_text("")
-        
+
         result = extract_fixtures(empty_file, "python")
-        
+
         assert isinstance(result, ExtractResult)
         assert len(result.fixtures) == 0
         # Should handle gracefully without crashing
@@ -37,9 +37,9 @@ class TestDetectorErrorHandling:
 # It has only comments
 # No actual code
 """)
-        
+
         result = extract_fixtures(py_file, "python")
-        
+
         assert len(result.fixtures) == 0
 
     def test_extract_file_with_only_imports(self, tmp_path):
@@ -51,9 +51,9 @@ import unittest
 from pathlib import Path
 from collections import defaultdict
 """)
-        
+
         result = extract_fixtures(py_file, "python")
-        
+
         assert len(result.fixtures) == 0
 
     def test_extract_syntactically_invalid_python(self, tmp_path):
@@ -67,9 +67,9 @@ def broken_fixture(
 def another_function():
     pass
 """)
-        
+
         result = extract_fixtures(py_file, "python")
-        
+
         # Should not crash; may find no fixtures or return error
         assert result is not None
         # Invalid syntax may prevent detection or error out gracefully
@@ -85,9 +85,9 @@ public class TestInvalid {
     // Missing closing paren and body
 }
 """)
-        
+
         result = extract_fixtures(java_file, "java")
-        
+
         assert result is not None
         assert isinstance(result.fixtures, list)
 
@@ -104,9 +104,9 @@ def fixture_with_emoji():  # 🔧 fixture
     pass
 """
         py_file.write_text(content, encoding="utf-8")
-        
+
         result = extract_fixtures(py_file, "python")
-        
+
         # Should handle UTF-8 gracefully
         assert result is not None
         if len(result.fixtures) > 0:
@@ -133,9 +133,9 @@ def deeply_nested():
                                             result = create_resource()
                                             return result
 """)
-        
+
         result = extract_fixtures(py_file, "python")
-        
+
         assert len(result.fixtures) > 0
         assert result.fixtures[0].name == "deeply_nested"
         # Should calculate complexity correctly despite deep nesting
@@ -153,9 +153,9 @@ def fixture_with_long_lines():
     {long_line}
     return x
 """)
-        
+
         result = extract_fixtures(py_file, "python")
-        
+
         assert len(result.fixtures) > 0
         assert result.fixtures[0].name == "fixture_with_long_lines"
 
@@ -175,9 +175,9 @@ async def async_fixture():
     yield result
     await cleanup()
 """)
-        
+
         result = extract_fixtures(py_file, "python")
-        
+
         assert len(result.fixtures) > 0
         assert result.fixtures[0].name == "async_fixture"
 
@@ -199,9 +199,9 @@ def regular_function():
         pass
     return inner
 """)
-        
+
         result = extract_fixtures(py_file, "python")
-        
+
         # Should detect the outer_fixture but not inner helpers
         fixture_names = [f.name for f in result.fixtures]
         assert "outer_fixture" in fixture_names
@@ -222,9 +222,9 @@ public class TestParameterized {
     }
 }
 """)
-        
+
         result = extract_fixtures(java_file, "java")
-        
+
         if len(result.fixtures) > 0:
             assert result.fixtures[0].name == "setup"
 
@@ -244,12 +244,16 @@ describe('Test suite', () => {
     });
 });
 """)
-        
+
         result = extract_fixtures(ts_file, "typescript")
-        
+
         # beforeEach should be detected as per_test fixture
         if len(result.fixtures) > 0:
-            before_each = [f for f in result.fixtures if "beforeEach" in f.name or "before" in f.fixture_type.lower()]
+            before_each = [
+                f
+                for f in result.fixtures
+                if "beforeEach" in f.name or "before" in f.fixture_type.lower()
+            ]
             if before_each:
                 assert before_each[0].scope == "per_test"
 
@@ -270,9 +274,9 @@ func TestMain(m *testing.M) {
     os.Exit(code)
 }
 """)
-        
+
         result = extract_fixtures(go_file, "go")
-        
+
         if len(result.fixtures) > 0:
             assert result.fixtures[0].name == "TestMain"
 
@@ -283,20 +287,17 @@ class TestDetectorBoundaryConditions:
     def test_many_fixtures_in_single_file(self, tmp_path):
         """File with many fixtures should handle all of them."""
         py_file = tmp_path / "test_many.py"
-        
-        fixture_defs = "\n".join([
-            f"""
+
+        fixture_defs = "\n".join([f"""
 @pytest.fixture
 def fixture_{i}():
     return {i}
-"""
-            for i in range(50)
-        ])
-        
+""" for i in range(50)])
+
         py_file.write_text(f"import pytest\n{fixture_defs}")
-        
+
         result = extract_fixtures(py_file, "python")
-        
+
         # Should detect many fixtures
         assert len(result.fixtures) >= 50
 
@@ -327,9 +328,9 @@ def ultra_complex():
     return result
 """
         py_file.write_text(complex_code)
-        
+
         result = extract_fixtures(py_file, "python")
-        
+
         assert len(result.fixtures) > 0
         fixture = result.fixtures[0]
         # Complex fixture should have detectable cyclomatic complexity
@@ -346,9 +347,9 @@ import pytest
 def parametrized_fixture(request, arg1, arg2, arg3, arg4, arg5):
     return arg1 + arg2 + arg3 + arg4 + arg5
 """)
-        
+
         result = extract_fixtures(py_file, "python")
-        
+
         assert len(result.fixtures) > 0
         fixture = result.fixtures[0]
         # Should count parameters correctly (5 in this case, not counting request)
@@ -373,10 +374,10 @@ def stable_fixture():
 def test_example():
     pass
 """)
-        
+
         result1 = extract_fixtures(py_file, "python")
         result2 = extract_fixtures(py_file, "python")
-        
+
         assert len(result1.fixtures) == len(result2.fixtures)
         if result1.fixtures:
             f1 = result1.fixtures[0]
@@ -406,9 +407,9 @@ def my_fixture():  # Line 7
 # Line 11
 """
         py_file.write_text(content)
-        
+
         result = extract_fixtures(py_file, "python")
-        
+
         assert len(result.fixtures) > 0
         fixture = result.fixtures[0]
         # start_line should be around line 6 (decorator) or 7 (def)

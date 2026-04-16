@@ -228,7 +228,7 @@ def load_repos_for_language(language_key: str) -> int:
 def load_all_languages() -> dict[str, int]:
     """
     Load repos for all configured languages from CSV files.
-    
+
     All repos that pass basic quality filters are loaded into the database.
     The 500-per-language target is enforced at the clone/analyze phase,
     not during loading. This allows downstream processing to filter based on

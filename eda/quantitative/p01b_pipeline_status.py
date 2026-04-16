@@ -38,13 +38,20 @@ def plot_pipeline_status(conn, out_dir, show):
         count = (repos["status"] == status).sum()
         if count > 0:
             status_counts[status] = count
-    
+
     # For skipped repos, group by skip_reason
     skipped = repos[repos["status"] == "skipped"]
     if len(skipped) > 0:
-        skip_reason_counts = skipped["skip_reason"].fillna("unknown").value_counts().to_dict()
-        status_counts.update({f"skipped: {reason}": count for reason, count in skip_reason_counts.items()})
-    
+        skip_reason_counts = (
+            skipped["skip_reason"].fillna("unknown").value_counts().to_dict()
+        )
+        status_counts.update(
+            {
+                f"skipped: {reason}": count
+                for reason, count in skip_reason_counts.items()
+            }
+        )
+
     # Organize pie chart: "analysed" first, then "error"/"discovered"/"cloned", then skip reasons
     pie_order = ["analysed"]
     if "error" in status_counts:
@@ -55,11 +62,11 @@ def plot_pipeline_status(conn, out_dir, show):
         pie_order.append("cloned")
     # Add skip reasons in order of frequency
     pie_order.extend([k for k in status_counts.keys() if k.startswith("skipped:")])
-    
+
     pie_data = [status_counts[s] for s in pie_order if s in status_counts]
     pie_labels = []
     pie_colors = []
-    
+
     for label in pie_order:
         if label in status_counts:
             if label.startswith("skipped:"):
@@ -97,7 +104,12 @@ def plot_pipeline_status(conn, out_dir, show):
     # Add total text
     fig.text(0.72, 0.05, f"Total: {total:,} repos", fontsize=11, fontweight="bold")
 
-    ax.set_title("Pipeline Status Breakdown (with Skip Reasons)", fontsize=14, fontweight="bold", pad=20)
+    ax.set_title(
+        "Pipeline Status Breakdown (with Skip Reasons)",
+        fontsize=14,
+        fontweight="bold",
+        pad=20,
+    )
 
     plt.tight_layout()
     save_or_show(fig, "01b_pipeline_status", out_dir, show)

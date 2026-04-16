@@ -82,10 +82,10 @@ def get_cognitive_complexity_python(file_path: Path) -> Optional[int]:
 
         # Get complexity of first function found using complexipy
         result = code_complexity(source)
-        
+
         # complexipy returns code-level complexity for the entire file
         # For single-function extraction, return the file-level complexity
-        if result and hasattr(result, 'complexity'):
+        if result and hasattr(result, "complexity"):
             return result.complexity
     except Exception as e:
         logger.debug(
@@ -202,7 +202,7 @@ def analyze_function_complexity(
                 # Use complexipy library for Python (most accurate)
                 try:
                     result = code_complexity(source_text)
-                    if result and hasattr(result, 'complexity'):
+                    if result and hasattr(result, "complexity"):
                         metrics["cognitive_complexity"] = result.complexity
                 except Exception as e:
                     # Fall back to formula if complexipy library fails

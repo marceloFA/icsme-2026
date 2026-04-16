@@ -95,7 +95,7 @@ def cmd_init(args):
 
 def cmd_load(args):
     """Load pre-scraped repositories from SEART-GHS CSV files.
-    
+
     Loads all repos from CSV that pass basic quality filters (archived, forks,
     keywords, minimum commits/stars). The 500-per-language target is enforced
     at the clone/analyze phase, not here.
@@ -131,23 +131,25 @@ def cmd_cleanup(args):
 def cmd_cleanup_toy(args):
     """Remove all extracted repos beyond the first 50 per language."""
     from collection.db import cleanup_to_toy_dataset
-    
+
     print("╔════════════════════════════════════════════════╗")
     print("║  Cleaning up database to keep only TOY dataset ║")
     print("╚════════════════════════════════════════════════╝")
-    
+
     summary = cleanup_to_toy_dataset()
-    
+
     print(f"\n── Cleanup Summary ────────────────────────────")
     print(f"  Repos removed:     {summary['repos_removed']}")
     print(f"  Fixtures removed:  {summary['fixtures_removed']}")
     print(f"  Mock usages removed: {summary['mocks_removed']}")
-    
-    if summary['per_language']:
+
+    if summary["per_language"]:
         print(f"\n── Per Language ───────────────────────────────")
-        for lang, counts in sorted(summary['per_language'].items()):
-            print(f"  {lang:12s}: kept {counts['kept']:3d}, removed {counts['removed']:3d}")
-    
+        for lang, counts in sorted(summary["per_language"].items()):
+            print(
+                f"  {lang:12s}: kept {counts['kept']:3d}, removed {counts['removed']:3d}"
+            )
+
     print(f"\n✓ Cleanup complete. Database now contains only toy dataset.")
 
 
@@ -162,12 +164,14 @@ def cmd_clone(args):
     print(f"✓ Clone batch done: {summary}")
 
 
-def cmd_extract(args, target_analyzed: int | None = None, target_per_language: int | None = None):
+def cmd_extract(
+    args, target_analyzed: int | None = None, target_per_language: int | None = None
+):
     """Extract fixtures from cloned repos, optionally stopping early when target is reached."""
     totals = extract_all_cloned(
-        language=args.language, 
+        language=args.language,
         target_analyzed=target_analyzed,
-        target_per_language=target_per_language
+        target_per_language=target_per_language,
     )
     early_stopped = totals.pop("early_stopped", False)
     print(f"✓ Extraction done: {totals} (early_stopped={early_stopped})")
@@ -210,28 +214,28 @@ def cmd_run(args):
 def cmd_collect_balanced(args, target_per_language: int):
     """
     Balanced iterative collection: Clones and extracts until all languages reach target.
-    
+
     Repeats clone+extract cycles until each language has >=target_per_language repos
     with successfully extracted fixtures, ensuring balanced representation across languages.
-    
+
     Args:
         args: Command arguments
         target_per_language: Target repos per language
     """
     from collection.db import get_analyzed_count_by_language
-    
+
     max_iterations = 10  # Safety limit to prevent infinite loops
     iteration = 1
-    
+
     while iteration <= max_iterations:
         print(f"\n{'='*70}")
         print(f"Balanced Collection - Iteration {iteration}/{max_iterations}")
         print(f"{'='*70}")
-        
+
         # Check current extraction status per language
         with db_session() as conn:
             current_counts = get_analyzed_count_by_language(conn)
-        
+
         # Determine which languages need more repos
         languages_below_target = {}
         for lang in LANGUAGE_CONFIGS.keys():
@@ -239,17 +243,18 @@ def cmd_collect_balanced(args, target_per_language: int):
             languages_below_target[lang] = current
             status = "✓" if current >= target_per_language else "✗"
             print(f"  {status} {lang:12s}: {current:4d}/{target_per_language}")
-        
+
         # Check if all languages reached target
         all_reached = all(
-            count >= target_per_language 
-            for count in languages_below_target.values()
+            count >= target_per_language for count in languages_below_target.values()
         )
-        
+
         if all_reached:
-            print(f"\n✓ ALL LANGUAGES REACHED TARGET ({target_per_language} repos each)")
+            print(
+                f"\n✓ ALL LANGUAGES REACHED TARGET ({target_per_language} repos each)"
+            )
             break
-        
+
         # Clone phase: Only clone for languages below target
         print(f"\n── Phase: Clone (iteration {iteration}) ─────────────────────")
         print(f"  Cloning ~100 repos per language (only for those below target)...")
@@ -261,25 +266,29 @@ def cmd_collect_balanced(args, target_per_language: int):
                 cmd_clone(args)
                 print(f"    Cloning {lang} (currently {current}/{target_per_language})")
             else:
-                print(f"    Skipping {lang} (already at {current}/{target_per_language})")
+                print(
+                    f"    Skipping {lang} (already at {current}/{target_per_language})"
+                )
         args.language = None  # Reset for extraction
-        
+
         # Extract phase: Stop when all languages reach target
         print(f"\n── Phase: Extract (iteration {iteration}) ────────────────────")
         print(f"  Extracting until all languages reach {target_per_language} repos...")
         cmd_extract(args, target_per_language=target_per_language)
-        
+
         iteration += 1
-    
+
     if iteration > max_iterations:
-        print(f"\n⚠️  Max iterations ({max_iterations}) reached. Some languages may be below target.")
+        print(
+            f"\n⚠️  Max iterations ({max_iterations}) reached. Some languages may be below target."
+        )
         print(f"  Current status:")
         with db_session() as conn:
             current_counts = get_analyzed_count_by_language(conn)
         for lang in LANGUAGE_CONFIGS.keys():
             current = current_counts.get(lang, 0)
             print(f"    {lang:12s}: {current}/{target_per_language}")
-    
+
     print(f"\n── Done ─────────────────────────────────────────────")
     cmd_stats(args)
 
@@ -290,16 +299,18 @@ def cmd_toy(args):
 
     Uses iterative balanced collection to ensure all languages are represented equally.
     Continues cloning and extracting until each language reaches the target.
-    
+
     Flow:
     1. Load all repos (if not already loaded)
     2. Iteratively: Clone batches and extract until all languages reach target
     3. Classify and categorize the extracted fixtures
     """
     from collection.config import TOY_TARGET_REPOS_PER_LANGUAGE
-    
+
     print("╔════════════════════════════════════════════════════╗")
-    print(f"║  TOY DATASET ({TOY_TARGET_REPOS_PER_LANGUAGE} extracted repos/language)        ║")
+    print(
+        f"║  TOY DATASET ({TOY_TARGET_REPOS_PER_LANGUAGE} extracted repos/language)        ║"
+    )
     print("╚════════════════════════════════════════════════════╝")
 
     print("\n── Phase 0: Initialise ─────────────────────────────")
@@ -313,7 +324,9 @@ def cmd_toy(args):
     cmd_load(args)
 
     print("\n── Phase 2-3: Balanced Clone + Extract ────────────")
-    print(f"  (Iteratively collecting until {TOY_TARGET_REPOS_PER_LANGUAGE} repos/language)")
+    print(
+        f"  (Iteratively collecting until {TOY_TARGET_REPOS_PER_LANGUAGE} repos/language)"
+    )
     cmd_collect_balanced(args, target_per_language=TOY_TARGET_REPOS_PER_LANGUAGE)
     args.language = None  # Reset language filter
 
@@ -340,7 +353,7 @@ def cmd_full(args):
     Uses iterative balanced collection to ensure all languages are represented equally.
     Continues cloning and extracting until each language reaches 500 successfully extracted repos.
     This produces the production-quality research corpus.
-    
+
     Flow:
     1. Load all repos (if not already loaded)
     2. Iteratively: Clone batches and extract until all languages reach 500 target
@@ -348,9 +361,11 @@ def cmd_full(args):
     4. Export final corpus
     """
     from collection.config import FULL_TARGET_REPOS_PER_LANGUAGE
-    
+
     print("╔════════════════════════════════════════════════════╗")
-    print(f"║  FULL DATASET ({FULL_TARGET_REPOS_PER_LANGUAGE} extracted repos/language)      ║")
+    print(
+        f"║  FULL DATASET ({FULL_TARGET_REPOS_PER_LANGUAGE} extracted repos/language)      ║"
+    )
     print("╚════════════════════════════════════════════════════╝")
 
     print("\n── Phase 0: Initialise ─────────────────────────────")
@@ -364,7 +379,9 @@ def cmd_full(args):
     cmd_load(args)
 
     print("\n── Phase 2-3: Balanced Clone + Extract ────────────")
-    print(f"  (Iteratively collecting until {FULL_TARGET_REPOS_PER_LANGUAGE} repos/language)")
+    print(
+        f"  (Iteratively collecting until {FULL_TARGET_REPOS_PER_LANGUAGE} repos/language)"
+    )
     cmd_collect_balanced(args, target_per_language=FULL_TARGET_REPOS_PER_LANGUAGE)
     args.language = None  # Reset language filter
 
@@ -383,7 +400,9 @@ def cmd_full(args):
     cmd_stats(args)
 
     print("\n✓ FULL DATASET COMPLETE")
-    print(f"  Production corpus with {FULL_TARGET_REPOS_PER_LANGUAGE} repos/language ready for analysis.")
+    print(
+        f"  Production corpus with {FULL_TARGET_REPOS_PER_LANGUAGE} repos/language ready for analysis."
+    )
 
 
 def cmd_classify(args):
@@ -422,7 +441,6 @@ def cmd_collect(args):
     if not target_analyzed or target_analyzed < 1:
         print("ERROR: --target must be a positive integer")
         sys.exit(1)
-
 
     # Initialize DB if needed
     if not db_is_initialised():
@@ -687,7 +705,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     # full
     p_full = sub.add_parser(
-        "full", help="Build full production dataset (500 repos per language) with balanced collection"
+        "full",
+        help="Build full production dataset (500 repos per language) with balanced collection",
     )
     p_full.add_argument(
         "--language",
@@ -725,7 +744,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     # cleanup-toy
     p_cleanup_toy = sub.add_parser(
-        "cleanup-toy", help="Remove extracted repos beyond first 50 per language (keep toy dataset only)"
+        "cleanup-toy",
+        help="Remove extracted repos beyond first 50 per language (keep toy dataset only)",
     )
 
     # classify

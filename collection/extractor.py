@@ -368,7 +368,7 @@ def _estimate_test_count(file_path: Path, language: str) -> int:
 
 
 def extract_all_cloned(
-    language: str | None = None, 
+    language: str | None = None,
     target_analyzed: int | None = None,
     target_per_language: int | None = None,
 ) -> dict:
@@ -377,7 +377,7 @@ def extract_all_cloned(
 
     Extraction uses round-robin ordering across creation year buckets to maintain
     temporal balance during the extraction phase (independent of discovery strategy).
-    
+
     If target_analyzed is set, stop early when global target is reached.
     If target_per_language is set, stop early when each language reaches that count.
 
@@ -394,6 +394,7 @@ def extract_all_cloned(
         languages_to_skip = set()
         if target_per_language:
             from collection.config import LANGUAGE_CONFIGS
+
             cursor = conn.execute("""
                 SELECT language, COUNT(DISTINCT r.id) as count
                 FROM repositories r
@@ -402,12 +403,15 @@ def extract_all_cloned(
             """)
             lang_counts = {row["language"]: row["count"] for row in cursor.fetchall()}
             languages_to_skip = {
-                lang for lang in LANGUAGE_CONFIGS.keys()
+                lang
+                for lang in LANGUAGE_CONFIGS.keys()
                 if lang_counts.get(lang, 0) >= target_per_language
             }
             if languages_to_skip:
-                logger.info(f"Skipping extraction for languages already at target: {languages_to_skip}")
-        
+                logger.info(
+                    f"Skipping extraction for languages already at target: {languages_to_skip}"
+                )
+
         # Fetch all cloned repos grouped by creation year (for stratified extraction)
         cursor = conn.execute("""
             SELECT 
@@ -421,7 +425,7 @@ def extract_all_cloned(
 
         if language:
             rows = [r for r in rows if r["language"] == language]
-        
+
         # Filter out repos from languages that have already reached their target
         if languages_to_skip:
             rows = [r for r in rows if r["language"] not in languages_to_skip]
@@ -453,7 +457,9 @@ def extract_all_cloned(
     if target_analyzed:
         logger.info(f"Will stop early when {target_analyzed} analyzed repos reached")
     if target_per_language:
-        logger.info(f"Will stop early when each language reaches {target_per_language} analyzed repos")
+        logger.info(
+            f"Will stop early when each language reaches {target_per_language} analyzed repos"
+        )
 
     totals: dict[str, int] = {"fixtures": 0, "mocks": 0}
     early_stopped = False
@@ -477,7 +483,7 @@ def extract_all_cloned(
 
             # Check if we've reached target (early stop)
             should_stop = False
-            
+
             if target_analyzed:
                 with db_session() as conn:
                     if language:
@@ -494,7 +500,7 @@ def extract_all_cloned(
                         f"Target reached ({analyzed} analyzed). Stopping extraction early."
                     )
                     should_stop = True
-            
+
             if target_per_language and not should_stop:
                 with db_session() as conn:
                     # Check per-language analyzed counts
@@ -504,21 +510,24 @@ def extract_all_cloned(
                         WHERE r.status = 'analysed' AND EXISTS (SELECT 1 FROM fixtures WHERE repo_id = r.id)
                         GROUP BY language
                     """)
-                    lang_counts = {row["language"]: row["count"] for row in cursor.fetchall()}
-                    
+                    lang_counts = {
+                        row["language"]: row["count"] for row in cursor.fetchall()
+                    }
+
                     # Check if all languages have reached their target
                     from collection.config import LANGUAGE_CONFIGS
+
                     all_reached = all(
-                        lang_counts.get(lang, 0) >= target_per_language 
+                        lang_counts.get(lang, 0) >= target_per_language
                         for lang in LANGUAGE_CONFIGS.keys()
                     )
-                    
+
                     if all_reached:
                         logger.info(
                             f"Per-language targets reached: {lang_counts}. Stopping extraction early."
                         )
                         should_stop = True
-            
+
             if should_stop:
                 executor.shutdown(wait=False, cancel_futures=True)
                 early_stopped = True

@@ -119,11 +119,15 @@ def temp_db_with_data():
                 '2019-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'https://example.com/repo2.git',
                 'def5678901234', 'web', 'analysed', '2024-01-02T00:00:00Z', 5)
     """)
-    
+
     # Test files
-    conn.execute("INSERT INTO test_files (repo_id, relative_path, language, num_test_funcs, num_fixtures) VALUES (1, 'test_module.py', 'python', 5, 2)")
-    conn.execute("INSERT INTO test_files (repo_id, relative_path, language, num_test_funcs, num_fixtures) VALUES (2, 'src/test/TestMain.java', 'java', 3, 1)")
-    
+    conn.execute(
+        "INSERT INTO test_files (repo_id, relative_path, language, num_test_funcs, num_fixtures) VALUES (1, 'test_module.py', 'python', 5, 2)"
+    )
+    conn.execute(
+        "INSERT INTO test_files (repo_id, relative_path, language, num_test_funcs, num_fixtures) VALUES (2, 'src/test/TestMain.java', 'java', 3, 1)"
+    )
+
     # Fixtures
     conn.execute("""
         INSERT INTO fixtures 
@@ -155,7 +159,7 @@ def temp_db_with_data():
                 2, 1, 1, 1, 0, 'public void setUp() {\\n    ...', 'setup', 'junit',
                 1, 2, 0)
     """)
-    
+
     # Mock usages
     conn.execute("""
         INSERT INTO mock_usages 
@@ -187,10 +191,10 @@ class TestExportTable:
         with tempfile.TemporaryDirectory() as tmpdir:
             dest = Path(tmpdir) / "repos.csv"
             conn = sqlite3.connect(temp_db_with_data)
-            
+
             _export_table(conn, "repositories", dest)
             conn.close()
-            
+
             assert dest.exists()
             df = pd.read_csv(dest)
             assert len(df) == 2
@@ -201,11 +205,13 @@ class TestExportTable:
         with tempfile.TemporaryDirectory() as tmpdir:
             dest = Path(tmpdir) / "fixtures.csv"
             conn = sqlite3.connect(temp_db_with_data)
-            
+
             # Export fixtures without raw_source and category
-            _export_table(conn, "fixtures", dest, exclude_cols=["raw_source", "category"])
+            _export_table(
+                conn, "fixtures", dest, exclude_cols=["raw_source", "category"]
+            )
             conn.close()
-            
+
             df = pd.read_csv(dest)
             assert "raw_source" not in df.columns
             assert "category" not in df.columns
@@ -218,11 +224,16 @@ class TestExportTable:
         with tempfile.TemporaryDirectory() as tmpdir:
             dest = Path(tmpdir) / "repos.csv"
             conn = sqlite3.connect(temp_db_with_data)
-            
+
             # Try to exclude a column that doesn't exist in this table
-            _export_table(conn, "repositories", dest, exclude_cols=["raw_source", "nonexistent_col"])
+            _export_table(
+                conn,
+                "repositories",
+                dest,
+                exclude_cols=["raw_source", "nonexistent_col"],
+            )
             conn.close()
-            
+
             df = pd.read_csv(dest)
             # Should not throw error; just skip nonexistent columns
             assert len(df) == 2
@@ -234,15 +245,15 @@ class TestExportTable:
         with tempfile.TemporaryDirectory() as tmpdir:
             dest = Path(tmpdir) / "test_files.csv"
             conn = sqlite3.connect(temp_db_with_data)
-            
+
             # Count rows in DB
             cursor = conn.cursor()
             cursor.execute("SELECT COUNT(*) FROM test_files")
             db_count = cursor.fetchone()[0]
-            
+
             _export_table(conn, "test_files", dest)
             conn.close()
-            
+
             df = pd.read_csv(dest)
             assert len(df) == db_count == 2
 
@@ -251,10 +262,10 @@ class TestExportTable:
         with tempfile.TemporaryDirectory() as tmpdir:
             dest = Path(tmpdir) / "repos.csv"
             conn = sqlite3.connect(temp_db_with_data)
-            
+
             _export_table(conn, "repositories", dest)
             conn.close()
-            
+
             df = pd.read_csv(dest)
             assert pd.api.types.is_numeric_dtype(df["stars"])
             assert pd.api.types.is_numeric_dtype(df["forks"])
@@ -270,13 +281,15 @@ class TestMockUsagesExport:
         with tempfile.TemporaryDirectory() as tmpdir:
             dest = Path(tmpdir) / "mock_usages.csv"
             conn = sqlite3.connect(temp_db_with_data)
-            
+
             _export_table(
-                conn, "mock_usages", dest,
-                exclude_cols=["mock_style", "target_layer", "raw_snippet"]
+                conn,
+                "mock_usages",
+                dest,
+                exclude_cols=["mock_style", "target_layer", "raw_snippet"],
             )
             conn.close()
-            
+
             df = pd.read_csv(dest)
             assert "mock_style" not in df.columns
             assert "target_layer" not in df.columns
@@ -293,13 +306,15 @@ class TestFixturesExport:
         with tempfile.TemporaryDirectory() as tmpdir:
             dest = Path(tmpdir) / "fixtures.csv"
             conn = sqlite3.connect(temp_db_with_data)
-            
+
             _export_table(
-                conn, "fixtures", dest,
-                exclude_cols=["raw_source", "category", "has_teardown_pair"]
+                conn,
+                "fixtures",
+                dest,
+                exclude_cols=["raw_source", "category", "has_teardown_pair"],
             )
             conn.close()
-            
+
             df = pd.read_csv(dest)
             assert "raw_source" not in df.columns
             assert "category" not in df.columns
@@ -312,13 +327,12 @@ class TestFixturesExport:
         with tempfile.TemporaryDirectory() as tmpdir:
             dest = Path(tmpdir) / "fixtures_with_source.csv"
             conn = sqlite3.connect(temp_db_with_data)
-            
+
             _export_table(
-                conn, "fixtures", dest,
-                exclude_cols=["category", "has_teardown_pair"]
+                conn, "fixtures", dest, exclude_cols=["category", "has_teardown_pair"]
             )
             conn.close()
-            
+
             df = pd.read_csv(dest)
             assert "raw_source" in df.columns
             assert "category" not in df.columns
@@ -334,7 +348,7 @@ class TestReadmeGeneration:
         """README should include the version number."""
         readme_path = tmp_path / "README.txt"
         _write_readme(readme_path, "1.0.0")
-        
+
         content = readme_path.read_text()
         assert "1.0.0" in content
         assert "FixtureDB v1.0.0" in content
@@ -343,7 +357,7 @@ class TestReadmeGeneration:
         """README should include the full schema documentation."""
         readme_path = tmp_path / "README.txt"
         _write_readme(readme_path, "1.0")
-        
+
         content = readme_path.read_text()
         assert "TABLE: repositories" in content
         assert "TABLE: fixtures" in content
@@ -354,7 +368,7 @@ class TestReadmeGeneration:
         """README should include a generated timestamp."""
         readme_path = tmp_path / "README.txt"
         _write_readme(readme_path, "1.0")
-        
+
         content = readme_path.read_text()
         assert "Generated: 20" in content  # Matches "Generated: YYYY-..."
 
@@ -362,7 +376,7 @@ class TestReadmeGeneration:
         """README should include license information."""
         readme_path = tmp_path / "README.txt"
         _write_readme(readme_path, "1.0")
-        
+
         content = readme_path.read_text()
         assert "CC BY 4.0" in content
         assert "MIT" in content
@@ -376,10 +390,10 @@ class TestStatsGeneration:
         with tempfile.TemporaryDirectory() as tmpdir:
             stats_path = Path(tmpdir) / "stats.txt"
             conn = sqlite3.connect(temp_db_with_data)
-            
+
             _write_stats(conn, stats_path)
             conn.close()
-            
+
             assert stats_path.exists()
 
     def test_write_stats_includes_language_breakdowns(self, temp_db_with_data):
@@ -387,10 +401,10 @@ class TestStatsGeneration:
         with tempfile.TemporaryDirectory() as tmpdir:
             stats_path = Path(tmpdir) / "stats.txt"
             conn = sqlite3.connect(temp_db_with_data)
-            
+
             _write_stats(conn, stats_path)
             conn.close()
-            
+
             content = stats_path.read_text()
             assert "python" in content
             assert "java" in content
@@ -404,10 +418,10 @@ class TestStatsGeneration:
         with tempfile.TemporaryDirectory() as tmpdir:
             stats_path = Path(tmpdir) / "stats.txt"
             conn = sqlite3.connect(temp_db_with_data)
-            
+
             _write_stats(conn, stats_path)
             conn.close()
-            
+
             content = stats_path.read_text()
             # We have 2 Python fixtures and 1 Java fixture
             if "fixtures=" in content:
@@ -423,15 +437,16 @@ class TestFullExportWorkflow:
         with tempfile.TemporaryDirectory() as tmpdir:
             # Temporarily override DB_PATH to use our test database
             from collection import exporter
+
             original_db = exporter.DB_PATH
             monkeypatch.setattr(exporter, "DB_PATH", temp_db_with_data)
-            
+
             export_dir = Path(tmpdir) / "export"
             monkeypatch.setattr(exporter, "EXPORT_DIR", export_dir)
-            
+
             try:
                 zip_path = export_dataset(version="1.0.0")
-                
+
                 assert zip_path.exists()
                 assert zip_path.suffix == ".zip"
                 assert "1.0.0" in zip_path.name
@@ -442,15 +457,16 @@ class TestFullExportWorkflow:
         """ZIP should contain all expected CSV files."""
         with tempfile.TemporaryDirectory() as tmpdir:
             from collection import exporter
+
             original_db = exporter.DB_PATH
             monkeypatch.setattr(exporter, "DB_PATH", temp_db_with_data)
-            
+
             export_dir = Path(tmpdir) / "export"
             monkeypatch.setattr(exporter, "EXPORT_DIR", export_dir)
-            
+
             try:
                 zip_path = export_dataset(version="1.0.0")
-                
+
                 with zipfile.ZipFile(zip_path) as zf:
                     names = zf.namelist()
                     assert any("repositories.csv" in n for n in names)
@@ -465,12 +481,13 @@ class TestFullExportWorkflow:
         """Exported ZIP filename should include the version."""
         with tempfile.TemporaryDirectory() as tmpdir:
             from collection import exporter
+
             original_db = exporter.DB_PATH
             monkeypatch.setattr(exporter, "DB_PATH", temp_db_with_data)
-            
+
             export_dir = Path(tmpdir) / "export"
             monkeypatch.setattr(exporter, "EXPORT_DIR", export_dir)
-            
+
             try:
                 zip_path = export_dataset(version="2.3.4")
                 assert "2.3.4" in zip_path.name
@@ -487,10 +504,10 @@ class TestDataIntegrity:
         with tempfile.TemporaryDirectory() as tmpdir:
             dest = Path(tmpdir) / "fixtures.csv"
             conn = sqlite3.connect(temp_db_with_data)
-            
+
             _export_table(conn, "fixtures", dest)
             conn.close()
-            
+
             df = pd.read_csv(dest)
             # ID columns should never be null
             if "id" in df.columns:
@@ -505,10 +522,10 @@ class TestDataIntegrity:
         with tempfile.TemporaryDirectory() as tmpdir:
             dest = Path(tmpdir) / "repositories.csv"
             conn = sqlite3.connect(temp_db_with_data)
-            
+
             _export_table(conn, "repositories", dest)
             conn.close()
-            
+
             df = pd.read_csv(dest)
             # ID should come first typically
             assert df.columns[0] == "id"

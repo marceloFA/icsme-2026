@@ -385,7 +385,7 @@ def fixture():
         return True
     return False
 """
-        
+
         java_code = """
 public boolean fixture() {
     if (x) {
@@ -394,10 +394,10 @@ public boolean fixture() {
     return false;
 }
 """
-        
+
         py_result = analyze_function_complexity(python_code, "python")
         java_result = analyze_function_complexity(java_code, "java")
-        
+
         # Both should have CC >= 2 (one if statement)
         assert py_result["cyclomatic_complexity"] >= 2
         assert java_result["cyclomatic_complexity"] >= 2
@@ -408,15 +408,15 @@ public boolean fixture() {
 def func(a, b, c):
     pass
 """
-        
+
         java_code = """
 public void func(int a, int b, int c) {
 }
 """
-        
+
         py_result = analyze_function_complexity(python_code, "python")
         java_result = analyze_function_complexity(java_code, "java")
-        
+
         # Both should count 3 parameters
         assert py_result["num_parameters"] == 3
         assert java_result["num_parameters"] == 3
@@ -432,7 +432,7 @@ def fixture():
     return setup()
 """
         result = analyze_function_complexity(code, "python")
-        
+
         expected_keys = [
             "cyclomatic_complexity",
             "cognitive_complexity",
@@ -440,7 +440,7 @@ def fixture():
             "num_objects_instantiated",
             "num_external_calls",
         ]
-        
+
         for key in expected_keys:
             assert key in result, f"Missing metric: {key}"
 
@@ -451,9 +451,9 @@ def fixture():
     return 42
 """
         result = analyze_function_complexity(code, "python")
-        
+
         assert result["cyclomatic_complexity"] >= 1  # CC is always >= 1
-        assert result["cognitive_complexity"] >= 0   # CC_cog can be 0
+        assert result["cognitive_complexity"] >= 0  # CC_cog can be 0
         assert result["num_parameters"] >= 0
         assert result["num_objects_instantiated"] >= 0
         assert result["num_external_calls"] >= 0
@@ -468,7 +468,7 @@ def complex_fixture():
                 process(i, j)
 """
         result = analyze_function_complexity(code, "python")
-        
+
         # This is a heuristic test; both should be reasonably close
         assert result["cognitive_complexity"] >= 0
         assert result["cyclomatic_complexity"] >= 1

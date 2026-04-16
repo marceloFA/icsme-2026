@@ -40,7 +40,6 @@ class TestParseSearrGhsRepo:
         assert result["star_tier"] in ["core", "extended"]  # depends on star count
         assert "topics" in result
 
-
     def test_parse_repo_missing_optional_fields(self):
         """Test parsing a repo with missing optional fields."""
         row = {
@@ -57,7 +56,6 @@ class TestParseSearrGhsRepo:
         assert result["description"] == ""
         assert result["created_at"] == ""
         assert result["clone_url"] == "https://github.com/test/empty.git"
-
 
     def test_parse_high_star_repo(self):
         """Test that star_tier is correctly assigned for high-star repos."""
@@ -93,7 +91,6 @@ class TestIsExcluded:
         assert is_excluded
         assert "keyword" in reason
 
-
     def test_exclude_by_keyword_in_description(self):
         """Test that repos with exclusion keywords in description are filtered."""
         config = LANGUAGE_CONFIGS["python"]
@@ -108,7 +105,6 @@ class TestIsExcluded:
 
         assert is_excluded
         assert "keyword" in reason
-
 
     def test_exclude_archived_repo(self):
         """Test that archived repos are filtered."""
@@ -125,7 +121,6 @@ class TestIsExcluded:
         assert is_excluded
         assert "archived" in reason.lower()
 
-
     def test_exclude_fork(self):
         """Test that forks are filtered."""
         config = LANGUAGE_CONFIGS["python"]
@@ -140,7 +135,6 @@ class TestIsExcluded:
 
         assert is_excluded
         assert "fork" in reason.lower()
-
 
     def test_include_quality_repo(self):
         """Test that quality repos are NOT excluded."""
@@ -163,33 +157,42 @@ class TestPerLanguageLimit:
 
     def test_max_repos_per_language_target_is_500(self):
         """Verify that MAX_REPOS_PER_LANGUAGE_LOAD constant is 500.
-        
+
         This is a TARGET for the clone/analyze phase, not a hard limit during load.
         Repos loaded here may be filtered out later if they lack test files/fixtures.
         """
         from collection.config import MAX_REPOS_PER_LANGUAGE_LOAD
+
         assert MAX_REPOS_PER_LANGUAGE_LOAD == 500
 
     def test_load_all_languages_no_per_language_limit(self):
         """Test that load_all_languages() does not enforce a per-language limit.
-        
+
         All repos that pass basic quality filters should be loaded.
         The 500-per-language target is enforced at clone/analyze phase.
         """
         from collection.config import LANGUAGE_CONFIGS
-        
+
         # Verify the function signature doesn't have max_per_language parameter
         import inspect
-        sig = inspect.signature(__import__('collection.github_search_loader', fromlist=['load_all_languages']).load_all_languages)
-        assert 'max_per_language' not in sig.parameters, \
-            "load_all_languages() should not have max_per_language parameter"
-    
+
+        sig = inspect.signature(
+            __import__(
+                "collection.github_search_loader", fromlist=["load_all_languages"]
+            ).load_all_languages
+        )
+        assert (
+            "max_per_language" not in sig.parameters
+        ), "load_all_languages() should not have max_per_language parameter"
+
     def test_load_repos_for_language_no_max_repos_limit(self):
         """Test that load_repos_for_language() does not enforce a max_repos limit."""
         from collection.github_search_loader import load_repos_for_language
-        
+
         # Verify the function signature doesn't have max_repos parameter
         import inspect
+
         sig = inspect.signature(load_repos_for_language)
-        assert 'max_repos' not in sig.parameters, \
-            "load_repos_for_language() should not have max_repos parameter"
+        assert (
+            "max_repos" not in sig.parameters
+        ), "load_repos_for_language() should not have max_repos parameter"

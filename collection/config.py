@@ -475,7 +475,7 @@ CLONE_WORKERS = 12
 
 # Number of parallel extraction workers (balanced for SQLite single-writer limit)
 # SQLite has a single-writer limitation; only one transaction can write at a time.
-# With 20-retry aggressive backoff policy (exponential: 0.5s, 1s, 2s, 4s...), 
+# With 20-retry aggressive backoff policy (exponential: 0.5s, 1s, 2s, 4s...),
 # 8 workers is safe and provides excellent parallelism on multi-core machines.
 # The retry mechanism handles lock contention automatically.
 EXTRACT_WORKERS = 8
