@@ -8,7 +8,7 @@ The test suite validates the **fixture extraction module** (`collection/detector
 
 **Coverage:**
 - Comprehensive test coverage across all categories
-- **Languages covered**: Python, Java, JavaScript, TypeScript (with additional test patterns for other languages)
+- **Languages covered**: Python, Java, JavaScript, TypeScript
 - **Language-specific test files** for clarity in academic papers
 - **Test framework**: pytest with custom assertion helpers
 
@@ -26,7 +26,6 @@ tests/
 │   ├── test_java_fixtures.py
 │   ├── test_javascript_fixtures.py
 │   ├── test_typescript_fixtures.py
-│   ├── test_go_fixtures.py
 │   └── test_csharp_fixtures.py
 ├── test_extractor_metadata/         # Category 2: Metadata accuracy
 │   ├── test_line_numbers.py
@@ -38,14 +37,12 @@ tests/
 │   ├── test_java_mock_patterns.py
 │   ├── test_javascript_mock_patterns.py
 │   ├── test_typescript_mock_patterns.py
-│   ├── test_go_mock_patterns.py
 │   └── test_csharp_mock_patterns.py
 └── test_integration/                # Category 6: Realistic fixtures
     ├── test_python_realistic_fixtures.py
     ├── test_java_realistic_fixtures.py
     ├── test_javascript_realistic_fixtures.py
     ├── test_typescript_realistic_fixtures.py
-    ├── test_go_realistic_fixtures.py
     └── test_csharp_realistic_fixtures.py
 ```
 
@@ -66,7 +63,6 @@ tests/
 - **Java**: `@Before`, `@After`, `@BeforeClass`, `@BeforeEach` (JUnit 5)
 - **JavaScript**: `beforeEach()`, `afterEach()`, `before()`, `after()`
 - **TypeScript**: Jest/Mocha hooks with type annotations
-- **Go**: Setup functions, table-driven patterns
 - **C#**: `[SetUp]`, `[TearDown]`, `[OneTimeSetUp]`, async patterns
 
 ### 2. Metadata Tests
@@ -121,7 +117,7 @@ tests/
 - **Java**: Mockito, PowerMock
 - **JavaScript**: Jest mocks, Sinon stubs
 - **TypeScript**: ts-mockito, Jest with types
-- **Go**: GoMock patterns
+
 - **C#**: Moq, NSubstitute
 
 ### 6. Integration Tests
@@ -133,7 +129,7 @@ tests/
 - JUnit 5 with nested classes (Java)
 - Jest with beforeAll/afterAll (JavaScript)
 - Type-annotated Jest (TypeScript)
-- Table-driven tests (Go)
+- Implicit vs. explicit setup patterns
 - xUnit collection fixtures (C#)
 - Complex fixture dependencies
 - Large test modules with many fixtures

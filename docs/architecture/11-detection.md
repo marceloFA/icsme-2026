@@ -1,9 +1,5 @@
 # Fixture Detection Logic
 
-**Important Note on Go**: While the collection codebase (`detector.py`, `config.py`) contains Go extraction logic, **Go repositories are NOT included in the published FixtureDB dataset** by design. See [Limitations — Go language exclusion](../reference/12-limitations.md) for details. The CSV exports and database contain zero Go data. The detection documentation below covers the implementation of supported languages; Go sections are included for reference only.
-
----
-
 Detection is implemented in `collection/detector.py` using
 [Tree-sitter](https://tree-sitter.github.io/tree-sitter/) grammars.
 Each language has a dedicated detector function that walks the AST
@@ -106,7 +102,7 @@ For each detected fixture, the system computes the following quantitative metric
 
 **Cyclomatic Complexity**
 - **Tool**: [Lizard](https://github.com/terryyin/lizard) v1.21.3+
-- **Language Support**: Python, Java, JavaScript, TypeScript, Go
+- **Language Support**: Python, Java, JavaScript, TypeScript
 - **Definition**: McCabe complexity (1 + count of decision points: if, for, while, try, catch, case)
 - **Accuracy**: Academic standard metric, widely used in SonarQube and Codecov
 
@@ -116,7 +112,7 @@ For each detected fixture, the system computes the following quantitative metric
   - Formula: Σ(nesting_depth) over all control structures, following SonarQube's G. Ann Campbell research
   - Example: Three nested if-statements at depths 1, 2, 3 contribute 1+2+3=6 to cognitive complexity (vs. cyclomatic complexity of 3)
   
-- **Other languages** (Java, JavaScript, TypeScript, Go): Formula-based fallback
+- **Other languages** (Java, JavaScript, TypeScript): Formula-based fallback
   - Formula: Cognitive Complexity = cyclomatic_complexity × average_nesting_depth
   - Rationale: Nested code is harder to understand than flat code; nesting depth better reflects human cognitive burden
   - Accuracy: Reasonable estimate when official Python implementation unavailable
@@ -125,24 +121,23 @@ For each detected fixture, the system computes the following quantitative metric
 
 **Number of Parameters**
 - **Tool**: [Lizard](https://github.com/terryyin/lizard) v1.21.3+
-- **Language Support**: Python, Java, JavaScript, TypeScript, Go
+- **Language Support**: Python, Java, JavaScript, TypeScript
 - **Definition**: Count of parameters in function/method signature
 - **Accuracy**: Native Lizard metric, exact count
 
 **Object Instantiations**
 - **Tool**: [Lizard](https://github.com/terryyin/lizard) v1.21.3+ with post-processing
-- **Language Support**: Python, Java, JavaScript, TypeScript, Go
+- **Language Support**: Python, Java, JavaScript, TypeScript
 - **Definition**: Count of object creation via constructor calls
 - **Implementation**: Filters Lizard's `external_call_count` for constructor patterns:
   - Java/JavaScript/TypeScript: `new ClassName(...)` or `new ClassName<T>(...)`
   - Python: `ClassName(...)` where ClassName starts with uppercase letter
-  - Go: `&StructName{...}` struct literal syntax
 - **Rationale**: Lizard counts all external function calls (too broad); we filter for constructors specifically using regex pattern matching
 - **Accuracy**: Hybrid approach minimizes DIY logic while maintaining semantic accuracy
 
 **Lines of Code (LOC)**
 - **Tool**: [Lizard](https://github.com/terryyin/lizard) v1.21.3+
-- **Language Support**: Python, Java, JavaScript, TypeScript, Go
+- **Language Support**: Python, Java, JavaScript, TypeScript
 - **Definition**: Non-blank, non-comment lines of code
 - **Accuracy**: Consistent with industry-standard LOC measurement
 
@@ -157,7 +152,7 @@ For each detected fixture, the system computes the following quantitative metric
 
 **Max Nesting Depth** (Phase 3)
 - **Tool**: Tree-sitter AST traversal (custom)
-- **Language Support**: Python, Java, JavaScript, TypeScript, Go
+- **Language Support**: Python, Java, JavaScript, TypeScript
 - **Definition**: Maximum level of nested block structures (if/for/while/try statements)
 - **Ranges**: 1 (no nesting) to N (deeply nested)
 - **Rationale**: Isolates structural nesting independent of control flow decisions; complementary to cognitive complexity
@@ -167,12 +162,11 @@ For each detected fixture, the system computes the following quantitative metric
 
 **Framework Identification**
 - **Tool**: FRAMEWORK_REGISTRY (config.py) with regex pattern matching fallback
-- **Supported Frameworks**: 44+ frameworks across 5 languages
+- **Supported Frameworks**: 40+ frameworks across 4 languages
   - Python: pytest, unittest, nose, nose2, doctest, behave, pytest-bdd, pytest-asyncio, testtools, trial, etc.
   - Java: junit, testng, spock, cucumber, mockito, easymock, powermock, etc.
   - JavaScript: jest, mocha, jasmine, ava, vitest, cucumber, sinon, tap, etc.
   - TypeScript: jest, mocha, vitest, cucumber, sinon, etc.
-  - Go: testing, ginkgo, goblin, gomock, testify, etc.
 - **Registry**: Authoritative list of known frameworks per language maintained in `collection/config.py`
 - **Validation**: `is_known_framework()` and `_validate_framework()` functions validate framework names
 - **Extensibility**: Registry can generate detection patterns in future versions
@@ -184,7 +178,6 @@ Mock usage is detected as a separate pass after fixture extraction using 40+ reg
 - **Python**: `unittest.mock`, `pytest-mock`, `MagicMock`, `AsyncMock`, `patch`, `Mock`, `Mock.assert_*`
 - **Java**: Mockito (`when`, `thenReturn`, `verify`), EasyMock (`expect`, `replay`), MockK (Kotlin)
 - **JavaScript/TypeScript**: Jest (`jest.mock`, `jest.fn`, `jest.spyOn`), Sinon (`sinon.spy`, `sinon.stub`, `sinon.mock`), Vitest (`vi.mock`, `vi.spyOn`)
-- **Go**: gomock (`gomock.NewController`, `EXPECT()`), testify/mock (`mock.Mock`, `assert.Called`)
 
 For each mock framework detected, the fixture records:
 - **framework**: Name of mock framework (e.g., `mockito`, `unittest_mock`, `sinon`)
@@ -198,7 +191,7 @@ For each mock framework detected, the fixture records:
 ## Documentation References
 
 For detailed fixture patterns, examples, and framework reference:
-- [16-fixture-patterns-reference.md](../usage/16-fixture-patterns-reference.md) — Comprehensive catalog of all 50+ fixture types, frameworks, detection patterns, and examples across 6 languages (Python, Java, JavaScript, TypeScript, Go, C#)
+- [16-fixture-patterns-reference.md](../usage/16-fixture-patterns-reference.md) — Comprehensive catalog of all 50+ fixture types, frameworks, detection patterns, and examples across 4 languages (Python, Java, JavaScript, TypeScript)
 
 ---
 
@@ -214,7 +207,6 @@ After initial AST-based detection, fixtures undergo post-processing to calculate
   - **Python/pytest**: Scans test function signatures for fixture name in parameter lists
   - **Java**: Counts test methods in same class as setup annotations
   - **JavaScript/TypeScript**: Counts test functions using fixture in scope
-  - **Go**: Counts test functions that register the fixture
 - **Calculation Timing**: Post-processing step after all fixtures detected (requires file-wide fixture name registry)
 - **Utility**: Fixture modularity metric; complex fixtures used by many tests have system-wide impact
 - **CSV Export**: ✅ Included (quantitative metric)
@@ -227,8 +219,6 @@ After initial AST-based detection, fixtures undergo post-processing to calculate
   - **Python**: Presence of `yield` statement (fixture-style cleanup) or `tearDown` method paired with `setUp`
   - **Java**: `@AfterEach`/`@After` or `@AfterAll`/`@AfterClass` in same class as setup annotations
   - **JavaScript**: `afterEach()` or `afterAll()` call paired with `beforeEach()` or `beforeAll()`
-  - **Go**: `t.Cleanup()` callbacks registered
-  - **C#**: `TearDown`/`Cleanup` equivalent found in fixture scope
 - **Calculation Timing**: Post-processing step (after initial detection, cross-references setup/teardown pairs)
 - **Utility**: Indicator of resource cleanup discipline; fixtures without teardown are potential leak indicators
 - **CSV Export**: ❌ Excluded (qualitative indicator, internal analysis only)
@@ -452,7 +442,6 @@ tempfile.NamedTemporaryFile()  # Temp file creation
    - **unittest**: `def setUp(self)` method name (convention)
    - **Jest**: `beforeEach(() => {})` function call (API)
    - **JUnit**: `@BeforeEach` annotation (metadata)
-   - **Go**: `func Setup(s *Suite)` method (convention)
 
 3. **Tool analysis**:
 
@@ -464,7 +453,7 @@ tempfile.NamedTemporaryFile()  # Temp file creation
 | **Custom pattern matching** | ✅ Full | Encodes framework-specific rules | Requires maintenance as frameworks evolve |
 
 **Current implementation strengths**:
-- ✅ Accurate: Validated against real fixtures across 6 languages
+- ✅ Accurate: Validated against real fixtures across 4 languages
 - ✅ Fast: Regex-based detection is computationally efficient
 - ✅ Extensible: Easy to add new fixture types/frameworks
 - ✅ Maintainable: Patterns organized clearly by language
@@ -501,7 +490,6 @@ Central registry maintaining all supported testing frameworks:
 - **Java** (10+ frameworks): junit, testng, spock, cucumber, mockito, easymock, powermock, jmockit, etc.
 - **JavaScript** (12+ frameworks): jest, mocha, jasmine, ava, vitest, cucumber, tap, qunit, etc.
 - **TypeScript** (8+ frameworks): jest, mocha, vitest, cucumber, sinon, etc.
-- **Go** (8+ frameworks): testing, ginkgo, goblin, gomock, testify, assert, etc.
 
 **Functions**:
 - `is_known_framework(framework, language)`: Validate framework exists in registry
@@ -509,6 +497,90 @@ Central registry maintaining all supported testing frameworks:
 - `_validate_framework()`: Log warning if detected framework not in registry (forward-compatible)
 
 **Design**: Allows system to be forward-compatible (unknown frameworks are recorded but noted) while maintaining canonical registry of known ones.
+
+---
+
+## Framework References & Official Homepages
+
+This section provides direct links to the official homepages and documentation for all supported testing and mocking frameworks. Use these links to learn more about framework-specific features, installation, and best practices.
+
+### Python Testing Frameworks
+
+| Framework | Type | Official Homepage | Documentation |
+|-----------|------|-------------------|-----------------|
+| **pytest** | Unit Testing | https://pytest.org/ | https://docs.pytest.org/ |
+| **unittest** | Unit Testing | https://docs.python.org/3/library/unittest.html | https://docs.python.org/3/library/unittest.html |
+| **nose** | Test Discovery | https://nose.readthedocs.io/ | https://nose.readthedocs.io/ |
+| **nose2** | Test Discovery | https://nose2.readthedocs.io/ | https://nose2.readthedocs.io/ |
+| **doctest** | Documentation Testing | https://docs.python.org/3/library/doctest.html | https://docs.python.org/3/library/doctest.html |
+| **behave** | BDD Framework | https://behave.readthedocs.io/ | https://behave.readthedocs.io/ |
+| **pytest-bdd** | BDD Framework | https://pytest-bdd.readthedocs.io/ | https://pytest-bdd.readthedocs.io/ |
+| **testtools** | Extended Testing | https://testtools.readthedocs.io/ | https://testtools.readthedocs.io/ |
+| **trial** | Async Testing | https://twistedmatrix.com/documents/current/core/howto/trial.html | https://twistedmatrix.com/documents/current/core/howto/trial.html |
+
+### Python Mocking Frameworks
+
+| Framework | Type | Official Homepage | Documentation |
+|-----------|------|-------------------|-----------------|
+| **unittest.mock** | Built-in Mocking | https://docs.python.org/3/library/unittest.mock.html | https://docs.python.org/3/library/unittest.mock.html |
+| **pytest-mock** | Pytest Fixtures | https://pytest-mock.readthedocs.io/ | https://pytest-mock.readthedocs.io/ |
+| **pytest-asyncio** | Async Fixtures | https://pytest-asyncio.readthedocs.io/ | https://pytest-asyncio.readthedocs.io/ |
+
+### Java Testing Frameworks
+
+| Framework | Type | Official Homepage | Documentation |
+|-----------|------|-------------------|-----------------|
+| **JUnit** | Unit Testing | https://junit.org/ | https://junit.org/junit4/ (v4) / https://junit.org/junit5/ (v5) |
+| **TestNG** | Unit Testing | https://testng.org/ | https://testng.org/doc/ |
+| **Spock** | BDD Framework | https://spockframework.org/ | https://spockframework.org/spock/docs/ |
+| **Cucumber** | BDD Framework | https://cucumber.io/ | https://cucumber.io/docs/cucumber/ |
+| **Arquillian** | Container Testing | https://arquillian.org/ | https://arquillian.org/docs/ |
+
+### Java Mocking Frameworks
+
+| Framework | Type | Official Homepage | Documentation |
+|-----------|------|-------------------|-----------------|
+| **Mockito** | Mocking Framework | https://site.mockito.org/ | https://javadoc.io/doc/org.mockito/mockito-core/latest/org/mockito/Mockito.html |
+| **EasyMock** | Mocking Framework | https://easymock.org/ | https://easymock.org/user-guide.html |
+| **PowerMock** | Advanced Mocking | https://powermock.github.io/ | https://github.com/powermock/powermock/wiki |
+
+### JavaScript Testing Frameworks
+
+| Framework | Type | Official Homepage | Documentation |
+|-----------|------|-------------------|-----------------|
+| **Jest** | Unit Testing | https://jestjs.io/ | https://jestjs.io/docs/getting-started |
+| **Mocha** | Unit Testing | https://mochajs.org/ | https://mochajs.org/#getting-started |
+| **Jasmine** | Unit Testing | https://jasmine.github.io/ | https://jasmine.github.io/pages/getting_started.html |
+| **AVA** | Test Runner | https://github.com/avajs/ava | https://github.com/avajs/ava#readme |
+| **Vitest** | Unit Testing | https://vitest.dev/ | https://vitest.dev/guide/ |
+| **Cucumber** | BDD Framework | https://cucumber.io/ | https://cucumber.io/docs/cucumber/ |
+| **TAP** | Test Protocol | https://node-tap.org/ | https://node-tap.org/docs/ |
+| **uvu** | Test Runner | https://github.com/lukeed/uvu | https://github.com/lukeed/uvu#readme |
+
+### JavaScript Mocking Frameworks
+
+| Framework | Type | Official Homepage | Documentation |
+|-----------|------|-------------------|-----------------|
+| **Sinon.JS** | Spies, Stubs, Mocks | https://sinonjs.org/ | https://sinonjs.org/releases/latest/ |
+
+### TypeScript Testing Frameworks
+
+| Framework | Type | Official Homepage | Documentation |
+|-----------|------|-------------------|-----------------|
+| **Jest** | Unit Testing | https://jestjs.io/ | https://jestjs.io/docs/getting-started |
+| **Mocha** | Unit Testing | https://mochajs.org/ | https://mochajs.org/#getting-started |
+| **Jasmine** | Unit Testing | https://jasmine.github.io/ | https://jasmine.github.io/pages/getting_started.html |
+| **Vitest** | Unit Testing | https://vitest.dev/ | https://vitest.dev/guide/ |
+| **AVA** | Test Runner | https://github.com/avajs/ava | https://github.com/avajs/ava#readme |
+| **Cucumber** | BDD Framework | https://cucumber.io/ | https://cucumber.io/docs/cucumber/ |
+
+### TypeScript Mocking Frameworks
+
+| Framework | Type | Official Homepage | Documentation |
+|-----------|------|-------------------|-----------------|
+| **Sinon.JS** | Spies, Stubs, Mocks | https://sinonjs.org/ | https://sinonjs.org/releases/latest/ |
+
+---
 
 ### Mock Framework Dependency Validation (Phase 4)
 
@@ -528,9 +600,6 @@ Central registry maintaining all supported testing frameworks:
 
 3. **JavaScript/TypeScript**: Scans `package.json`, `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`
    - Checks both `dependencies` and `devDependencies` sections
-
-4. **Go**: Scans `go.mod`, `go.sum`
-   - Looks for framework import paths
 
 **Return Behavior**:
 - Returns `True` if framework found in any dependency file

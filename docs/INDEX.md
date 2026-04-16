@@ -30,6 +30,10 @@ This folder contains the complete documentation for FixtureDB, organized into se
 - Overview: [Limitations & Threats to Validity](reference/12-limitations.md)
 - Testing: [Testing Strategy](reference/17-testing.md)
 
+### **I want to find framework documentation**
+- Links: [Fixture Detection Logic — Framework References](architecture/11-detection.md#framework-references--official-homepages) — Direct links to 40+ testing and mocking frameworks
+
+
 ## All Documentation
 
 ### Getting Started

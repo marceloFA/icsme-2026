@@ -105,8 +105,7 @@ NON_CODE_EXTENSIONS = {
     ".log",
     ".out",
     ".tmp",
-    ".mod",  # Go
-    ".sum",  # Go
+
     ".dot",  # Graph visualization
     # Geospatial files
     ".geom",

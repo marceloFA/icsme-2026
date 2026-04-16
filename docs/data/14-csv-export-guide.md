@@ -34,7 +34,6 @@ export/fixturedb_v<version>_<date>/
 ├── fixtures_java.csv          (fixtures for Java repos)
 ├── fixtures_javascript.csv    (fixtures for JavaScript repos)
 ├── fixtures_typescript.csv    (fixtures for TypeScript repos)
-├── fixtures_go.csv            (fixtures for Go repos)
 ├── fixtures_csharp.csv        (fixtures for C# repos)
 ├── stats.txt                  (high-level statistics)
 └── README.txt                 (schema documentation)
@@ -49,7 +48,7 @@ One row per repository discovered during GitHub search.
 | `id` | INT | Internal primary key |
 | `github_id` | INT | GitHub repository numeric ID |
 | `full_name` | TEXT | Repository slug (e.g., "pytest-dev/pytest") |
-| `language` | TEXT | Primary language (python, java, javascript, typescript, go, csharp) |
+| `language` | TEXT | Primary language (python, java, javascript, typescript, csharp) |
 | `stars` | INT | Star count at collection time |
 | `forks` | INT | Fork count at collection time |
 | `description` | TEXT | GitHub repository description |

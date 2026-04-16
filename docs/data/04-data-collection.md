@@ -2,20 +2,10 @@
 
 **Collection Metadata**  
 - **Collection Period**: April 1–2, 2026
-- **Repositories Collected**: 160 (4 languages: Python, Java, JavaScript, TypeScript; Go excluded by design)
+- **Repositories Collected**: 160 (4 languages: Python, Java, JavaScript, TypeScript)
 - **Total Fixtures Extracted**: 40,672
 - **Extraction Timestamp Range**: 2026-04-01 20:16:59 to 2026-04-01 23:18:03 UTC
 - **Reproducibility**: All collection parameters pinned in code; repos at specific commits preserved
-
-### Go Language Handling
-
-**Clarification**: While the collection codebase (`collection/detector.py`, `collection/config.py`) contains Go extraction logic for reference, **Go is not included in the FixtureDB dataset**. The distinction:
-
-1. **Code Level**: Go detection logic exists in `detector.py` and language config in `config.py` (retained for reference)
-2. **Data Level**: The database (`data/corpus.db`) contains only 4 languages: Python, Java, JavaScript, TypeScript
-3. **CSV Level**: CSV exports (`fixtures.csv`, `fixtures_python.csv`, etc.) contain only data from the 4 languages
-
-See [Limitations — Go language exclusion](../reference/12-limitations.md) for rationale.
 
 ## Tool Versions (for Reproducibility)
 

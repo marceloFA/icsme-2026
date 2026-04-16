@@ -4,7 +4,7 @@
 
 **Status:** Complete reference with BDD and Spring enhancements  
 **Last Updated:** April 2026  
-**Languages:** Python, Java, JavaScript, TypeScript, Go, C#
+**Languages:** Python, Java, JavaScript, TypeScript, C#
 
 ---
 
@@ -14,12 +14,11 @@
 2. [Python Fixtures](#python-fixtures)
 3. [Java Fixtures](#java-fixtures)
 4. [JavaScript/TypeScript Fixtures](#javascripttypescript-fixtures)
-5. [Go Fixtures](#go-fixtures)
-6. [C# Fixtures](#c-fixtures)
-7. [BDD Frameworks](#bdd-frameworks)
-8. [Spring Framework](#spring-framework)
-9. [Fixture Relationships](#fixture-relationships)
-10. [Detection Methodology](#detection-methodology)
+5. [C# Fixtures](#c-fixtures)
+6. [BDD Frameworks](#bdd-frameworks)
+7. [Spring Framework](#spring-framework)
+8. [Fixture Relationships](#fixture-relationships)
+9. [Detection Methodology](#detection-methodology)
 
 ---
 
@@ -40,8 +39,6 @@
 | Jest/Mocha/Jasmine/Vitest | JavaScript | before_each/after_each/before_all/after_all | `beforeEach/afterEach/beforeAll/afterAll(...)` | per_test, per_class |
 | Mocha | JavaScript | mocha_before/mocha_after | `before/after(...)` | per_test |
 | AVA | JavaScript/TypeScript | ava_before/after/serial_before/serial_after | `test.before/.after/.serial.before/.serial.after(...)` | per_test, per_class |
-| testing.T | Go | test_main | `func TestMain(m *testing.M)` | global |
-| testify/suite | Go | go_setup_suite/go_teardown_suite | `func (s *MySuite) SetupSuite/TeardownSuite()` | per_class |
 | NUnit | C# | nunit_setup/nunit_teardown | `[SetUp]/[TearDown]` | per_test |
 | xUnit | C# | xunit_constructor/xunit_dispose | `Constructor/IDisposable` | per_test, per_class |
 
@@ -677,98 +674,6 @@ test.serial('database operations', t => {
 
 ---
 
-## Go Fixtures
-
-### testing.T Pattern
-
-**Type:** `test_main`  
-**Framework:** Go testing  
-**Pattern:** `func TestMain(m *testing.M)`
-
-```go
-package mypackage
-
-import (
-    "testing"
-)
-
-func TestMain(m *testing.M) {
-    // Setup: runs once before all tests
-    setupGlobal()
-    
-    // Run all tests
-    code := m.Run()
-    
-    // Teardown: runs once after all tests
-    teardownGlobal()
-    
-    // Exit with test result code
-    os.Exit(code)
-}
-
-func TestSomething(t *testing.T) {
-    // Individual test
-    if something != expected {
-        t.Fail()
-    }
-}
-```
-
-**Scope:** global
-
----
-
-### testify/suite Pattern
-
-**Type:** `go_setup_suite`, `go_teardown_suite`, `go_setup_test`, `go_teardown_test`  
-**Framework:** testify/suite  
-**Pattern:** Methods on test suite struct
-
-```go
-import "github.com/stretchr/testify/suite"
-
-type MySuite struct {
-    suite.Suite
-    db *Database
-}
-
-// Runs once before all tests in the suite
-func (s *MySuite) SetupSuite() {
-    s.db = NewDatabase()
-}
-
-// Runs before each test
-func (s *MySuite) SetupTest() {
-    s.db.Clear()
-}
-
-// Runs after each test
-func (s *MySuite) TeardownTest() {
-    s.db.Rollback()
-}
-
-// Runs once after all tests
-func (s *MySuite) TeardownSuite() {
-    s.db.Close()
-}
-
-func (s *MySuite) TestQuery() {
-    result := s.db.Query("SELECT 1")
-    s.Equal(1, result)
-}
-
-// Run tests
-func TestMySuite(t *testing.T) {
-    suite.Run(t, new(MySuite))
-}
-```
-
-**Scope Mapping:**
-- `SetupTest`/`TeardownTest` → per_test
-- `SetupSuite`/`TeardownSuite` → per_class
-
----
-
 ## C# Fixtures
 
 ### NUnit
@@ -1039,11 +944,6 @@ For each source file:
 - Member expressions: `test.serial.before()`
 - Decorators (TypeScript): `@Before`, `@After`
 - Check for `call_expression` with matching function names
-
-**Go:**
-- Function names: `TestMain`, `SetupTest`, `TeardownTest`
-- Receiver methods on suite types
-- Check for `function_declaration` with matching patterns
 
 **C#:**
 - Attributes: `[SetUp]`, `[TearDown]`, `[OneTimeSetUp]`, `[OneTimeTearDown]`

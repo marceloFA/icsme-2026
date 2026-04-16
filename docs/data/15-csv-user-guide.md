@@ -17,8 +17,6 @@ FixtureDB provides CSV exports of the main analysis tables across 4 programming 
 - How to link tables together
 - Common analyses and their queries
 
-**Go Language Note**: By configuration, FixtureDB contains **zero Go data** in all CSV exports and database tables. Go repositories are excluded due to unvalidated fixture detection heuristics. The collection code (`detector.py`, `config.py`) retains Go extraction logic for reference, but no Go data is present in the published dataset. All CSV files below contain only 4 languages: Python, Java, JavaScript, and TypeScript. See [Data Collection — Go Language Handling](../data/04-data-collection.md) and [Limitations](../reference/12-limitations.md) for details.
-
 ---
 
 ## Getting Started
@@ -405,7 +403,6 @@ fixtures.groupby('language').apply(
 **Limitations:**
 - Snapshot at one commit per repository (no time series)
 - Mock detection uses pattern matching (may miss unusual patterns)
-- Go repositories excluded by design (dataset uses 4 languages only; see [docs/12-limitations.md](../reference/12-limitations.md))
 
 ---
 

@@ -11,18 +11,10 @@ and improve generalizability, the dataset records `star_tier` (`core` for ≥500
 stars, `extended` for 100–499) and we recommend stratifying all analyses by tier.
 This allows researchers to study both popular and emerging projects separately.
 
-## Go language exclusion
-
-Go repositories are excluded from the FixtureDB dataset due to unvalidated heuristic-based detection. The Go helper detector relies on pattern matching (non-test functions called from ≥2 test functions) without formal validation. Rather than publish unvalidated data, Go is not included (this exclusion avoids ~2.5% of data). All included languages (Python, Java, JavaScript, TypeScript) use syntax-based detection with high confidence (~95%+).
-
-## Snapshot corpus
-
-Each repository is captured at a single commit. The dataset does not support
-longitudinal analyses of fixture evolution.
-
 ## Language coverage
 
-This dataset covers four languages (Python, Java, JavaScript, TypeScript) with syntax-based detection across all. Ruby (RSpec), Kotlin, Scala, Rust, and Go are not included.
+FixtureDB covers four languages: Python, Java, JavaScript, and TypeScript.
+Other languages such as Ruby (RSpec), Kotlin, Scala, Rust, C#, and Go are not included.
 
 ## Mock detection completeness
 
@@ -77,7 +69,6 @@ Fixture detection uses syntax-based patterns (decorators, annotations, named met
 - **Python**: Highly accurate (yield detection, setUp/tearDown pairing)
 - **Java**: Accurate for annotation-based (@After, @AfterEach)
 - **JavaScript/TypeScript**: Best-effort scope inference; ambiguous cases may misclassify
-- **Go**: Incomplete detection without formal validation
 - **Limitation**: Implicit cleanup (e.g., connection pooling in frameworks, automatic resource management) is not detected
 - **Mitigation**: `raw_source` field available in SQLite for manual verification on important fixtures
 
