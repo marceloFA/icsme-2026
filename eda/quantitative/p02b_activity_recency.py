@@ -41,7 +41,7 @@ def plot_activity_recency(conn, out_dir, show):
         return
 
     repos["days_since_push"] = (
-        pd.Timestamp.now("UTC") - pd.to_datetime(repos["pushed_at"], errors="coerce")
+        pd.Timestamp.now("UTC") - pd.to_datetime(repos["pushed_at"], errors="coerce", utc=True)
     ).dt.days.clip(lower=0)
 
     present = [l for l in LANG_ORDER if l in repos["language"].values]

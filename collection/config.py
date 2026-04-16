@@ -464,14 +464,21 @@ MAX_REPOS_PER_LANGUAGE_LOAD = 500  # Do not exceed 500 per language
 # Maximum repos to clone in a single run (useful for incremental collection)
 CLONE_BATCH_SIZE = 50
 
+# Per-language targets for dataset collection
+# Toy dataset: quick validation with smaller extraction (faster testing of pipeline changes)
+# Full dataset: production-quality corpus for research
+TOY_TARGET_REPOS_PER_LANGUAGE = 50
+FULL_TARGET_REPOS_PER_LANGUAGE = 500
+
 # Number of parallel clone workers
 CLONE_WORKERS = 12
 
 # Number of parallel extraction workers (balanced for SQLite single-writer limit)
 # SQLite has a single-writer limitation; only one transaction can write at a time.
-# With 20-retry aggressive backoff policy, 3 workers is safe and provides good parallelism
-# without excessive lock contention. Going above 4 causes diminishing returns.
-EXTRACT_WORKERS = 3
+# With 20-retry aggressive backoff policy (exponential: 0.5s, 1s, 2s, 4s...), 
+# 8 workers is safe and provides excellent parallelism on multi-core machines.
+# The retry mechanism handles lock contention automatically.
+EXTRACT_WORKERS = 8
 
 # Maximum time to spend extracting fixtures from a single test file (seconds)
 # Files that exceed this timeout are skipped to prevent pathological cases
