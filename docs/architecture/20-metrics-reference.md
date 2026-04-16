@@ -164,7 +164,6 @@
 
 **Implementation:** `collection/detector.py::_count_object_instantiations()`
 
-**Reliability:** ⭐⭐⭐⭐  
 **Pros:**
 - Reduces false positives from Lizard's general external call count
 - Provides semantic insight into fixture complexity (setup using factories vs. mocks)
@@ -478,9 +477,9 @@ For consistency with file-level metrics, consider migrating to Lizard's LOC defi
 | `fixture_type` | Yes | Yes | Yes | Yes |
 | `scope` | Yes | Yes | Yes | Yes |
 | `framework` | Yes | Yes | Yes | Yes |
-| `reuse_count` | ✅ | ✅ | ✅ | ✅ |
-| `has_teardown_pair` | ✅ | ✅ | ✅ | ✅ |
-| `fixture_dependencies` | ✅ | ✅ | ✅ | ✅ |
+| `reuse_count` | Yes | Yes | Yes | Yes |
+| `has_teardown_pair` | Yes | Yes | Yes | Yes |
+| `fixture_dependencies` | Yes | Yes | Yes | Yes |
 
 ---
 

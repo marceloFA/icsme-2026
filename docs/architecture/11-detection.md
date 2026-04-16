@@ -156,7 +156,7 @@ For each detected fixture, the system computes the following quantitative metric
 - **Definition**: Maximum level of nested block structures (if/for/while/try statements)
 - **Ranges**: 1 (no nesting) to N (deeply nested)
 - **Rationale**: Isolates structural nesting independent of control flow decisions; complementary to cognitive complexity
-- **CSV Export**: ✅ Included (quantitative)
+- **CSV Export**: Included (quantitative)
 
 ### Framework Detection
 
@@ -212,7 +212,7 @@ After initial AST-based detection, fixtures undergo post-processing to calculate
   - **JavaScript/TypeScript**: Counts test functions using fixture in scope
 - **Calculation Timing**: Post-processing step after all fixtures detected (requires file-wide fixture name registry)
 - **Utility**: Fixture modularity metric; complex fixtures used by many tests have system-wide impact
-- **CSV Export**: ✅ Included (quantitative metric)
+- **CSV Export**: Included (quantitative metric)
 
 ### Teardown Pairing (Phase 3)
 
@@ -224,7 +224,7 @@ After initial AST-based detection, fixtures undergo post-processing to calculate
   - **JavaScript**: `afterEach()` or `afterAll()` call paired with `beforeEach()` or `beforeAll()`
 - **Calculation Timing**: Post-processing step (after initial detection, cross-references setup/teardown pairs)
 - **Utility**: Indicator of resource cleanup discipline; fixtures without teardown are potential leak indicators
-- **CSV Export**: ❌ Excluded (qualitative indicator, internal analysis only)
+- **CSV Export**: Excluded (qualitative indicator, internal analysis only)
 
 ### Repository Contributor Count (Phase 3)
 
@@ -233,7 +233,7 @@ After initial AST-based detection, fixtures undergo post-processing to calculate
 - **Source**: GitHub API endpoint `/repos/{owner}/{repo}/contributors`
 - **Implementation**: Fetches contributor count via Link header pagination (handles API caps)
 - **Utility**: Project maturity and team size proxy; correlates with test practice variation
-- **CSV Export**: ✅ Included (quantitative metric)
+- **CSV Export**: Included (quantitative metric)
 
 ---
 
@@ -275,7 +275,7 @@ After initial AST-based detection, fixtures undergo post-processing to calculate
   def db():
       return setup_expensive_db()
   
-  @pytest.fixture(scope="global")  # ❌ Would be invalid!
+  @pytest.fixture(scope="global")  # Would be invalid!
   def service(db):  # depends on module-scoped fixture
       return UserService(db)
   
@@ -335,19 +335,19 @@ This section provides the complete audit of which metrics use external tools vs.
 
 | Metric | Type | Tool(s) Used | Phase | Phase | Rationale |
 |--------|------|-------------|-------|-------|-----------|
-| `loc` | Code Property | ✅ Lizard v1.21.3+ | P2 | Fixture | Industry-standard code metric; consistent with fix-level metrics |
-| `cyclomatic_complexity` | Code Property | ✅ Lizard v1.21.3+ | P1 | Fixture | McCabe's standard; widely recognized metric |
-| `cognitive_complexity` | Code Property | ✅ Lizard + complexipy v5.0.0+ | P1 | Fixture | SonarQube standard; Python-native, fallback formula for others |
-| `num_parameters` | Syntax | ✅ Lizard v1.21.3+ | P2 | Fixture | Direct extraction from Lizard's parameter_count |
-| `num_objects_instantiated` | Semantic | ✅ Lizard v1.21.3+ (post-processed) | P2 | Fixture | Filters Lizard's external_call_count for constructor patterns |
-| `num_external_calls` | Semantic | ❌ Custom regex | P2 | Fixture | Domain-specific I/O detection (not general function calls) |
-| `fixture_type` | Classification | ❌ Custom AST + regex | P1 | Fixture | Domain-specific framework patterns; no generalizable tool |
-| `scope` | Classification | ✅ Tree-sitter (AST) | P1 | Fixture | Built-in; custom scope rules per language |
-| `framework` | Classification | ✅ FRAMEWORK_REGISTRY + regex | P2 | Fixture | Standardized registry of 44+ frameworks; extensible design |
-| `max_nesting_depth` | Code Property | ✅ Tree-sitter AST | P1 | Fixture | Structual nesting independent of complexity |
-| `reuse_count` | Usage | ❌ Custom AST | P1 | Fixture | Post-processing metric; requires file-wide fixture context |
-| `has_teardown_pair` | Pattern | ❌ Custom AST + regex | P1 | Fixture | Framework-specific cleanup patterns |
-| `fixture_dependencies` | Relationships | ❌ Custom regex | P4 | Fixture | pytest-specific parameter injection (Phase 4) |
+| `loc` | Code Property | Lizard v1.21.3+ | P2 | Fixture | Industry-standard code metric; consistent with fix-level metrics |
+| `cyclomatic_complexity` | Code Property | Lizard v1.21.3+ | P1 | Fixture | McCabe's standard; widely recognized metric |
+| `cognitive_complexity` | Code Property | Lizard + complexipy v5.0.0+ | P1 | Fixture | SonarQube standard; Python-native, fallback formula for others |
+| `num_parameters` | Syntax | Lizard v1.21.3+ | P2 | Fixture | Direct extraction from Lizard's parameter_count |
+| `num_objects_instantiated` | Semantic | Lizard v1.21.3+ (post-processed) | P2 | Fixture | Filters Lizard's external_call_count for constructor patterns |
+| `num_external_calls` | Semantic | Custom regex | P2 | Fixture | Domain-specific I/O detection (not general function calls) |
+| `fixture_type` | Classification | Custom AST + regex | P1 | Fixture | Domain-specific framework patterns; no generalizable tool |
+| `scope` | Classification | Tree-sitter (AST) | P1 | Fixture | Built-in; custom scope rules per language |
+| `framework` | Classification | FRAMEWORK_REGISTRY + regex | P2 | Fixture | Standardized registry of 44+ frameworks; extensible design |
+| `max_nesting_depth` | Code Property | Tree-sitter AST | P1 | Fixture | Structual nesting independent of complexity |
+| `reuse_count` | Usage | Custom AST | P1 | Fixture | Post-processing metric; requires file-wide fixture context |
+| `has_teardown_pair` | Pattern | Custom AST + regex | P1 | Fixture | Framework-specific cleanup patterns |
+| `fixture_dependencies` | Relationships | Custom regex | P4 | Fixture | pytest-specific parameter injection (Phase 4) |
 | `raw_source` | Data | N/A | P1 | Fixture | Text extraction for reproducibility |
 
 ### External Tools Migrations (Phase 1-2)
@@ -425,17 +425,17 @@ tempfile.NamedTemporaryFile()  # Temp file creation
 1. **Semantic distinction requires framework patterns**:
    ```python
    # Which of these are fixtures?
-   def my_fixture():  # ❌ Helper function
+   def my_fixture():  # Helper function
        return data
    
-   @pytest.fixture  # ✅ pytest fixture
+   @pytest.fixture  # pytest fixture
    def my_fixture():
        return data
    
-   def setUp(self):  # ✅ unittest fixture (convention-based)
+   def setUp(self):  # unittest fixture (convention-based)
        pass
    
-   def my_helper():  # ❌ Helper function
+   def my_helper():  # Helper function
        return data
    ```
    No AST tool can reliably distinguish these without framework-specific knowledge.
@@ -453,13 +453,13 @@ tempfile.NamedTemporaryFile()  # Temp file creation
 | **AST Libraries** | Partial | Can identify decorators/names | No semantic understanding of fixture vs. helper |
 | **Type checkers** (mypy, tsc) | No | Would require type hints | Not all fixtures have type hints; Python-centric |
 | **Pre-trained models** | No | Could classify by naming conventions | No public models for fixture classification |
-| **Custom pattern matching** | ✅ Full | Encodes framework-specific rules | Requires maintenance as frameworks evolve |
+| **Custom pattern matching** | Full | Encodes framework-specific rules | Requires maintenance as frameworks evolve |
 
 **Current implementation strengths**:
-- ✅ Accurate: Validated against real fixtures across 4 languages
-- ✅ Fast: Regex-based detection is computationally efficient
-- ✅ Extensible: Easy to add new fixture types/frameworks
-- ✅ Maintainable: Patterns organized clearly by language
+- Accurate: Validated against real fixtures across 4 languages
+- Fast: Regex-based detection is computationally efficient
+- Extensible: Easy to add new fixture types/frameworks
+- Maintainable: Patterns organized clearly by language
 
 **Decision**: Keep custom implementation; no viable tool alternative exists, and current approach is well-tested.
 

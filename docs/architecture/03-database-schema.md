@@ -78,7 +78,7 @@ One row per test file found inside each analysed repository.
 
 One row per fixture definition. This is the primary analysis table.
 
-**📊 Metrics Note:** See [Metrics Reference & Calculation Methodology](20-metrics-reference.md) for detailed information about:
+**Metrics Note:** See [Metrics Reference & Calculation Methodology](20-metrics-reference.md) for detailed information about:
 - Which metrics use external tools (Lizard, complexipy, Tree-sitter)
 - Custom implementations and their reliability assessments  
 - Academic references and citations
