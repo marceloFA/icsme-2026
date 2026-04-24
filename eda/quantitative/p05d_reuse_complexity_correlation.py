@@ -1,7 +1,7 @@
 """
 FixtureDB — Exploratory Data Analysis
 ======================================
-Fixture Reuse vs Complexity Correlation (Phase 3)
+Fixture Reuse vs Complexity Correlation (extraction phase metrics)
 """
 
 import argparse
@@ -46,7 +46,7 @@ def plot_reuse_complexity_correlation(conn, out_dir, show):
     """,
     )
     if fixtures.empty or fixtures["reuse_count"].isna().all():
-        print("  [skip] No reuse count data (run Phase 3 collection).")
+        print("  [skip] No reuse count data (run extraction phase collection).") 
         return
 
     present = [l for l in LANG_ORDER if l in fixtures["language"].values]

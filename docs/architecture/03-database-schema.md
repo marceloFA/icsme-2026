@@ -4,7 +4,7 @@ FixtureDB provides data in two formats with different schemas optimized for diff
 
 ## Two Data Formats
 
-### **SQLite Database** (`fixturedb.sqlite`)
+### **SQLite Database** (`fixtures.db`)
 **Contents:** Complete extraction infrastructure with all fields for reproducibility  
 **Tables:** 4 normalized tables (repositories, test_files, fixtures, mock_usages) linked by foreign keys  
 **Fields:** All internal columns including reproducibility fields (`raw_source`, `category`, `mock_style`, `target_layer`)  
@@ -318,6 +318,6 @@ One row per test file analyzed. Use this to study test file characteristics and 
 ## Column Documentation
 
 For detailed descriptions of what each metric means and how it's calculated, see:
-- **[Fixture Detection Logic](../architecture/11-detection.md)** — How each metric is computed and which tools are used; includes Phase 3 metrics (max_nesting_depth, reuse_count, has_teardown_pair, num_contributors)
-- **[Limitations and Threats to Validity](../reference/12-limitations.md)** — Known limitations of Phase 3 metrics and mitigation strategies
+- **[Fixture Detection Logic](../architecture/11-detection.md)** — How each metric is computed and which tools are used; includes extraction phase metrics (max_nesting_depth, reuse_count, has_teardown_pair, num_contributors)
+- **[Limitations and Threats to Validity](../reference/12-limitations.md)** — Known limitations of extraction phase metrics and mitigation strategies
 - **[CSV Export Guide](../data/14-csv-export-guide.md)** — Column-by-column definitions (consolidated reference)

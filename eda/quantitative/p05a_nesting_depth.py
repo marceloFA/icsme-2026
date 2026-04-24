@@ -1,7 +1,7 @@
 """
 FixtureDB — Exploratory Data Analysis
 ======================================
-Nesting Depth Distribution (Phase 3 metric)
+Nesting Depth Distribution (extraction phase metric)
 """
 
 import argparse

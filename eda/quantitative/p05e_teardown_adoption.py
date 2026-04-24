@@ -1,7 +1,7 @@
 """
 FixtureDB — Exploratory Data Analysis
 ======================================
-Cleanup/Teardown Adoption (Phase 3)
+Cleanup/Teardown Adoption (extraction phase metrics)
 """
 
 import argparse
@@ -46,7 +46,7 @@ def plot_teardown_adoption(conn, out_dir, show):
     """,
     )
     if fixtures.empty or fixtures["has_teardown_pair"].isna().all():
-        print("  [skip] No teardown pair data (run Phase 3 collection).")
+        print("  [skip] No teardown pair data (run extraction phase collection).")
         return
 
     present = [l for l in LANG_ORDER if l in fixtures["language"].values]

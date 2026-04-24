@@ -30,7 +30,7 @@ FixtureDB comprises:
 
 - **Public CSV exports** (`fixtures.csv`, `mock_usages.csv`, language-specific CSVs)  
   Contains **quantitative metrics only**: structure (LOC, complexity, scope, type), mock framework detection
-- **Full SQLite database** (`fixturedb.sqlite`)  
+- **Full SQLite database** (`fixtures.db`)  
   Includes the complete dataset plus internal infrastructure for reproducibility and future research
 - **Repository metadata**: GitHub stars, forks, contributor count, creation date, domain classification
 

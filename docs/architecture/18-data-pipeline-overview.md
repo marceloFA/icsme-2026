@@ -15,7 +15,7 @@ GitHub Repositories
     (SQLite)
         ↓
     Export Dataset
-        ├── fixturedb.sqlite (full database)
+        ├── fixtures.db (full database)
         ├── repositories.csv
         ├── test_files.csv
         ├── fixtures.csv
@@ -165,7 +165,7 @@ python pipeline.py export --version 1.0
 ```python
 # In collection/exporter.py :: export_dataset()
 
-1. Copy database to staging/fixturedb.sqlite
+1. Copy database to staging/fixtures.db
 2. Export all tables as CSV:
    - repositories.csv
    - test_files.csv
@@ -203,7 +203,7 @@ python pipeline.py export --version 1.0
 ```
 export/
 └── fixturedb_v2_2026-04-05/
-    ├── fixturedb.sqlite           (full queryable database)
+    ├── fixtures.db                (full queryable database)
     ├── repositories.csv            (160 repos)
     ├── test_files.csv             (all test files)
     ├── fixtures.csv               (40,672 fixtures across 4 languages)

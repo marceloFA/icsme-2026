@@ -1,6 +1,6 @@
 # Mock Classification Reference (mock_usages Taxonomy)
 
-**Status:** Phase 3 enhancement — Comprehensive mock classification rules and methodology  
+**Status:** Extraction phase enhancement — Comprehensive mock classification rules and methodology  
 **Objective:** Document classification rules for `mock_style` and `target_layer` to enable analysis of mock object design patterns
 
 ---

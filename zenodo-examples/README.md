@@ -92,7 +92,7 @@ These notebooks use **CSV exports only**, which contain quantitative metrics onl
 - Qualitative mock classification (`mock_style`, `target_layer`)
 - Fixture category (`category`)
 
-...query the SQLite database (`fixturedb.sqlite`) directly or using an ORM.
+...query the SQLite database (`fixtures.db`) directly or using an ORM.
 
 See [Limitations & Threats to Validity](../docs/reference/12-limitations.md) for known constraints and detection limitations.
 

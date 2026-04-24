@@ -1,7 +1,7 @@
 """
 FixtureDB — Exploratory Data Analysis
 ======================================
-Nesting Depth vs Complexity Correlation (Phase 3)
+Nesting Depth vs Complexity Correlation (extraction phase metrics)
 """
 
 import argparse

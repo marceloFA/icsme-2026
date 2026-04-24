@@ -200,8 +200,8 @@ against its name, description, and GitHub topics. Labels: `web`, `data`,
 
 Produces a versioned zip file ready for Zenodo deposit. **This phase creates two complementary formats optimized for different use cases**:
 
-**SQLite Database** (`fixturedb.sqlite`) — For reproducibility verification and raw source inspection:
-- `fixturedb.sqlite` — the full database with all fields, internal classifications, and raw source code
+**SQLite Database** (`fixtures.db`) — For reproducibility verification and raw source inspection:
+- `fixtures.db` — the full database with all fields, internal classifications, and raw source code
 - See [Database Schema — SQLite Section](../architecture/03-database-schema.md)
 
 **CSV Exports** (`.csv` files) — For spreadsheet and statistical analysis:

@@ -316,7 +316,7 @@ def _extract_mocks(node, src_bytes: bytes) -> list[MockResult]:
                 )
             )
 
-            # Phase 3: Classify mock_style and target_layer
+            # Extract phase: Classify mock_style and target_layer for detailed analysis
             mock_style = _classify_mock_style(snippet, text, framework)
             target_layer = _classify_target_layer(target, framework, snippet, text)
 
@@ -1861,7 +1861,7 @@ def extract_fixtures(file_path: Path, language: str) -> ExtractResult:
         _propagate_fixture_scopes(fixtures)  # Phase 4: propagate scope constraints
         _calculate_teardown_pairs(fixtures)
 
-        # Phase 3: Use Lizard for file-level metrics instead of manual counting
+        # Extraction phase: Use Lizard for file-level metrics instead of manual counting
         # This provides consistency with fixture-level complexity analysis
         file_loc = _count_file_loc(
             src_bytes

@@ -14,15 +14,11 @@ python pipeline.py export --version 1.0
 
 This generates:
 - `export/fixturedb_<date>/` directory containing:
-  - `fixturedb.sqlite` — Full database (SQLite 3)
+  - `fixtures.db` — Full database (SQLite 3)
   - `repositories.csv` — All repositories
   - `test_files.csv` — All test files
   - `fixtures.csv` — All fixtures (raw_source excluded)
   - `mock_usages.csv` — All mock usages
-  - **`fixtures_python.csv`** — Fixtures for Python projects
-  - **`fixtures_java.csv`** — Fixtures for Java projects
-  - **`fixtures_javascript.csv`** — Fixtures for JavaScript projects
-  - **`fixtures_typescript.csv`** — Fixtures for TypeScript projects
 
   - **`fixtures_csharp.csv`** — Fixtures for C# projects
   - `stats.txt` — High-level corpus statistics
@@ -46,7 +42,7 @@ The directory is then zipped into `fixturedb_v1.0_<date>.zip` for upload to Zeno
 | `pinned_commit` | TEXT | Commit SHA for repo at analysis time |
 | `stars` | INT | Star count at collection time |
 | `forks` | INT | Fork count at collection time |
-| `num_contributors` | INT | Repository contributor count (Phase 3 metric) |
+| `num_contributors` | INT | Repository contributor count (extraction phase metric) |
 | `test_file_path` | TEXT | Path to the test file (relative to repo root) |
 | `github_url` | TEXT | Direct HTTPS GitHub link to fixture in source |
 | `fixture_id` | INT | Unique fixture ID in database |
@@ -58,8 +54,8 @@ The directory is then zipped into `fixturedb_v1.0_<date>.zip` for upload to Zeno
 | `loc` | INT | Non-blank lines of code in the fixture |
 | `cyclomatic_complexity` | INT | Code complexity (branches + 1) |
 | `cognitive_complexity` | INT | Nesting-depth-weighted complexity |
-| `max_nesting_depth` | INT | Maximum block nesting level (Phase 3 metric) |
-| `reuse_count` | INT | Test functions using this fixture (Phase 3 metric) |
+| `max_nesting_depth` | INT | Maximum block nesting level (extraction phase metric) |
+| `reuse_count` | INT | Test functions using this fixture (extraction phase metric) |
 | `num_objects_instantiated` | INT | Estimated constructor calls |
 | `num_external_calls` | INT | Estimated I/O and external API calls |
 | `num_parameters` | INT | Number of function parameters |

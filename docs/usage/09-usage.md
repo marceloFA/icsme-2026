@@ -4,7 +4,7 @@ FixtureDB offers two complementary analysis pathways, suited to different resear
 
 ## Two Main Use Cases
 
-### **Use Case 1: SQLite Database** (`fixturedb.sqlite`)
+### **Use Case 1: SQLite Database** (`fixtures.db`)
 **Best for:** Complex queries, joins across tables, reproducibility verification, custom analysis  
 **Access methods:** `sqlite3` CLI, Python (`sqlite3` module), R (`RSQLite` package), SQL IDE (DBeaver, SQLiteStudio)  
 **Data scope:** Full database with all fields, internal infrastructure, complete extraction history  
@@ -36,7 +36,7 @@ on the command line, or Python. No additional setup is required.
 import sqlite3
 import pandas as pd
 
-conn = sqlite3.connect("data/corpus.db")  # or fixturedb.sqlite from Zenodo
+conn = sqlite3.connect("data/corpus.db")  # or fixtures.db from Zenodo
 
 # All Python fixtures with their complexity metrics
 df = pd.read_sql("""
@@ -72,7 +72,7 @@ pd.read_sql("""
 
 ### Command Line Example (SQLite CLI)
 ```bash
-sqlite3 fixturedb.sqlite
+sqlite3 fixtures.db
 
 # Find all Java fixtures with cyclomatic complexity > 5
 SELECT f.name, f.cyclomatic_complexity, r.full_name
@@ -95,7 +95,7 @@ ORDER BY r.language, count DESC;
 library(RSQLite)
 library(tidyverse)
 
-db <- dbConnect(SQLite(), "fixturedb.sqlite")
+db <- dbConnect(SQLite(), "fixtures.db")
 
 # All JavaScript fixtures with mock adoption rate
 fixtures_with_mocks <- dbGetQuery(db, "
