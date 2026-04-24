@@ -212,17 +212,19 @@ class TestExportTable:
             dest = Path(tmpdir) / "fixtures.csv"
             conn = sqlite3.connect(temp_db_with_data)
 
-            # Export fixtures without raw_source and category
+            # Export fixtures without category, fixture_type, and has_teardown_pair (but keep raw_source)
             _export_table(
-                conn, "fixtures", dest, exclude_cols=["raw_source", "category"]
+                conn, "fixtures", dest, exclude_cols=["category", "fixture_type", "has_teardown_pair"]
             )
             conn.close()
 
             df = pd.read_csv(dest)
-            assert "raw_source" not in df.columns
             assert "category" not in df.columns
+            assert "fixture_type" not in df.columns
+            assert "has_teardown_pair" not in df.columns
+            assert "raw_source" in df.columns
             assert "name" in df.columns
-            assert "fixture_type" in df.columns
+            assert "scope" in df.columns
             assert len(df) == 3
 
     def test_export_table_handles_missing_exclude_columns(self, temp_db_with_data):
@@ -338,10 +340,10 @@ class TestMockUsagesExport:
 
 
 class TestFixturesExport:
-    """Test fixtures CSV exports with and without raw_source."""
+    """Test fixtures CSV exports with quantitative metrics and source code."""
 
-    def test_fixtures_excludes_raw_source_by_default(self, temp_db_with_data):
-        """Default fixtures.csv should exclude raw_source, category, has_teardown_pair."""
+    def test_fixtures_excludes_qualitative_fields_by_default(self, temp_db_with_data):
+        """Default fixtures.csv should exclude qualitative fields but include raw_source."""
         with tempfile.TemporaryDirectory() as tmpdir:
             dest = Path(tmpdir) / "fixtures.csv"
             conn = sqlite3.connect(temp_db_with_data)
@@ -350,31 +352,37 @@ class TestFixturesExport:
                 conn,
                 "fixtures",
                 dest,
-                exclude_cols=["raw_source", "category", "has_teardown_pair"],
+                exclude_cols=["category", "fixture_type", "has_teardown_pair"],
             )
             conn.close()
 
             df = pd.read_csv(dest)
-            assert "raw_source" not in df.columns
+            # Qualitative fields excluded
             assert "category" not in df.columns
+            assert "fixture_type" not in df.columns
             assert "has_teardown_pair" not in df.columns
+            # But raw_source is included for reproducibility
+            assert "raw_source" in df.columns
             assert "name" in df.columns
             assert len(df) == 3
 
     def test_fixtures_with_source_includes_raw_source(self, temp_db_with_data):
-        """fixtures_with_source.csv should include raw_source but exclude category, has_teardown_pair."""
+        """fixtures_with_source.csv should include raw_source and exclude only qualitative fields."""
         with tempfile.TemporaryDirectory() as tmpdir:
             dest = Path(tmpdir) / "fixtures_with_source.csv"
             conn = sqlite3.connect(temp_db_with_data)
 
             _export_table(
-                conn, "fixtures", dest, exclude_cols=["category", "has_teardown_pair"]
+                conn, "fixtures", dest, exclude_cols=["category", "fixture_type", "has_teardown_pair"]
             )
             conn.close()
 
             df = pd.read_csv(dest)
+            # raw_source is included
             assert "raw_source" in df.columns
+            # Qualitative fields still excluded
             assert "category" not in df.columns
+            assert "fixture_type" not in df.columns
             assert "has_teardown_pair" not in df.columns
             # raw_source contains the literal string with escaped newlines
             assert "db_fixture" in df.iloc[0]["raw_source"]

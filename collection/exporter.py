@@ -150,23 +150,24 @@ def export_dataset(version: str = "1.0", include_raw_source: bool = False) -> Pa
         exclude_cols=["mock_style", "target_layer", "raw_snippet"],
     )
 
-    # fixtures: exclude raw_source, category, and has_teardown_pair by default
-    # raw_source: large text, already in SQLite
+    # fixtures: exclude category, has_teardown_pair, and fixture_type by default
     # category: subjective fixture classification, for internal analysis only
     # has_teardown_pair: qualitative cleanup indicator, internal analysis only
+    # fixture_type: qualitative/categorical classification (how fixture detected), not quantitative metric
+    # raw_source: included for reproducibility (actual fixture source code)
     if include_raw_source:
         _export_table(
             conn,
             "fixtures",
             staging / "fixtures_with_source.csv",
-            exclude_cols=["category", "has_teardown_pair"],
+            exclude_cols=["category", "has_teardown_pair", "fixture_type"],
         )
     else:
         _export_table(
             conn,
             "fixtures",
             staging / "fixtures.csv",
-            exclude_cols=["raw_source", "category", "has_teardown_pair"],
+            exclude_cols=["category", "has_teardown_pair", "fixture_type"],
         )
 
     conn.close()

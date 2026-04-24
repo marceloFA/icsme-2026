@@ -10,8 +10,8 @@ The following columns exist in the SQLite database but are intentionally exclude
 
 | Table | Column | Type | Reason |
 |-------|--------|------|--------|
-| `fixtures` | `raw_source` | TEXT | Full source text; too large for CSV (available in SQLite) |
 | `fixtures` | `category` | TEXT | Internal fixture classification; excluded from public CSV exports |
+| `fixtures` | `fixture_type` | TEXT | Qualitative/categorical classification (detection pattern); excluded from CSV (quantitative only) |
 | `fixtures` | `has_teardown_pair` | INT | Qualitative cleanup indicator; internal analysis only |
 | `mock_usages` | `mock_style` | TEXT | Internal classification (stub, mock, spy, fake); excluded from CSV |
 | `mock_usages` | `target_layer` | TEXT | Internal classification (boundary, infrastructure, internal, framework); excluded from CSV |
@@ -74,7 +74,7 @@ One row per test file found during repository analysis.
 
 One row per fixture definition found during extraction.
 
-**Excluded columns:** `raw_source`, `category` (see [Excluded Columns](#excluded-columns-database-only) table above)
+**Excluded columns:** `category`, `fixture_type` (see [Excluded Columns](#excluded-columns-database-only) table above)
 
 | Column | Type | Description |
 |--------|------|-------------|
@@ -82,7 +82,6 @@ One row per fixture definition found during extraction.
 | `file_id` | INT | FK → test_files.id |
 | `repo_id` | INT | FK → repositories.id |
 | `name` | TEXT | Function/method name of the fixture |
-| `fixture_type` | TEXT | Detection pattern (pytest_decorator, junit4_before, unittest_setup, etc.) |
 | `scope` | TEXT | Execution scope (per_test, per_class, per_module, global) |
 | `start_line` | INT | 1-indexed start line in source file |
 | `end_line` | INT | 1-indexed end line in source file |
@@ -95,6 +94,7 @@ One row per fixture definition found during extraction.
 | `num_parameters` | INT | Number of function parameters |
 | `reuse_count` | INT | Number of test functions using this fixture (extraction phase metric) |
 | `framework` | TEXT | Detected testing framework (pytest, unittest, junit, nunit, testify, etc.) |
+| `raw_source` | TEXT | Complete source code of the fixture (for reproducibility and verification) |
 
 ## 4. mock_usages.csv
 
