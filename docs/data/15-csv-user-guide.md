@@ -193,7 +193,6 @@ ORDER BY count DESC
 | `stars` | Star count at collection time | 54000 |
 | `forks` | Fork count | 8500 |
 | `domain` | Inferred category | `web`, `data`, `cli`, `infra`, `library`, `other` |
-| `star_tier` | `core` (≥500 stars) or `extended` (100–499) | `core` |
 | `pinned_commit` | Git commit SHA we analyzed | `abc123def456...` |
 | `status` | Collection status | Usually `analysed` |
 | `num_fixtures` | How many fixtures in this repo | 187 |

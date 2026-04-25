@@ -7,7 +7,7 @@ actively maintained projects may exhibit higher test discipline than typical
 open-source software. This is a known limitation in empirical software
 engineering studies (Hamster study by Pan et al., 2025) which also used
 star-based sampling to ensure sufficient test coverage. To mitigate this bias
-and improve generalizability, the dataset records `star_tier` (`core` for ≥500
+and improve generalizability, we collected repos with ≥500 stars
 stars, `extended` for 100–499) and we recommend stratifying all analyses by tier.
 This allows researchers to study both popular and emerging projects separately.
 

@@ -223,14 +223,6 @@ class LanguageConfig:
 #   The 100-star floor is the common quality minimum in MSR work.
 # ---------------------------------------------------------------------------
 
-STAR_TIER_CORE_THRESHOLD = 500  # 'core', directly comparable to Hamster
-# repos with stars in [MIN_STARS, 499] are tagged 'extended'
-
-
-def star_tier(stars: int) -> str:
-    """Return the tier label for a given star count."""
-    return "core" if stars >= STAR_TIER_CORE_THRESHOLD else "extended"
-
 
 def is_known_framework(framework: str, language: str) -> bool:
     """

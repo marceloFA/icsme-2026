@@ -50,7 +50,6 @@ from collection.config import (
     LANGUAGE_CONFIGS,
     EXCLUSION_KEYWORDS,
     LanguageConfig,
-    star_tier,
     MIN_COMMITS,
 )
 from collection.db import db_session, upsert_repository
@@ -94,7 +93,6 @@ def _parse_seart_ghs_repo(row: dict) -> dict:
         "created_at": row.get("createdAt", ""),
         "pushed_at": row.get("pushedAt", ""),
         "clone_url": f"https://github.com/{full_name}.git",
-        "star_tier": star_tier(int(row.get("stargazers", 0))),
     }
 
 

@@ -42,7 +42,7 @@ conn = sqlite3.connect("data/corpus.db")  # or fixtures.db from Zenodo
 df = pd.read_sql("""
     SELECT f.name, f.fixture_type, f.scope, f.loc,
            f.cyclomatic_complexity, f.num_external_calls,
-           r.full_name AS repo, r.domain, r.star_tier
+           r.full_name AS repo, r.domain, r.stars
     FROM fixtures f
     JOIN repositories r ON f.repo_id = r.id
     WHERE r.language = 'python' AND r.status = 'analysed'
@@ -66,7 +66,7 @@ pd.read_sql("""
 pd.read_sql("""
     SELECT * FROM fixtures f
     JOIN repositories r ON f.repo_id = r.id
-    WHERE r.star_tier = 'core'
+    WHERE r.stars >= 500
 """, conn)
 ```
 
@@ -147,7 +147,7 @@ The CSV exports provide a curated, denormalized view of the dataset optimized fo
 | `fixtures_javascript.csv` | JavaScript fixtures only | Same as above |
 | `fixtures_typescript.csv` | TypeScript fixtures only | Same as above |
 | `mock_usages.csv` | Mock framework detections | `fixture_id`, `mock_framework`, `mocked_target` |
-| `repositories.csv` | Repository metadata | `id`, `full_name`, `language`, `stars`, `forks`, `domain`, `star_tier`, `status`, `num_test_files`, `num_fixtures`, `num_mock_usages` |
+| `repositories.csv` | Repository metadata | `id`, `full_name`, `language`, `stars`, `forks`, `domain`, `status`, `num_test_files`, `num_fixtures`, `num_mock_usages` |
 | `test_files.csv` | Metadata per test file | `id`, `repo_id`, `file_path`, `num_fixtures` |
 
 **Full column documentation:** See [docs/14-csv-export-guide.md](../data/14-csv-export-guide.md)
@@ -172,8 +172,10 @@ print(f"{len(complex_fixtures)} complex fixtures found")
 repos = pd.read_csv("repositories.csv")
 fixtures_with_repo = fixtures.merge(repos, left_on='repo_id', right_on='id', suffixes=('_fixture', '_repo'))
 
-# Analyze by star tier
-star_tier_analysis = fixtures_with_repo.groupby('star_tier').agg({
+# Analyze by star count
+star_count_analysis = fixtures_with_repo.assign(
+    star_band=pd.cut(fixtures_with_repo['stars'], bins=[0, 500, 1000, 5000, np.inf], labels=['500-1K', '1K-5K', '5K+'])
+).groupby('star_band').agg({
     'cyclomatic_complexity': 'mean',
     'cognitive_complexity': 'mean',
     'num_external_calls': 'mean',
@@ -218,7 +220,7 @@ fixtures[, .(avg_cc = mean(cyclomatic_complexity),
          by = fixture_type]
 
 # Join with repos and filter for core tier
-fixtures_core <- fixtures[repos[star_tier == 'core', .(id)], 
+fixtures_by_stars <- fixtures[repos[stars >= 500, .(id)], 
                           on = .(repo_id = id)]
 
 # Visualization: complexity by scope

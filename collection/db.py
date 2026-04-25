@@ -39,7 +39,6 @@ CREATE TABLE IF NOT EXISTS repositories (
     clone_url       TEXT,
     pinned_commit   TEXT,                   -- SHA at time of analysis (reproducibility)
     domain          TEXT,                   -- web/cli/data/infra/library/other (filled later)
-    star_tier       TEXT,                   -- core (>=500) | extended (100-499)
     status          TEXT DEFAULT 'discovered',
     -- status values: discovered | cloned | analysed | skipped | error
     error_message   TEXT,
@@ -252,17 +251,14 @@ def upsert_repository(conn: sqlite3.Connection, repo: dict) -> tuple[int, bool]:
         """
         INSERT INTO repositories (
             github_id, full_name, language, stars, forks,
-            description, topics, created_at, pushed_at, clone_url,
-            star_tier
+            description, topics, created_at, pushed_at, clone_url
         ) VALUES (
             :github_id, :full_name, :language, :stars, :forks,
-            :description, :topics, :created_at, :pushed_at, :clone_url,
-            :star_tier
+            :description, :topics, :created_at, :pushed_at, :clone_url
         )
         ON CONFLICT(github_id) DO UPDATE SET
             stars       = excluded.stars,
-            pushed_at   = excluded.pushed_at,
-            star_tier   = excluded.star_tier
+            pushed_at   = excluded.pushed_at
     """,
         repo,
     )

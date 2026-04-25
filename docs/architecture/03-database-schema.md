@@ -43,7 +43,6 @@ One row per GitHub repository discovered and processed.
 | `clone_url`       | TEXT    | HTTPS clone URL |
 | `pinned_commit`   | TEXT    | **SHA of the HEAD commit that was analysed** — used for exact reproduction |
 | `domain`          | TEXT    | `web` \| `data` \| `cli` \| `infra` \| `library` \| `other` (set by `classify` command) |
-| `star_tier`       | TEXT    | `core` (≥ 500 stars, comparable to Hamster) \| `extended` (100–499 stars) |
 | `status`          | TEXT    | Pipeline lifecycle state: `discovered` → `cloned` → `analysed` (or `skipped` / `error`) |
 | `error_message`   | TEXT    | Populated when `status = 'error'` |
 | `num_test_files`  | INTEGER | Count of test files detected in this repository|
@@ -51,13 +50,6 @@ One row per GitHub repository discovered and processed.
 | `num_mock_usages` | INTEGER | Total count of mock usages detected across all fixtures in this repository |
 | `num_contributors` | INTEGER | GitHub API: number of contributors to the repository |
 | `collected_at`    | TEXT    | ISO 8601 timestamp of DB insertion |
-
-### Note on `star_tier`
-
-The `core` tier (≥ 500 stars) directly mirrors the selection criterion used in
-Hamster (arXiv:2509.26204), the primary related dataset. The `extended` tier
-(100–499 stars) adds diversity. Analyses can be restricted to `core` alone for
-strict comparability with prior work, or run over both tiers with stratification.
 
 ## 3.2 `test_files`
 
@@ -206,7 +198,7 @@ Contains one row per fixture across all 4 languages. Use this for cross-language
 | `framework` | TEXT | Testing framework (pytest, unittest, junit4, junit5, jest, mocha, etc.) |
 | `repo_full_name` | TEXT | **ADDED FOR CSV:** Repository slug (`owner/repo`) |
 | `stars` | INTEGER | **ADDED FOR CSV:** GitHub stars |
-| `star_tier` | TEXT | **ADDED FOR CSV:** `core` or `extended` |
+
 | `domain` | TEXT | **ADDED FOR CSV:** Repository domain (`web`, `data`, `cli`, `infra`, `library`, `other`) |
 
 #### 2. `fixtures_python.csv`, `fixtures_java.csv`, `fixtures_javascript.csv`, `fixtures_typescript.csv`
@@ -260,7 +252,6 @@ One row per repository analyzed. Use this to filter fixtures by repository metad
 | `created_at` | TEXT | ISO 8601 creation date |
 | `pushed_at` | TEXT | ISO 8601 last push date |
 | `domain` | TEXT | Repository domain (`web`, `data`, `cli`, `infra`, `library`, `other`) |
-| `star_tier` | TEXT | `core` (≥500) or `extended` (100–499) |
 | `status` | TEXT | Pipeline status (`analysed`, `skipped`, `error`) |
 | `num_test_files` | INTEGER | Count of test files in repo |
 | `num_fixtures` | INTEGER | Total fixtures in repo |
