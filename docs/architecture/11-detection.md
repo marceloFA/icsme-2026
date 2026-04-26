@@ -101,13 +101,13 @@ For each detected fixture, the system computes the following quantitative metric
 ### Code Complexity Metrics
 
 **Cyclomatic Complexity**
-- **Tool**: [Lizard](https://github.com/terryyin/lizard) v1.21.3+
+- **Tool**: [Lizard](https://github.com/terryyin/lizard) (see [requirements.txt](../../requirements.txt) for version)
 - **Language Support**: Python, Java, JavaScript, TypeScript
 - **Definition**: McCabe complexity (1 + count of decision points: if, for, while, try, catch, case)
 - **Accuracy**: Academic standard metric, widely used in SonarQube and Codecov
 
 **Cognitive Complexity**
-- **Python**: Calculated via [complexipy library](https://github.com/rohaquinlop/complexipy) v5.0.0+ (fast Rust-based implementation of SonarQube cognitive complexity)
+- **Python**: Calculated via [complexipy library](https://github.com/rohaquinlop/complexipy) (see [requirements.txt](../../requirements.txt) for version; fast Rust-based implementation of SonarQube cognitive complexity)
   - Metric: SonarQube nesting-aware complexity (higher = harder to understand)
   - Formula: Σ(nesting_depth) over all control structures, following SonarQube's G. Ann Campbell research
   - Example: Three nested if-statements at depths 1, 2, 3 contribute 1+2+3=6 to cognitive complexity (vs. cyclomatic complexity of 3)
@@ -121,7 +121,7 @@ For each detected fixture, the system computes the following quantitative metric
 ### Code Structure Metrics
 
 **Number of Parameters**
-- **Tool**: [Lizard](https://github.com/terryyin/lizard) v1.21.3+
+- **Tool**: [Lizard](https://github.com/terryyin/lizard) (see [requirements.txt](../../requirements.txt) for version)
 - **Language Support**: Python, Java, JavaScript, TypeScript
 - **Definition**: Count of parameters in function/method signature
 - **Accuracy**: Native Lizard metric, exact count

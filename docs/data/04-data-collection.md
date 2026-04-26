@@ -2,44 +2,33 @@
 
 **Collection Metadata**  
 - **Collection Period**: April 1–2, 2026
-- **Repositories Collected**: 160 (4 languages: Python, Java, JavaScript, TypeScript)
-- **Total Fixtures Extracted**: 40,672
+- **Languages**: Python, Java, JavaScript, TypeScript
+- **Repository Selection**: Minimum 500 stars
 - **Extraction Timestamp Range**: 2026-04-01 20:16:59 to 2026-04-01 23:18:03 UTC
 - **Reproducibility**: All collection parameters pinned in code; repos at specific commits preserved
 
 ## Tool Versions (for Reproducibility)
 
-The following tool versions were used during extraction. To exactly replicate the corpus, use identical versions:
+The following tools were used during extraction. See [requirements.txt](../../requirements.txt) for exact pinned versions to replicate the corpus:
 
 ```
 GitHub API:                    v3 REST API
-
-AST Parsing:
-  - Tree-sitter core:          v0.21.0+
-  - tree-sitter-python         v0.21.0+
-  - tree-sitter-java           v0.21.0+
-  - tree-sitter-javascript     v0.21.0+
-  - tree-sitter-typescript     v0.21.0+
-
-Code Metrics:
-  - Lizard                      v1.21.3+ (cyclomatic complexity, LOC, 
-                                          parameters, external call count)
-  - complexipy                  v5.0.0+ (Python cognitive complexity, SonarQube-standard)
-
-Runtime:
-  - Python                      3.8+
-  - SQLite                      3.x
+Tree-sitter:                   Core + language grammars for Python, Java, JavaScript, TypeScript
+Complexity Analysis:           Lizard (cyclomatic complexity, LOC, parameters, external call count)
+                               Language-specific cognitive complexity tools
+Python Runtime:                3.8+
+SQLite:                        3.x
 ```
 
 **Key Tools & Rationale:**
 
-- **Lizard** (v1.21.3+): Handles cyclomatic complexity, cognitive complexity fallback, LOC, parameters, and external function call detection across all languages. Reduces custom metric code while maintaining reproducibility via industry-standard tool.
+- **Lizard**: Cyclomatic complexity, LOC, parameters, and external function call detection across all languages. Industry-standard tool for reproducible metrics.
 
-- **cognitive-complexity** (v1.3.0+): Python-specific SonarQube-standard cognitive complexity implementation. Provides accurate nesting-depth-weighted complexity for Python; other languages use Lizard-based formula fallback.
+- **Language-Specific Cognitive Complexity**: Python uses SonarQube-standard implementation; other languages use Lizard-based formula fallback for consistency.
 
-- **Tree-sitter** (v0.21.0+): AST parsing for fixture detection, scope analysis, and code structure metrics across 5 languages. Provides consistent abstract syntax representation independent of language syntax quirks.
+- **Tree-sitter**: AST parsing for fixture detection, scope analysis, and code structure metrics. Provides consistent abstract syntax representation independent of language syntax quirks.
 
-See [requirements.txt](../requirements.txt) for exact pinned versions used in this execution.
+For exact tool versions, see [requirements.txt](../../requirements.txt).
 
 ## Collection Strategy
 

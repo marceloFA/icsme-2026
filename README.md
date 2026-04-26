@@ -18,14 +18,28 @@ on Zenodo at **TODO: Zenodo DOI**.
 
 | Property | Value |
 |----------|-------|
-| **Collection Period** | April 1–2, 2026 |
+| **SEART GitHub Search Extraction** | April 1–2, 2026 |
+| **Repository Selection** | Minimum 500 stars |
+| **Languages** | Python, Java, JavaScript, TypeScript |
 | **GitHub API Version** | v3 REST API |
-| **Tree-sitter Grammar** | v0.21.0+ (Python, Java, JavaScript, TypeScript) |
-| **Complexity Tool** | Lizard v1.21.0+ |
-| **Cognitive Complexity** | complexipy v5.0.0+ |
-| **Python Version** | 3.8+ (see requirements.txt) |
+| **Required Tools** | See [requirements.txt](requirements.txt) for exact versions |
+| **Tree-sitter** | Grammar support for all 4 languages |
+| **Complexity Analysis** | Lizard + language-specific cognitive complexity |
+| **Python Environment** | 3.8+ |
 
-For exact tool versions and reproducibility details, see [docs/04-data-collection.md](docs/04-data-collection.md).
+### Collection Pipeline
+
+The dataset was constructed through a five-phase pipeline:
+
+1. **GitHub Search** (April 1–2, 2026) — Query SEART API for repositories by language and star count
+2. **Repository Cloning** — Download full source code for all matching repositories
+3. **Test File Detection** — Discover test files using language-specific patterns and parse with Tree-sitter
+4. **Fixture Extraction** — Identify fixture definitions and scan for mock framework usage
+5. **Metrics & Export** — Compute complexity metrics, validate quality, generate CSV exports
+
+![Collection Pipeline](docs/collection-pipeline.png)
+
+See [docs/collection-pipeline.md](docs/collection-pipeline.md) for detailed pipeline walkthrough and [docs/04-data-collection.md](docs/04-data-collection.md) for reproducibility steps. For exact tool versions, see [requirements.txt](requirements.txt).
 
 ---
 
@@ -36,6 +50,7 @@ Complete documentation has been organized into dedicated files in the [docs/](do
 | Document | Purpose |
 |----------|---------|
 | [docs/INDEX.md](docs/INDEX.md) | **Start here** — overview and quick navigation |
+| [docs/collection-pipeline.md](docs/collection-pipeline.md) | Collection pipeline phases with Mermaid diagram |
 | [docs/01-intro.md](docs/01-intro.md) | What is FixtureDB and why it matters |
 | [docs/02-repository-structure.md](docs/02-repository-structure.md) | Project layout and organization |
 | [docs/03-database-schema.md](docs/03-database-schema.md) | Complete ERD and table specifications |

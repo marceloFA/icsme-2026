@@ -36,9 +36,11 @@
 
 ## Part 1: External Tools (Proven, Reliable)
 
-### 1.1 Lizard v1.21.3+
+### 1.1 Lizard
 
 **Purpose:** Industry-standard complexity and structure analysis across 5 languages
+
+(See [requirements.txt](../../requirements.txt) for version)
 
 **Metrics Provided:**
 - `cyclomatic_complexity` — McCabe's cyclomatic complexity
@@ -74,9 +76,11 @@
 
 ---
 
-### 1.2 complexipy v5.0.0+
+### 1.2 complexipy
 
 **Purpose:** Python-specific cognitive complexity calculation (SonarQube standard)
+
+(See [requirements.txt](../../requirements.txt) for version)
 
 **Metrics Provided:**
 - `cognitive_complexity` — Nesting-depth-weighted complexity following SonarQube's algorithm
@@ -107,9 +111,11 @@
 
 ---
 
-### 1.3 Tree-sitter v0.21.0+
+### 1.3 Tree-sitter
 
 **Purpose:** Language-agnostic AST parsing for fixture detection and scope analysis
+
+(See [requirements.txt](../../requirements.txt) for version)
 
 **Metrics Provided (derived):**
 - `scope` — Fixture execution scope (per_test, per_class, per_module, global)
@@ -789,6 +795,6 @@ See [docs/architecture/10-configuration.md](10-configuration.md) for:
 
 **In your paper, cite the relevant external tools:**
 
-"Fixture complexity was measured using Lizard v1.21.3+ (McCabe, 1976) for cyclomatic complexity 
-and complexipy v5.0.0+ (Campbell, 2018) for cognitive complexity. Code structure metrics were 
-extracted from Tree-sitter AST analysis (version 0.21.0+)."
+"Fixture complexity was measured using Lizard (McCabe, 1976) for cyclomatic complexity 
+and complexipy (Campbell, 2018) for cognitive complexity. Code structure metrics were 
+extracted from Tree-sitter AST analysis. See FixtureDB's [requirements.txt](../../requirements.txt) for exact tool versions."

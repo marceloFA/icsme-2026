@@ -878,9 +878,8 @@ def plot_fixture_types(conn, out_dir, show):
 
 
 def plot_fixture_overview(conn, out_dir, show):
-    """Wrapper: calls both fixture plots"""
+    """Wrapper: calls fixture distribution plot (scope-based, CSV-exported)"""
     plot_fixture_distribution(conn, out_dir, show)
-    plot_fixture_types(conn, out_dir, show)
 
 
 # ---------------------------------------------------------------------------
@@ -1184,7 +1183,6 @@ def main():
         ("Domain Distribution", plot_domain_distribution),
         ("Stars vs Forks", plot_fork_star_ratio),
         ("Fixture Overview", plot_fixture_overview),
-        ("Fixture Categories", plot_fixture_categories),
         ("Mock Prevalence", plot_mock_prevalence),
     ]:
         print(f"[{name}]")
