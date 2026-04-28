@@ -48,55 +48,15 @@ tests/
 
 ## Test Categories
 
-### 1. Unit Tests (Per-Language)
+**1. Unit Tests** — Small code snippets (1-10 lines). Validate fixture detection and scope classification across all languages.
 
-**Scope:** Small code snippets (1-10 lines)
+**2. Metadata Tests** — Line numbers, LOC, fixture type, scope, complexity metrics (cyclomatic, cognitive), code metrics (parameters, objects instantiated, I/O calls).
 
-**What they test:**
-- Positive detection: Fixtures are found when they exist
-- Negative detection: Non-fixtures are correctly excluded
-- Multiple fixture types per language
-- Different fixture scopes (per-test, per-class, module-level)
+**3. Edge Cases** — Large fixtures (100+ lines), deep nesting, false positive prevention, unicode, special characters, indentation variations, empty fixtures, malformed code.
 
-**Examples:**
-- **Python**: `setUp()`, `@pytest.fixture`, module-level setup
-- **Java**: `@Before`, `@After`, `@BeforeClass`, `@BeforeEach` (JUnit 5)
-- **JavaScript**: `beforeEach()`, `afterEach()`, `before()`, `after()`
-- **TypeScript**: Jest/Mocha hooks with type annotations
-- **C#**: `[SetUp]`, `[TearDown]`, `[OneTimeSetUp]`, async patterns
+**4. Mock Detection** — Framework-specific mock patterns (unittest.mock, pytest-mock, Mockito, Jest, Sinon, etc.) across all languages.
 
-### 2. Metadata Tests
-
-**Scope:** Validation of extracted fixture metadata
-
-**What they test:**
-- **Line numbers**: `start_line` and `end_line` accuracy
-- **Lines of code**: LOC counting (excluding blanks/comments)
-- **Fixture type**: Correct classification (setUp, fixture, etc.)
-- **Fixture scope**: per_test, per_class, per_module, per_session
-- **Complexity metrics**: 
-  - Cyclomatic complexity (via Lizard library)
-  - Cognitive complexity (via cognitive-complexity library for Python, formula fallback for others)
-  - Parameter counts (via Lizard library)
-- **Code metrics**: Objects instantiated (regex), external I/O calls (regex)
-
-### 3. Edge Cases
-
-**Scope:** Unusual but valid code patterns
-
-**What they test:**
-- Large fixtures (100+ lines)
-- Deeply nested structures
-- False positive prevention (comments, strings)
-- Special characters and unicode
-- Indentation variations
-- Multiple fixtures in same class
-- Empty/minimal fixtures
-- Malformed but parseable code
-- Line ending variations (Unix/Windows/Mac)
-- Lambda and comprehension patterns
-
-### 4. Language-Specific Tests — *planned*
+**5. Integration Tests** — Realistic fixtures from actual open-source repositories, testing extraction and metric computation end-to-end.
 
 **Scope:** Framework-specific patterns
 

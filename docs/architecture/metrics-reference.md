@@ -727,7 +727,7 @@ For consistency with file-level metrics, consider migrating to Lizard's LOC defi
 
 ### Configuration & Tuning
 
-See [docs/architecture/10-configuration.md](10-configuration.md) for:
+See [docs/architecture/configuration.md](configuration.md) for:
 - Framework registry (FRAMEWORK_REGISTRY)
 - File size and type filters
 - Extraction timeouts

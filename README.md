@@ -14,6 +14,23 @@ This repository contains the extraction pipeline that builds FixtureDB.
 The dataset itself (SQLite database + CSV exports) is archived separately
 on Zenodo at **TODO: Zenodo DOI**.
 
+---
+
+## Dataset at a Glance
+
+| Metric | Value |
+|--------|-------|
+| **Repositories** | 160 (with ≥1 fixture) |
+| **Fixture Definitions** | ~40,700 |
+| **Mock Framework Usages** | ~12,800 |
+| **Test Files** | ~228,000 |
+| **Languages** | Python (4.9K), Java (11.2K), JavaScript (5.5K), TypeScript (19K) fixtures |
+| **Collection Date** | April 1–2, 2026 |
+| **Database Size** | ~1–3 GB (with raw source) |
+| **CSV Export** | ~100–200 MB (quantitative metrics only) |
+
+---
+
 ## Dataset Collection Details
 
 | Property | Value |
@@ -39,7 +56,7 @@ The dataset was constructed through a five-phase pipeline:
 
 ![Collection Pipeline](docs/collection-pipeline.png)
 
-See [docs/collection-pipeline.md](docs/collection-pipeline.md) for detailed pipeline walkthrough and [docs/04-data-collection.md](docs/04-data-collection.md) for reproducibility steps. For exact tool versions, see [requirements.txt](requirements.txt).
+See [docs/collection-pipeline.md](docs/collection-pipeline.md) for detailed pipeline walkthrough and [docs/data/data-collection.md](docs/data/data-collection.md) for reproducibility steps. For exact tool versions, see [requirements.txt](requirements.txt).
 
 ---
 
@@ -47,26 +64,57 @@ See [docs/collection-pipeline.md](docs/collection-pipeline.md) for detailed pipe
 
 Complete documentation has been organized into dedicated files in the [docs/](docs/) folder:
 
+### Quick Navigation
+
 | Document | Purpose |
 |----------|---------|
 | [docs/INDEX.md](docs/INDEX.md) | **Start here** — overview and quick navigation |
 | [docs/collection-pipeline.md](docs/collection-pipeline.md) | Collection pipeline phases with Mermaid diagram |
-| [docs/01-intro.md](docs/01-intro.md) | What is FixtureDB and why it matters |
-| [docs/02-repository-structure.md](docs/02-repository-structure.md) | Project layout and organization |
-| [docs/03-database-schema.md](docs/03-database-schema.md) | Complete ERD and table specifications |
-| [docs/04-data-collection.md](docs/04-data-collection.md) | Five-phase pipeline walkthrough |
-| [docs/05-storage.md](docs/05-storage.md) | Disk usage and database growth |
-| [docs/06-setup.md](docs/06-setup.md) | Installation and dependencies |
-| [docs/07-running.md](docs/07-running.md) | Command reference for pipeline operations |
-| [docs/08-reproducing.md](docs/08-reproducing.md) | Exact corpus replication with pinned commits |
-| [docs/09-usage.md](docs/09-usage.md) | SQL query examples and data access |
-| [docs/10-configuration.md](docs/10-configuration.md) | All tunable parameters |
-| [docs/11-detection.md](docs/11-detection.md) | Tree-sitter AST and mock detection |
-| [docs/12-limitations.md](docs/12-limitations.md) | Known constraints and validation status |
-| [docs/13-license.md](docs/13-license.md) | MIT (code) and CC BY 4.0 (dataset) |
-| [docs/14-criteria-tracking.md](docs/14-criteria-tracking.md) | Research question tracking |
-| [docs/15-csv-user-guide.md](docs/15-csv-user-guide.md) | CSV exports for non-SQL users |
-| [docs/18-example-analyses.md](docs/18-example-analyses.md) | 5 research questions with findings |
+
+### Getting Started
+
+| Document | Purpose |
+|----------|---------|
+| [docs/getting-started/intro.md](docs/getting-started/intro.md) | What is FixtureDB and why it matters |
+| [docs/getting-started/repository-structure.md](docs/getting-started/repository-structure.md) | Project layout and organization |
+| [docs/getting-started/setup.md](docs/getting-started/setup.md) | Installation and dependencies |
+| [docs/getting-started/running.md](docs/getting-started/running.md) | Command reference for pipeline operations |
+
+### Dataset & Data Collection
+
+| Document | Purpose |
+|----------|---------|
+| [docs/data/data-collection.md](docs/data/data-collection.md) | Five-phase pipeline walkthrough |
+| [docs/data/storage.md](docs/data/storage.md) | Disk usage and database growth |
+| [docs/data/csv-export-guide.md](docs/data/csv-export-guide.md) | CSV export format and columns |
+| [docs/data/csv-user-guide.md](docs/data/csv-user-guide.md) | CSV exports for non-SQL users |
+
+### Architecture & Technical Reference
+
+| Document | Purpose |
+|----------|---------|
+| [docs/architecture/database-schema.md](docs/architecture/database-schema.md) | Complete ERD and table specifications |
+| [docs/architecture/configuration.md](docs/architecture/configuration.md) | All tunable parameters |
+| [docs/architecture/detection.md](docs/architecture/detection.md) | Tree-sitter AST and mock detection |
+| [docs/architecture/data-pipeline-overview.md](docs/architecture/data-pipeline-overview.md) | Detailed pipeline architecture |
+| [docs/architecture/metrics-reference.md](docs/architecture/metrics-reference.md) | Metrics definitions and computation |
+
+### Usage & Analysis
+
+| Document | Purpose |
+|----------|---------|
+| [docs/usage/reproducing.md](docs/usage/reproducing.md) | Exact corpus replication with pinned commits |
+| [docs/usage/usage.md](docs/usage/usage.md) | SQL query examples and data access |
+| [docs/usage/fixture-patterns-reference.md](docs/usage/fixture-patterns-reference.md) | Fixture types and classification patterns |
+
+### Reference
+
+| Document | Purpose |
+|----------|---------|
+| [docs/reference/limitations.md](docs/reference/limitations.md) | Known constraints and validation status |
+| [docs/reference/license.md](docs/reference/license.md) | MIT (code) and CC BY 4.0 (dataset) |
+| [docs/reference/testing.md](docs/reference/testing.md) | Test suite and validation |
+| [docs/reference/references.md](docs/reference/references.md) | Academic citations and sources |
 
 ## Quick start
 
@@ -85,7 +133,7 @@ python pipeline.py init
 python pipeline.py run
 ```
 
-For detailed setup, see [docs/06-setup.md](docs/06-setup.md).
+For detailed setup, see [docs/getting-started/setup.md](docs/getting-started/setup.md).
 
 ## What is FixtureDB?
 
@@ -100,7 +148,7 @@ and mock framework usage.
 **Why it matters:** Prior empirical work on fixtures is exclusively Java-based. FixtureDB is the
 first cross-language resource treating the fixture as its primary unit of analysis.
 
-See [docs/01-intro.md](docs/01-intro.md) for the full overview.
+See [docs/getting-started/intro.md](docs/getting-started/intro.md) for the full overview.
 
 ### Data Quality & Testing
 
@@ -121,7 +169,7 @@ All fixture detectors include **comprehensive unit tests** ([tests/test_framewor
 - AST-based detection accuracy
 - Cross-language consistency
 
-See [docs/11-detection.md](docs/11-detection.md) for technical details on detection algorithms.
+See [docs/architecture/detection.md](docs/architecture/detection.md) for technical details on detection algorithms.
 
 ---
 

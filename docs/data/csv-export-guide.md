@@ -1,34 +1,21 @@
 # CSV Export Guide
 
-**For CSV users and spreadsheet analysis** — If you need to query the full database or access raw source code, see [Database Schema (SQLite)](../architecture/03-database-schema.md) or [Using the Dataset for Research (SQLite pathways)](../usage/09-usage.md).
+**Note:** For full database queries and raw source code access, see [Database Schema](../architecture/database-schema.md) or [Using the Dataset](../usage/usage.md).
 
-This document describes all CSV files exported when running `python pipeline.py export`.
-
-## Excluded Columns (Database-Only)
-
-The following columns exist in the SQLite database but are intentionally excluded from CSV exports:
-
-| Table | Column | Type | Reason |
-|-------|--------|------|--------|
-| `fixtures` | `category` | TEXT | Internal fixture classification; excluded from public CSV exports |
-| `fixtures` | `fixture_type` | TEXT | Qualitative/categorical classification (detection pattern); excluded from CSV (quantitative only) |
-| `fixtures` | `has_teardown_pair` | INT | Qualitative cleanup indicator; internal analysis only |
-| `mock_usages` | `raw_snippet` | TEXT | Source code snippet; redundant with fixtures table and SQLite full-text search |
-
-Column names and rationale documented here to clarify schema discrepancies between SQLite and CSV exports.
+This document describes all CSV files exported during `python pipeline.py export`.
 
 ## Export Structure
 
-The export generates the following CSV files:
+CSV files generated during export:
 
 ```
 export/fixturedb_v<version>_<date>/
-├── fixtures.db                (full database)
-├── repositories.csv           (all repositories)
-├── test_files.csv             (all test files)
-├── fixtures.csv               (all fixtures)
-├── mock_usages.csv            (all mock usages)
-├── stats.txt                  (high-level statistics)
+├── fixtures.db                (full database with all fields)
+├── repositories.csv
+├── test_files.csv
+├── fixtures.csv               (raw_source excluded; use SQLite for full source)
+├── mock_usages.csv
+├── stats.txt                  (summary statistics)
 └── README.txt                 (schema documentation)
 ```
 
@@ -132,5 +119,5 @@ The public CSV exports contain **quantitative metrics only** for this dataset. T
 
 ## See Also
 
-- [Database Schema](../architecture/03-database-schema.md) — Complete schema including excluded fields
-- [Collection & Extraction](../data/04-data-collection.md) — How metrics and detections are computed
+- [Database Schema](../architecture/database-schema.md) — Complete schema including excluded fields
+- [Collection & Extraction](../data/data-collection.md) — How metrics and detections are computed

@@ -22,7 +22,7 @@ cp .env.example .env
 # Get a token at: https://github.com/settings/tokens
 
 # Download SEART-GHS CSV files and place in github-search/ folder
-# See docs/data/04-data-collection.md for details
+# See docs/data/data-collection.md for details
 
 python pipeline.py init
 ```

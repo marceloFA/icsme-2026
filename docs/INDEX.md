@@ -1,81 +1,97 @@
 # FixtureDB Documentation Index
 
-This folder contains the complete documentation for FixtureDB, organized into sections.
+Start here for navigation and use-case-specific guides.
 
-## Getting Started (5 min read)
+## Quick Links (5 min)
 
-1. **[What is FixtureDB?](getting-started/01-intro.md)** — Overview, language coverage, and why this dataset matters
-2. **[Quick Start](getting-started/06-setup.md)** — Installation and first steps
-3. **[Running the Pipeline](getting-started/07-running.md)** — Command reference for all operations
+| What do you want? | Start here |
+|-------------------|-----------|
+| **Overview** | [What is FixtureDB?](getting-started/intro.md) |
+| **Get the data** | [Setup & Requirements](getting-started/setup.md) |
+| **Run the pipeline** | [Running the Pipeline](getting-started/running.md) |
+| **Analyze CSVs** | [Using the Dataset — CSV Analysis](usage/usage.md#use-case-2-analyzing-csv-exports) |
+| **Query SQLite** | [Using the Dataset — SQLite Queries](usage/usage.md#use-case-1-querying-the-sqlite-database) |
+| **Reproduce the corpus** | [Reproducing Results](usage/reproducing.md) |
+| **Verify limitations** | [Limitations & Threats to Validity](reference/limitations.md) |
+| **Understand metrics** | [Metrics Reference](architecture/metrics-reference.md) |
 
-## Documentation by Use Case
+---
 
-### **I want to analyze the data (CSV exports)**
-- Start: [Using the Dataset for Research — CSV Exports](usage/09-usage.md#use-case-2-analyzing-csv-exports)
-- Reference: [CSV Export Guide](data/14-csv-export-guide.md) — Full column documentation
-- How-to: [CSV User Guide](data/15-csv-user-guide.md) — Import & analyze in Excel, pandas, R
-- Language-specific data: [Language-Specific Fixture CSV](data/15-language-specific-csv-export.md)
+## By Use Case
 
-### **I want to query the SQLite database**
-- Start: [Using the Dataset for Research — SQLite](usage/09-usage.md#use-case-1-querying-the-sqlite-database)
-- Schema: [Database Schema](architecture/03-database-schema.md)
-- Advanced: [Data Pipeline Overview](architecture/18-data-pipeline-overview.md)
+### I want to analyze the data
 
-### **I want to verify or reproduce results**
-- How-to: [Reproducing the Paper Corpus](usage/08-reproducing.md)
-- Configuration: [Configuration Reference](architecture/10-configuration.md)
-- Details: [Fixture Detection Logic](architecture/11-detection.md)
+- **CSV Exports:** [Using the Dataset for Analysis](usage/usage.md#use-case-2-analyzing-csv-exports)
+- **Database Schema:** [Schema Reference](architecture/database-schema.md)
+- **Metric Definitions:** [Metrics & Calculations](architecture/metrics-reference.md)
 
-### **I want to understand limitations**
-- Overview: [Limitations & Threats to Validity](reference/12-limitations.md)
-- Testing: [Testing Strategy](reference/17-testing.md)
+### I want to query SQL
 
-### **I want to understand metrics & calculations**
-- Guide: [Metrics Reference & Calculation Methodology](architecture/20-metrics-reference.md) — External tools (Lizard, complexipy), custom implementations, reliability assessments, academic references
+- **SQLite Guide:** [Using the Dataset — SQL Queries](usage/usage.md#use-case-1-querying-the-sqlite-database)
+- **Schema & Relationships:** [Database Schema](architecture/database-schema.md)
 
+### I want to reproduce the paper
+
+- **How-To:** [Reproducing the Corpus](usage/reproducing.md)
+- **Configuration:** [Configuration Reference](architecture/configuration.md)
+- **Detection Details:** [Fixture Detection Logic](architecture/detection.md)
+
+### I want to understand limitations
+
+- **Known Constraints:** [Limitations & Threats to Validity](reference/limitations.md)
+- **Testing:** [Test Suite & Validation](reference/testing.md)
+
+---
 
 ## All Documentation
 
-### Getting Started
-- [What is FixtureDB?](getting-started/01-intro.md)
-- [Repository Structure](getting-started/02-repository-structure.md)
-- [Setup & Requirements](getting-started/06-setup.md)
-- [Running the Pipeline](getting-started/07-running.md)
+**Getting Started**
+- [What is FixtureDB?](getting-started/intro.md) — Overview & significance
+- [Repository Structure](getting-started/repository-structure.md) — Project layout
+- [Setup & Requirements](getting-started/setup.md) — Installation
+- [Running the Pipeline](getting-started/running.md) — Command reference
 
-### Architecture & Technical
-- [Database Schema](architecture/03-database-schema.md)
-- [Configuration Reference](architecture/10-configuration.md)
-- [Fixture Detection Logic](architecture/11-detection.md)
-- [Metrics Reference & Calculation Methodology](architecture/20-metrics-reference.md)
-- [Data Pipeline Overview](architecture/18-data-pipeline-overview.md)
+**Architecture & Technical**
+- [Database Schema](architecture/database-schema.md) — Tables, columns, relationships
+- [Configuration Reference](architecture/configuration.md) — Tunable parameters
+- [Fixture Detection Logic](architecture/detection.md) — AST parsing & metric computation
+- [Metrics Reference](architecture/metrics-reference.md) — Tool usage & methodology
+- [Data Pipeline Overview](architecture/data-pipeline-overview.md) — Extraction phases
 
-### Data Collection & Export
-- [Data Collection Process](data/04-data-collection.md)
-- [Storage & Scale](data/05-storage.md)
-- [CSV Export Guide](data/14-csv-export-guide.md)
-- [CSV User Guide](data/15-csv-user-guide.md)
-- [Language-Specific CSV Export](data/15-language-specific-csv-export.md)
+**Data Collection & Export**
+- [Data Collection Process](data/data-collection.md) — 5-phase pipeline
+- [Storage & Scale](data/storage.md) — Disk usage estimates
+- [CSV Export Guide](data/csv-export-guide.md) — Export formats
+- [Language-Specific CSV Export](data/language-specific-csv-export.md) — Per-language extracts
 
-### Usage & Analysis
-- [Reproducing Results](usage/08-reproducing.md)
-- [Using the Dataset for Research](usage/09-usage.md)
-- [Fixture Patterns Reference](usage/16-fixture-patterns-reference.md)
+**Usage & Analysis**
+- [Using the Dataset](usage/usage.md) — SQL/CSV examples
+- [Reproducing Results](usage/reproducing.md) — Corpus replication
+- [Fixture Patterns Reference](usage/fixture-patterns-reference.md) — Fixture types & patterns
+
+**Reference**
+- [Limitations & Threats to Validity](reference/limitations.md) — Known constraints
+- [Test Suite & Validation](reference/testing.md) — Test coverage & strategy
+- [Academic References](reference/references.md) — Citations & grounding
+- [License](reference/license.md) — MIT code, CC BY 4.0 data
+- [Using the Dataset for Research](usage/usage.md)
+- [Fixture Patterns Reference](usage/fixture-patterns-reference.md)
 
 ### Reference & Specs
-- [Limitations & Validity](reference/12-limitations.md)
-- [License](reference/13-license.md)
-- [Testing Strategy](reference/17-testing.md)
-- [Scientific References](reference/19-references.md)
+- [Limitations & Validity](reference/limitations.md)
+- [License](reference/license.md)
+- [Testing Strategy](reference/testing.md)
+- [Scientific References](reference/references.md)
 
 ## Quick Navigation
 
-- **New to FixtureDB?** → [What is FixtureDB?](getting-started/01-intro.md)
-- **How do I install?** → [Setup & Requirements](getting-started/06-setup.md)
-- **How do I run it?** → [Running the Pipeline](getting-started/07-running.md)
-- **Where's the data schema?** → [Database Schema](architecture/03-database-schema.md)
-- **How do I analyze CSVs?** → [CSV User Guide](data/15-csv-user-guide.md)
-- **How do I query SQLite?** → [Using the Dataset for Research](usage/09-usage.md)
-- **What are the limitations?** → [Limitations & Validity](reference/12-limitations.md)
+- **New to FixtureDB?** → [What is FixtureDB?](getting-started/intro.md)
+- **How do I install?** → [Setup & Requirements](getting-started/setup.md)
+- **How do I run it?** → [Running the Pipeline](getting-started/running.md)
+- **Where's the data schema?** → [Database Schema](architecture/database-schema.md)
+- **How do I analyze CSVs?** → [CSV User Guide](data/csv-user-guide.md)
+- **How do I query SQLite?** → [Using the Dataset for Research](usage/usage.md)
+- **What are the limitations?** → [Limitations & Validity](reference/limitations.md)
 
 ## Citation
 
@@ -87,5 +103,5 @@ João Almeida, Andre Hora
 
 ## License
 
-- **Code:** MIT License — See [LICENSE](../LICENSE) or [reference/13-license.md](reference/13-license.md)
-- **Dataset:** CC BY 4.0 — See [reference/13-license.md](reference/13-license.md)
+- **Code:** MIT License — See [LICENSE](../LICENSE) or [reference/license.md](reference/license.md)
+- **Dataset:** CC BY 4.0 — See [reference/license.md](reference/license.md)

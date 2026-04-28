@@ -17,7 +17,7 @@ github-search/
   └── typescript-results.csv.gz
 ```
 
-See [Data Collection](../data/04-data-collection.md#phase-1--repository-loading-from-seart-ghs-search) 
+See [Data Collection](../data/data-collection.md#phase-1--repository-loading-from-seart-ghs-search) 
 for details on why SEART-GHS and how to obtain the data.
 
 ## Quick Start (Toy Dataset)
